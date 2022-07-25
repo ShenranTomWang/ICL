@@ -346,3 +346,13 @@ MetaICL is CC-BY-NC 4.0 licensed.
 [t0-paper]: https://arxiv.org/abs/2110.08207
 [t0-repo]: https://github.com/bigscience-workshop/promptsource
 
+## Running with GPT-3
+Default command to run the evaluation with GPT-3:
+```bash
+python test_gpt3.py --dataset {dataset} --gpt3 {ada|babbage|curie|davinci} --method {direct|channel} --out_dir out/gpt3 --do_zeroshot --api {API key}
+```
+Some useful notes:
+* You can create/check your OpenAI API keys by visiting [this link](https://beta.openai.com/account/api-keys).
+* All the addtional flags in the previous sections are still applicable to this new default command, allowing you to reproduce the same set of experiments with GPT-3.
+* The responses from GPT-3 API are saved and can be found in the `out_dir`.
+* Running with GPT-3 can be expensive, and different models of GPT-3 comes with different costs. Please check [this link](https://openai.com/api/pricing/) to evaluate the cost before running each experiment.
