@@ -78,24 +78,16 @@ class MetaICLModel(object):
     def to_device(self):
         self.model.to(self.device)
 
-    def load(self, checkpoint=None, gpt2="gpt2-large"):
-        '''
-        checkpoint can be either keyword of the model or path to the checkpoint file
-        '''
-        if checkpoint is not None and checkpoint.startswith("gpt"):
-            gpt2 = checkpoint
-            checkpoint = None
-        if checkpoint is None and "gpt" not in gpt2:
-            checkpoint = gpt2
-            gpt2 = "gpt2-large"
+    def load(self, checkpoint=None, model_name="gpt2-large"):
+        """load model from checkpoint or by model_name
+
+        Args:
+            checkpoint (str, optional): path/name of checkpoint. Defaults to None.
+            model_name (str, optional): path/name of model. Defaults to "gpt2-large".
+        """
         if checkpoint is None:
-            if gpt2.startswith("gpt2"):
-                model = AutoModelForCausalLM.from_pretrained(gpt2)
-            elif "gpt-j" in gpt2:
-                model = AutoModelForCausalLM.from_pretrained("EleutherAI/gpt-j-6B") #/gpt2)
-            else:
-                raise NotImplementedError(checkpoint)
-            self.model_name = gpt2
+            model = AutoModelForCausalLM.from_pretrained(model_name)
+            self.model_name = model_name
         else:
             self.model_name = checkpoint
             _id = get_checkpoint_id(checkpoint)
@@ -114,7 +106,7 @@ class MetaICLModel(object):
             if self.local_rank <= 0:
                 self.logger.info("Loading the model from %s" % checkpoint)
             state_dict = torch.load(checkpoint)
-            model = AutoModelForCausalLM.from_pretrained(gpt2, state_dict=state_dict)
+            model = AutoModelForCausalLM.from_pretrained(model_name, state_dict=state_dict)
         self.model = model
 
     def save(self, step):

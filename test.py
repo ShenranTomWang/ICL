@@ -29,10 +29,10 @@ from utils.data import load_data
 def main(logger, args):
     assert (args.dataset is not None and args.task is None) or (args.dataset is None and args.task is not None)
 
-    if args.gpt2.startswith("gpt2"):
-        tokenizer = GPT2Tokenizer.from_pretrained(args.gpt2)
+    if args.model.startswith("gpt2"):
+        tokenizer = GPT2Tokenizer.from_pretrained(args.model)
     else:
-        tokenizer = AutoTokenizer.from_pretrained("gpt2")
+        tokenizer = AutoTokenizer.from_pretrained(args.model)
     add_newlines = True
 
     ### checkpoint ...
@@ -45,12 +45,7 @@ def main(logger, args):
             checkpoint = os.path.join(args.out_dir, "model-{}.pt".format(args.global_step))
         assert os.path.exists(checkpoint)
     else:
-        add_newlines = not args.gpt2.startswith("gpt2")
-        if False: #args.gpt2=="gpt-j-6B":
-            # we are using the HF veresion where GPT-J-6B checkpoint is not officially registered
-            # so need to download the model checkpoint and specify checkpoint
-            assert args.checkpoint is not None and os.path.exists(args.checkpoint)
-            args.gpt2 = args.checkpoint
+        add_newlines = not args.model.startswith("gpt2")
         checkpoint = None
     metaicl_model = MetaICLModel(logger, args.out_dir)
 
@@ -195,7 +190,7 @@ def run(logger, task, metaicl_data, metaicl_model, train_data, dev_data, seed,
             losses = pkl.load(f)
     else:
         if metaicl_model.is_none():
-            metaicl_model.load(checkpoint, gpt2=args.gpt2)
+            metaicl_model.load(checkpoint, model_name=args.model)
             metaicl_model.cuda()
             metaicl_model.eval()
 
@@ -257,7 +252,7 @@ if __name__=='__main__':
     parser.add_argument("--split", type=str, default="test")
     parser.add_argument("--is_null", default=False, action="store_true")
     parser.add_argument("--method", type=str, default="direct", choices=["direct", "channel"])
-    parser.add_argument("--gpt2", type=str, default="gpt2-large")
+    parser.add_argument("--model", type=str, default="gpt2-large")
 
     args = parser.parse_args()
 
