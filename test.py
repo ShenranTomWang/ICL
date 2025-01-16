@@ -24,7 +24,7 @@ from transformers import GPT2Tokenizer, AutoTokenizer
 from metaicl.data import MetaICLData
 from metaicl.model import MetaICLModel
 
-from utils.data import load_data
+from utils.data import load_data_by_task
 
 def main(logger, args):
     assert (args.dataset is not None and args.task is None) or (args.dataset is None and args.task is not None)
@@ -57,17 +57,12 @@ def main(logger, args):
     max_length_per_example = 256
     max_length = 256
     if args.use_demonstrations:
-        orig_max_length = max_length
-        if args.do_zeroshot:
-            max_length = min(max_length * args.k, 1024)
-        else:
-            max_length = min(max_length * args.k, 1024)
+        max_length = min(max_length * args.k, 1024)
 
     logger.info("batch_size=%d\tmax_length=%d\tmax_length_per_example=%d" % (
         args.test_batch_size, max_length, max_length_per_example))
 
-    metaicl_data = MetaICLData(logger, tokenizer, args.method,args.use_demonstrations, args.k,
-                               max_length, max_length_per_example)
+    metaicl_data = MetaICLData(logger, tokenizer, args.method, args.use_demonstrations, args.k, max_length, max_length_per_example)
 
     results = []
     errors = []
@@ -77,9 +72,9 @@ def main(logger, args):
     for seed in seeds:
 
         ### data ...
-        train_data = load_data(args.task, "train", args.k, seed=seed, config_split=config_split,
+        train_data = load_data_by_task(args.task, "train", args.k, seed=seed, config_split=config_split,
                                datasets=None if args.dataset is None else args.dataset.split(","))
-        dev_data = load_data(args.task, args.split, args.k, seed=seed, config_split=config_split,
+        dev_data = load_data_by_task(args.task, args.split, args.k, seed=seed, config_split=config_split,
                              datasets=None if args.dataset is None else args.dataset.split(","), is_null=args.is_null)
 
         if args.use_random_english_words:
@@ -150,6 +145,8 @@ def main(logger, args):
 
 def run(logger, task, metaicl_data, metaicl_model, train_data, dev_data, seed,
         checkpoint, is_classification, add_newlines):
+    """run testing with dev_data
+    """
 
     if args.do_zeroshot:
         split_name = args.split

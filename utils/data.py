@@ -92,16 +92,18 @@ def random_handler(args: dict) -> None:
         print(f"Completed for seed {seed}")
 
 
-def load_data(task, split, k, seed=0, config_split=None, datasets=None,
-              is_null=False):
+def load_data_by_task(task, split, k, seed=0, config_split=None, is_null=False):
     if config_split is None:
         config_split = split
 
-    if datasets is None:
-        with open(os.path.join("config", task+".json"), "r") as f:
-            config = json.load(f)
-        datasets = config[config_split]
+    with open(os.path.join("config", task + ".json"), "r") as f:
+        config = json.load(f)
+    datasets = config[config_split]
 
+    data = load_data_by_datasets(datasets, k, seed, split, is_null)
+    return data
+
+def load_data_by_datasets(datasets, k, split, seed=0, is_null=False):
     data = []
     for dataset in datasets:
         data_path = os.path.join("data", dataset,
@@ -113,4 +115,3 @@ def load_data(task, split, k, seed=0, config_split=None, datasets=None,
                     dp["input"] = "N/A"
                 data.append(dp)
     return data
-
