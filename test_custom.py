@@ -32,6 +32,7 @@ def main(logger, args):
     seeds = args.seed.split(",")
     errors, results = [], []
     for seed in seeds:
+        # TODO: should be able to load train data for k less than default 16
         if args.task != None:
             config_split = "unseen_domain_test" if args.unseen_domain_only else "test"
             train_data = load_data_by_task(args.task, "train", args.k, seed=seed, config_split=config_split)
