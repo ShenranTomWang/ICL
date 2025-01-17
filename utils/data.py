@@ -70,11 +70,9 @@ def random_handler(args: dict) -> None:
         
         dev_data_path = os.path.join(args.data_dir, args.dataset, f"{args.dataset}_{args.k}_{seed}_dev.jsonl")
         dev_data = load_jsonl(dev_data_path)
-        dev_data = random_option(dev_data, seed)
         
         test_data_path = os.path.join(args.data_dir, args.dataset, f"{args.dataset}_{args.k}_{seed}_test.jsonl")
         test_data = load_jsonl(test_data_path)
-        test_data = random_option(test_data, seed)
         
         new_train_path = os.path.join(args.data_dir, args.dataset + "_random", f"{args.dataset}_random_{args.k}_{seed}_train.jsonl")
         new_dev_path = os.path.join(args.data_dir, args.dataset + "_random", f"{args.dataset}_random_{args.k}_{seed}_dev.jsonl")
