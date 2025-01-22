@@ -119,12 +119,13 @@ def run(logger, task, metaicl_data, metaicl_model, train_data, dev_data, seed,
             split_name += "-null"
         cache_path = os.path.join(
             args.out_dir,
-            "{}-{}-{}{}{}{}{}.pkl".format(
+            "{}-{}-{}{}{}{}{}{}.pkl".format(
                 task,
                 split_name,
                 metaicl_data.method,
                 "-k={}".format(args.k) if args.use_demonstrations else "",
                 "-s={}".format(seed) if args.use_demonstrations or args.use_random_english_words else "",
+                "-n={}".format(args.n),
                 "" if add_newlines else "-no-newlines",
                 "-randomEnglish" if args.use_random_english_words else ""
             )
@@ -133,12 +134,13 @@ def run(logger, task, metaicl_data, metaicl_model, train_data, dev_data, seed,
         assert add_newlines
         cache_path = os.path.join(
             args.out_dir,
-            "{}-{}-{}{}{}{}.pkl".format(
+            "{}-{}-{}{}{}{}{}.pkl".format(
                 task,
                 args.split,
                 metaicl_data.method,
                 "-k={}".format(args.k) if args.use_demonstrations else "",
                 "-s={}".format(seed) if args.use_demonstrations or args.use_random_english_words else "",
+                "-n={}".format(args.n),
                 "-randomEnglish" if args.use_random_english_words else ""
                 )
             )
