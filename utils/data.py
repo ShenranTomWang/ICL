@@ -102,12 +102,15 @@ def load_data_by_task(task, split, k, seed=0, config_split=None, is_null=False):
     return data
 
 def load_data_by_datasets(datasets, k, split, seed=0, is_null=False):
+    assert k <= 16
     data = []
     for dataset in datasets:
         data_path = os.path.join("data", dataset,
-                                 "{}_{}_{}_{}.jsonl".format(dataset, k, seed, split))
+                                 "{}_{}_{}_{}.jsonl".format(dataset, "16", seed, split))
         with open(data_path, "r") as f:
-            for line in f:
+            for i, line in enumerate(f):
+                if i >= k:
+                    break
                 dp = json.loads(line)
                 if is_null:
                     dp["input"] = "N/A"

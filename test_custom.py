@@ -32,7 +32,6 @@ def main(logger, args):
     seeds = args.seed.split(",")
     errors, results = [], []
     for seed in seeds:
-        # TODO: should be able to load train data for k less than default 16
         if args.task != None:
             config_split = "unseen_domain_test" if args.unseen_domain_only else "test"
             train_data = load_data_by_task(args.task, "train", args.k, seed=seed, config_split=config_split)
@@ -164,6 +163,7 @@ def run(logger, task, metaicl_data, metaicl_model, train_data, dev_data, seed,
             metaicl_model.eval()
 
         losses = metaicl_model.do_inference(metaicl_data, args.test_batch_size)
+        os.makedirs(os.path.dirname(cache_path), exist_ok=True)
         with open(cache_path, "wb") as f:
             pkl.dump(losses, f)
 
@@ -222,7 +222,7 @@ if __name__=='__main__':
     parser.add_argument("--split", type=str, default="test")
     parser.add_argument("--is_null", default=False, action="store_true")
     parser.add_argument("--method", type=str, default="direct", choices=["direct", "channel"])
-    parser.add_argument("--model", type=str, default="gpt2-large")
+    parser.add_argument("--model", type=str, default="/scratch/st-jzhu71-1/shenranw/models/openai-community/gpt2")
 
     args = parser.parse_args()
     if args.out_dir is None:
