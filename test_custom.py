@@ -35,7 +35,7 @@ def main(logger, args):
         if args.task != None:
             config_split = "unseen_domain_test" if args.unseen_domain_only else "test"
             train_data = load_data_by_task(args.task, "train", args.k, seed=seed, config_split=config_split)
-            test_data = load_data_by_task(args.task, args.split, args.k, seed=seed, config_split=config_split, is_null=args.is_null)
+            test_data = load_data_by_task(args.task, args.split, args.n, seed=seed, config_split=config_split, is_null=args.is_null)
         else:
             assert args.dataset is not None
             train_data = load_data_by_datasets(args.dataset.split(","), args.k, "train", seed=seed)
