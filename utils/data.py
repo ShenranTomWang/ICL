@@ -109,7 +109,7 @@ def load_data_by_datasets(datasets, k, split, seed=0, is_null=False):
                                  "{}_{}_{}_{}.jsonl".format(dataset, "16", seed, split))
         with open(data_path, "r") as f:
             for i, line in enumerate(f):
-                if i >= k:
+                if k != -1 and i >= k:
                     break
                 dp = json.loads(line)
                 if is_null:
