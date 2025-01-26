@@ -186,7 +186,7 @@ def run(
         cache_path = os.path.join(
             args.out_dir,
             seed,
-            "{}-{}-{}{}{}{}{}{}{}.pkl".format(
+            "{}-{}-{}{}{}{}{}{}.pkl".format(
                 task,
                 split_name,
                 args.method,
@@ -202,7 +202,7 @@ def run(
         cache_path = os.path.join(
             args.out_dir,
             seed,
-            "{}-{}-{}{}{}{}{}{}.pkl".format(
+            "{}-{}-{}{}{}{}{}.pkl".format(
                 task,
                 args.split,
                 args.method,
