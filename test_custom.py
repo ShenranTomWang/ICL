@@ -9,6 +9,8 @@ import torch
 from utils.dataset import Dataset
 from collections import Counter, defaultdict
 
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 def evaluate(predictions: list, groundtruths: list, is_classification: bool) -> float:
     """Evaluate the predictions against the groundtruths. Return accuracy for non-classification tasks, and macro-F1 for classification tasks.
     """
@@ -46,8 +48,7 @@ def load_model(args: dict) -> any:
         model.load(model_name=args.model)
         model.to_device()
     else:
-        model = AutoModelForCausalLM.from_pretrained(args.model, dtype=getattr(torch, args.dtype), trust_remote_code=True)
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        model = AutoModelForCausalLM.from_pretrained(args.model, torch_dtype=getattr(torch, args.dtype), trust_remote_code=True)
         model = model.to(device)
     return model
 
@@ -107,6 +108,19 @@ def do_inference_meta_icl(
     predictions = model.do_predict(test_data, losses=losses)
     return predictions
 
+def preprocess_batch(batch: list) -> tuple:
+    """Preprocess batch of inputs
+
+    Returns:
+        tuple<torch.Tensor>: input_ids, attention_mask
+    """
+    input_ids = [input["input_ids"][0, :] for input in batch]
+    attention_mask = [input["attention_mask"][0, :] for input in batch]
+    
+    input_ids = torch.nn.utils.rnn.pad_sequence(input_ids, batch_first=True, padding_value=0).to(device)
+    attention_mask = torch.nn.utils.rnn.pad_sequence(attention_mask, batch_first=True, padding_value=0).to(device)
+    return input_ids, attention_mask
+
 def do_inference_hf(model: AutoModelForCausalLM, dataset: Dataset, batch_size: int) -> list:
     """Perform inference on dataset in batch with batch_size
 
@@ -117,20 +131,23 @@ def do_inference_hf(model: AutoModelForCausalLM, dataset: Dataset, batch_size: i
     inputs = dataset.inputs
     indices = dataset.indices
     option_ids = dataset.option_ids
-    options = torch.tensor(dataset.options)
-    for i in range(0, len(inputs), min(batch_size, len(inputs) - i)):
-        batch = inputs[i:i+batch_size]
-        index = indices[i:i+batch_size]
-        output = model(batch)
+    options = dataset.options
+    for i in range(0, len(inputs), batch_size):
+        upper = min(i + batch_size, len(inputs))
+        batch = inputs[i:upper]
+        index = torch.tensor(indices[i:upper]).to(device)
+        input_ids, attention_mask = preprocess_batch(batch)
+        output = model(input_ids=input_ids, attention_mask=attention_mask)
         logit = output.logits
-        output_logits = logit.gather(-2, index).squeeze(-2)        # (batch_size, vocab_size)
-        output_logits = output_logits.gather(-1, option_ids)        # (batch_size, num_options)
-        output = torch.argmax(output_logits, dim=-1).squeeze(-1)    # (batch_size)
+        output_logits = logit[..., index, :].squeeze(-2)        # (batch_size, vocab_size)
+        output_logits = output_logits[..., option_ids]          # (batch_size, num_options)
+        output = torch.argmax(output_logits, dim=-1)            # (batch_size)
         outputs.append(output)
     
-    outputs = torch.cat(outputs, dim=0)
-    outputs = options[outputs]
-    return outputs.tolist()
+    outputs = torch.cat(outputs, dim=0).flatten()
+    outputs = outputs.cpu().tolist()
+    outputs = [options[i] for i in outputs]
+    return outputs
 
 def log_counters(logger: logging.Logger, train_counter: Counter, test_counter: Counter) -> None:
     """Log the counts of tasks in train and test data
@@ -195,6 +212,9 @@ def run(
             )
     logger.info(cache_path)
     prediction_path = cache_path.replace(".pkl", ".txt")
+    if not os.path.exists(prediction_path):
+        os.makedirs(os.path.dirname(prediction_path), exist_ok=True)
+    
     if args.use_calibration:
         prediction_path = prediction_path.replace(".txt", "-calibrated.txt")
 
@@ -299,7 +319,7 @@ if __name__=='__main__':
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--do_zeroshot", default=False, action="store_true")
-    # parser.add_argument("--use_calibration", default=False, action="store_true")
+    parser.add_argument("--use_calibration", default=False, action="store_true")
     parser.add_argument("--unseen_domain_only", default=False, action="store_true")
 
     parser.add_argument("--log_file", default=None, type=str)
@@ -312,7 +332,7 @@ if __name__=='__main__':
 
     parser.add_argument("--dtype", type=str, default="float16")
     parser.add_argument("--meta_icl", default=False, action="store_true")
-    parser.add_argument("--test_batch_size", type=int, default=4)
+    parser.add_argument("--test_batch_size", type=int, default=1)
     # parser.add_argument("--global_step", type=str, default=None)
     parser.add_argument("--checkpoint", type=str, default=None)
     parser.add_argument("--use_random_english_words", default=False, action="store_true")       # TODO: this should be done in create_data_custom.py

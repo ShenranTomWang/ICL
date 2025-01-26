@@ -1,12 +1,11 @@
 import torch
 
 class Dataset:
-    def __init__(self, train, test, add_newlines=True, dtype=torch.float16):
+    def __init__(self, train, test, add_newlines=True):
         self.train = train
         self.add_newlines = add_newlines
         self.test = test
         self.options = test[0]["options"]
-        self.dtype = dtype
         
     def preprocess(self):
         """Effects:
@@ -25,7 +24,7 @@ class Dataset:
             total = input_ + output_
             if self.add_newlines:
                 total += "\n\n"
-            self.test[i]["inpupt"] += total + dp_test["input"]
+            self.test[i]["input"] += total + dp_test["input"]
         self.inputs = [dp["input"] for dp in self.test]
         self.outputs = [dp["output"] for dp in self.test]
         
@@ -43,14 +42,21 @@ class Dataset:
         if self.inputs is None or self.outputs is None:
             self.preprocess()
         inputs = self.inputs
+        if tokenizer.pad_token is None:
+            tokenizer.pad_token = tokenizer.eos_token
         inputs = [tokenizer(input, return_tensors="pt", padding=True, truncation=True) for input in inputs]
-        inputs["input_ids"] = inputs["input_ids"].to(dtype=self.dtype)
-        inputs["attention_mask"] = inputs["attention_mask"].to(dtype=self.dtype)
+        inputs = [
+            {
+                "input_ids": input["input_ids"],
+                "attention_mask": input["attention_mask"]
+            }
+            for input in inputs
+        ]
         indices = [input["input_ids"].shape[1] - 1 for input in inputs]
         output_ids = self.outputs
         output_ids = [tokenizer(output)["input_ids"][0] for output in output_ids]
         option_ids = self.test[0]["options"]
-        option_ids = [tokenizer(option)["input_ids"][0] for option in option_ids]
+        option_ids = [tokenizer(option)["input_ids"][-1] for option in option_ids]
         self.inputs = inputs
         self.output_ids = output_ids
         self.indices = indices
