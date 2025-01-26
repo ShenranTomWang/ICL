@@ -185,7 +185,8 @@ def run(
             split_name += "-null"
         cache_path = os.path.join(
             args.out_dir,
-            "{}-{}-{}{}{}{}{}{}.pkl".format(
+            seed,
+            "{}-{}-{}{}{}{}{}{}{}.pkl".format(
                 task,
                 split_name,
                 args.method,
@@ -200,7 +201,8 @@ def run(
         assert add_newlines
         cache_path = os.path.join(
             args.out_dir,
-            "{}-{}-{}{}{}{}{}.pkl".format(
+            seed,
+            "{}-{}-{}{}{}{}{}{}.pkl".format(
                 task,
                 args.split,
                 args.method,
