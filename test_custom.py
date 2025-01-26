@@ -9,8 +9,6 @@ import torch
 from utils.dataset import Dataset
 from collections import Counter, defaultdict
 
-torch.float
-
 def evaluate(predictions: list, groundtruths: list, is_classification: bool) -> float:
     """Evaluate the predictions against the groundtruths. Return accuracy for non-classification tasks, and macro-F1 for classification tasks.
     """
