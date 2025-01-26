@@ -48,7 +48,7 @@ def load_model(args: dict) -> any:
         model.load(model_name=args.model)
         model.to_device()
     else:
-        model = AutoModelForCausalLM.from_pretrained(args.model, dtype=getattr(torch, args.dtype))
+        model = AutoModelForCausalLM.from_pretrained(args.model, dtype=getattr(torch, args.dtype), trust_remote_code=True)
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         model = model.to(device)
     return model
@@ -134,6 +134,88 @@ def do_inference_hf(model: AutoModelForCausalLM, dataset: Dataset, batch_size: i
     outputs = options[outputs]
     return outputs.tolist()
 
+def log_counters(logger: logging.Logger, train_counter: Counter, test_counter: Counter) -> None:
+    """Log the counts of tasks in train and test data
+    """
+    for k, v in train_counter.items():
+        logger.info("[Train] %s\t%d" % (k, v))
+    for k, v in test_counter.items():
+        logger.info("[Test] %s\t%d" % (k, v))
+
+    logger.info("method %s on %s (%d train, %d test)" % (args.method, args.dataset, len(train_counter), len(test_counter)))
+
+def init_counters(train_data: list, test_data: list) -> tuple:
+    """Initiate train and test counters to cound tasks
+
+    Returns:
+        tuple<Counter>: train_counter, test_counter
+    """
+    train_counter = Counter()
+    test_counter = Counter()
+    for dp in train_data:
+        train_counter[dp["task"]] += 1
+    for dp in test_data:
+        test_counter[dp["task"]] += 1
+    return train_counter, test_counter
+            
+def run(
+    args, logger, task, dataset, model, test_data, seed, checkpoint, is_classification, add_newlines
+) -> float:
+    """run testing with test_data, return performance
+    """
+
+    if args.do_zeroshot:
+        split_name = args.split
+        if args.is_null:
+            split_name += "-null"
+        cache_path = os.path.join(
+            args.out_dir,
+            "{}-{}-{}{}{}{}{}{}.pkl".format(
+                task,
+                split_name,
+                args.method,
+                "-k={}".format(args.k),
+                "-s={}".format(seed) if args.use_random_english_words else "",
+                "-n={}".format(args.n),
+                "" if add_newlines else "-no-newlines",
+                "-randomEnglish" if args.use_random_english_words else ""
+            )
+        )
+    else:
+        assert add_newlines
+        cache_path = os.path.join(
+            args.out_dir,
+            "{}-{}-{}{}{}{}{}.pkl".format(
+                task,
+                args.split,
+                args.method,
+                "-k={}".format(args.k),
+                "-s={}".format(seed) if args.use_random_english_words else "",
+                "-n={}".format(args.n),
+                "-randomEnglish" if args.use_random_english_words else ""
+                )
+            )
+    logger.info(cache_path)
+    prediction_path = cache_path.replace(".pkl", ".txt")
+    if args.use_calibration:
+        prediction_path = prediction_path.replace(".txt", "-calibrated.txt")
+
+    if args.meta_icl:
+        predictions = do_inference_meta_icl(args, model, dataset, cache_path, checkpoint, test_data, is_classification)
+    else:
+        predictions = do_inference_hf(model, dataset, args.test_batch_size)
+
+    groundtruths = [dp["output"] for dp in test_data]
+    perf = evaluate(predictions, groundtruths, is_classification)
+    logger.info(f"{'F1' if is_classification else 'Accuracy'} = {perf}")
+
+    with open(prediction_path, "w") as f:
+        for prediction in predictions:
+            f.write(prediction)
+            f.write("\n")
+
+    return perf
+
 def main(logger, args):
     tokenizer = AutoTokenizer.from_pretrained(args.model)
     model = load_model(args)
@@ -213,84 +295,6 @@ def main(logger, args):
     if len(errors) > 0:
         logger.info("You had errors with datasets:", ",".join(errors))
         logger.info("Please see the error messages")
-
-
-def log_counters(logger, train_counter, test_counter):
-    for k, v in train_counter.items():
-        logger.info("[Train] %s\t%d" % (k, v))
-    for k, v in test_counter.items():
-        logger.info("[Test] %s\t%d" % (k, v))
-
-    logger.info("method %s on %s (%d train, %d test)" % (args.method, args.dataset, len(train_counter), len(test_counter)))
-
-
-def init_counters(train_data, test_data):
-    train_counter = Counter()
-    test_counter = Counter()
-    for dp in train_data:
-        train_counter[dp["task"]] += 1
-    for dp in test_data:
-        test_counter[dp["task"]] += 1
-    return train_counter, test_counter
-
-            
-def run(
-    args, logger, task, dataset, model, test_data, seed, checkpoint, is_classification, add_newlines
-):
-    """run testing with test_data
-    """
-
-    if args.do_zeroshot:
-        split_name = args.split
-        if args.is_null:
-            split_name += "-null"
-        cache_path = os.path.join(
-            args.out_dir,
-            "{}-{}-{}{}{}{}{}{}.pkl".format(
-                task,
-                split_name,
-                args.method,
-                "-k={}".format(args.k),
-                "-s={}".format(seed) if args.use_random_english_words else "",
-                "-n={}".format(args.n),
-                "" if add_newlines else "-no-newlines",
-                "-randomEnglish" if args.use_random_english_words else ""
-            )
-        )
-    else:
-        assert add_newlines
-        cache_path = os.path.join(
-            args.out_dir,
-            "{}-{}-{}{}{}{}{}.pkl".format(
-                task,
-                args.split,
-                args.method,
-                "-k={}".format(args.k),
-                "-s={}".format(seed) if args.use_random_english_words else "",
-                "-n={}".format(args.n),
-                "-randomEnglish" if args.use_random_english_words else ""
-                )
-            )
-    logger.info(cache_path)
-    prediction_path = cache_path.replace(".pkl", ".txt")
-    if args.use_calibration:
-        prediction_path = prediction_path.replace(".txt", "-calibrated.txt")
-
-    if args.meta_icl:
-        predictions = do_inference_meta_icl(args, model, dataset, cache_path, checkpoint, test_data, is_classification)
-    else:
-        predictions = do_inference_hf(model, dataset, args.test_batch_size)
-
-    groundtruths = [dp["output"] for dp in test_data]
-    perf = evaluate(predictions, groundtruths, is_classification)
-    logger.info(f"{"F1" if is_classification else "Accuracy"} = {perf}")
-
-    with open(prediction_path, "w") as f:
-        for prediction in predictions:
-            f.write(prediction)
-            f.write("\n")
-
-    return perf
 
 
 if __name__=='__main__':
