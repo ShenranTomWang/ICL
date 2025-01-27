@@ -20,11 +20,10 @@ class Dataset:
                 input_ += dp_train["input"]
                 if self.add_newlines:
                     input_ += "\n\n"
-                output_ += " " + dp_train["output"]
-            total = input_ + output_
+                input_ += " " + dp_train["output"]
             if self.add_newlines:
-                total += "\n\n"
-            self.test[i]["input"] += total + dp_test["input"]
+                input_ += "\n\n"
+            self.test[i]["input"] += input_ + dp_test["input"]
         self.inputs = [dp["input"] for dp in self.test]
         self.outputs = [dp["output"] for dp in self.test]
         
