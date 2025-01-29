@@ -8,8 +8,30 @@ import numpy as np
 import torch
 from utils.dataset import Dataset
 from collections import Counter, defaultdict
+import utils.utils as utils
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+def fwd_n_rounds(model: AutoModelForCausalLM, input_ids: torch.tensor, attention_mask: torch.tensor, n: int):
+    """
+    customized fwd function for n rounds of forward pass
+    Args:
+        model (AutoModelForCausalLM): model to be used for inference
+        input_ids (torch.tensor): input_ids tensor
+        attention_mask (torch.tensor): attention_mask tensor
+        n (int): number of tokens to be generated
+
+    Returns:
+        torch.tensor: output tensor
+    """
+    output = model(input_ids=input_ids, attention_mask=attention_mask)
+    for _ in range(n - 1):
+        logits = output.logits
+        past_key_values = output.past_key_values
+        next_token_id = torch.argmax(logits[:, -1, :], dim=-1).unsqueeze(-1)
+        new_attention_mask = torch.cat([attention_mask, torch.ones((attention_mask.shape[0], 1), device=attention_mask.device)], dim=1)
+        output = model(input_ids=next_token_id, attention_mask=new_attention_mask, past_key_values=past_key_values)
+    return output
 
 def evaluate(predictions: list, groundtruths: list, is_classification: bool) -> float:
     """Evaluate the predictions against the groundtruths. Return accuracy for non-classification tasks, and macro-F1 for classification tasks.
@@ -121,8 +143,14 @@ def preprocess_batch(batch: list) -> tuple:
     attention_mask = torch.nn.utils.rnn.pad_sequence(attention_mask, batch_first=True, padding_value=0).to(device)
     return input_ids, attention_mask
 
+@torch.inference_mode()
 def do_inference_hf(model: AutoModelForCausalLM, dataset: Dataset, batch_size: int) -> list:
     """Perform inference on dataset in batch with batch_size
+    
+    Args:
+        model (AutoModelForCausalLM): model
+        dataset (Dataset): dataset
+        batch_size (int): batch size
 
     Returns:
         list<str>: predictions
@@ -130,16 +158,21 @@ def do_inference_hf(model: AutoModelForCausalLM, dataset: Dataset, batch_size: i
     outputs = []
     inputs = dataset.inputs
     indices = dataset.indices
-    option_ids = dataset.option_ids
+    option_ids = torch.tensor(dataset.option_ids, device=device)
     options = dataset.options
     for i in range(0, len(inputs), batch_size):
         upper = min(i + batch_size, len(inputs))
         batch = inputs[i:upper]
         index = torch.tensor(indices[i:upper]).to(device)
         input_ids, attention_mask = preprocess_batch(batch)
-        output = model(input_ids=input_ids, attention_mask=attention_mask)
-        logit = output.logits
-        output_logits = logit[..., index, :].squeeze(-2)        # (batch_size, vocab_size)
+        if args.n_fwds == 1:
+            output = model(input_ids=input_ids, attention_mask=attention_mask)
+            logit = output.logits
+            output_logits = logit[..., index, :].squeeze(-2)        # (batch_size, vocab_size)
+        else:
+            output = fwd_n_rounds(model, input_ids, attention_mask, args.n_fwds)
+            logit = output.logits
+            output_logits = logit.squeeze(-2)                   # (batch_size, vocab_size)
         output_logits = output_logits[..., option_ids]          # (batch_size, num_options)
         output = torch.argmax(output_logits, dim=-1)            # (batch_size)
         outputs.append(output)
@@ -176,7 +209,22 @@ def init_counters(train_data: list, test_data: list) -> tuple:
 def run(
     args, logger, task, dataset, model, test_data, seed, checkpoint, is_classification, add_newlines
 ) -> float:
-    """run testing with test_data, return performance
+    """Run testing with test_data, return performance
+    
+    Args:
+        args (dict): arguments
+        logger (logging.Logger): logger
+        task (str): task name
+        dataset (Dataset): tensorized dataset
+        model (AutoModelForCausalLM): model
+        test_data (list): test data
+        seed (str): seed
+        checkpoint (str): checkpoint
+        is_classification (bool): whether the task is classification
+        add_newlines (bool): whether to add newlines to the predictions
+    
+    Returns:
+        (float): performance, macro-F1 for classification tasks, accuracy for non-classification tasks, none if args.is_null
     """
 
     if args.do_zeroshot:
@@ -332,6 +380,7 @@ if __name__=='__main__':
     parser.add_argument("--n", type=int, default=-1)
     parser.add_argument("--seed", type=str, default="100,13,21,42,87")
 
+    parser.add_argument("--n_fwds", type=int, default=1)
     parser.add_argument("--dtype", type=str, default="float16")
     parser.add_argument("--meta_icl", default=False, action="store_true")
     parser.add_argument("--test_batch_size", type=int, default=1)
@@ -349,6 +398,10 @@ if __name__=='__main__':
     args = parser.parse_args()
     if args.out_dir is None:
         args.out_dir = "out/" + "/".join(args.model.split("/")[-1:])
+    
+    if args.n_fwds == 1:
+        # Currently only support one-by-one multi-round forward pass
+        assert args.test_batch_size == 1
 
     handlers = [logging.StreamHandler()]
     if args.log_file is not None:

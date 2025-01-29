@@ -6,6 +6,8 @@
 
 import os
 import subprocess
+import torch
+from transformers import AutoModelForCausalLM, AutoTokenizer
 
 
 all_settings = ["hr_to_lr", "hr_to_lr_noinst", "hr_to_lr_inst", "hr_to_lr_inst_all",
@@ -62,6 +64,4 @@ def download_file(_id, dest):
             print("Unzip {} ... [Failed]".format(dest))
         else:
             print("Unzip {} ... [Success]".format(dest))
-
-
 

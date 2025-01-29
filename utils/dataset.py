@@ -5,7 +5,10 @@ class Dataset:
         self.train = train
         self.add_newlines = add_newlines
         self.test = test
-        self.options = test[0]["options"]
+        if add_newlines:
+            self.options = ["\n" + option for option in test[0]["options"]]
+        else:
+            self.options = [" " + option for option in test[0]["options"]]
         
     def preprocess(self):
         """Effects:
@@ -13,17 +16,18 @@ class Dataset:
             self.inputs: list<str>, 
             self.outputs: list<str>
         """
-        for i, dp_test in enumerate(self.test):
-            input_ = ""
-            output_ = ""
-            for dp_train in self.train:
-                input_ += dp_train["input"]
-                if self.add_newlines:
-                    input_ += "\n\n"
-                input_ += " " + dp_train["output"]
+        demo = ""
+        for dp_train in self.train:
+            demo += dp_train["input"]
+            dp_train["options"] = self.options
+            demo += ("\n" if self.add_newlines else " ")
+            demo += dp_train["output"]
             if self.add_newlines:
-                input_ += "\n\n"
-            self.test[i]["input"] += input_ + dp_test["input"]
+                demo += "\n\n"
+        
+        for i, dp_test in enumerate(self.test):
+            self.test[i]["input"] = demo + dp_test["input"]
+            self.test[i]["output"] = ("\n" if self.add_newlines else " ") + dp_test["output"]
         self.inputs = [dp["input"] for dp in self.test]
         self.outputs = [dp["output"] for dp in self.test]
         
