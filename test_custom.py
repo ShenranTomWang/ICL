@@ -290,7 +290,7 @@ def main(logger, args):
     logger.info("Model loaded")
     
     # TODO: the following two lines may need to be changed on demand
-    add_newlines = True
+    add_newlines = args.add_newlines
     checkpoint = None
     use_demonstrations = args.k != 0
     
@@ -368,6 +368,7 @@ def main(logger, args):
 if __name__=='__main__':
 
     parser = argparse.ArgumentParser()
+    parser.add_argument("--add_newlines", default=False, action="store_true")
     parser.add_argument("--do_zeroshot", default=False, action="store_true")
     parser.add_argument("--use_calibration", default=False, action="store_true")
     parser.add_argument("--unseen_domain_only", default=False, action="store_true")
