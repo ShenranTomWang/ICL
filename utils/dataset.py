@@ -57,7 +57,7 @@ class Dataset:
         ]
         indices = [input["input_ids"].shape[1] - 1 for input in inputs]
         output_ids = self.outputs
-        output_ids = [tokenizer(output)["input_ids"][0] for output in output_ids]
+        output_ids = [tokenizer(output)["input_ids"][-1] for output in output_ids]
         option_ids = self.test[0]["options"]
         option_ids = [tokenizer(option)["input_ids"][-1] for option in option_ids]
         self.inputs = inputs
