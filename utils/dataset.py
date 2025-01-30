@@ -1,11 +1,13 @@
-import torch
+import logging
 
 class Dataset:
-    def __init__(self, train, test, add_newlines=True, n_skips=1):
+    def __init__(self, train, test, verbose=False, add_newlines=True, n_skips=1):
         self.train = train
         self.add_newlines = add_newlines
         self.test = test
         self.n_skips = n_skips
+        self.logger = logging.getLogger(__name__)
+        self.verbose = verbose
         if add_newlines:
             self.options = ["\n" + option for option in test[0]["options"]]
         else:
@@ -60,6 +62,11 @@ class Dataset:
             index = 1 + self.n_skips
         output_ids = [tokenizer(output)["input_ids"][index] for output in self.outputs]
         option_ids = [tokenizer(option)["input_ids"][-1] for option in self.options]
+        if self.verbose:
+            self.logger.info(f"inputs example (string): {self.inputs[0]}")
+            self.logger.info(f"inputs example: {inputs[0]}")
+            self.logger.info(f"output id example: {output_ids[0]}")
+            self.logger.info(f"option ids: {option_ids}")
         self.inputs = inputs
         self.output_ids = output_ids
         self.indices = indices

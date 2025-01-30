@@ -346,7 +346,7 @@ def main(logger, args):
                 tokenized_dataset.tensorize(train_data, test_data, add_newlines=add_newlines)
                 tokenized_dataset.print_tensorized_example()
             else:
-                tokenized_dataset = Dataset(curr_train_data, curr_test_data, add_newlines=add_newlines, n_skips=args.n_skips)
+                tokenized_dataset = Dataset(curr_train_data, curr_test_data, add_newlines=add_newlines, n_skips=args.n_skips, verbose=args.verbose)
                 tokenized_dataset.preprocess()
                 tokenized_dataset.tensorize(tokenizer)
             result = run(
@@ -385,7 +385,7 @@ if __name__=='__main__':
     parser.add_argument("--seed", type=str, default="100,13,21,42,87")
 
     parser.add_argument("--n_fwds", type=int, default=1)
-    parser.add_argument("--n_skips", type=int, default=0)
+    parser.add_argument("--n_skips", type=int, default=0, help="number of tokens to skip in the output, assumes having <bos> token, set to -1 if tokenizer has no <bos> token")
     parser.add_argument("--dtype", type=str, default="float16")
     parser.add_argument("--meta_icl", default=False, action="store_true")
     parser.add_argument("--test_batch_size", type=int, default=1)
@@ -394,6 +394,7 @@ if __name__=='__main__':
     parser.add_argument("--use_random_english_words", default=False, action="store_true")       # TODO: this should be done in create_data_custom.py
 
     parser.add_argument("--out_dir", type=str, default=None)
+    parser.add_argument("--verbose", default=False, action="store_true")
 
     parser.add_argument("--split", type=str, default="test")
     parser.add_argument("--is_null", default=False, action="store_true")
