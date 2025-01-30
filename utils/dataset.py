@@ -61,7 +61,7 @@ class Dataset:
         else:
             index = 1 + self.n_skips
         output_ids = [tokenizer(output)["input_ids"][index] for output in self.outputs]
-        option_ids = [tokenizer(option)["input_ids"][-1] for option in self.options]
+        option_ids = [tokenizer(option)["input_ids"][index] for option in self.options]
         if self.verbose:
             self.logger.info(f"inputs example (string): {self.inputs[0]}")
             self.logger.info(f"inputs example: {inputs[0]}")
