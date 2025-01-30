@@ -9,8 +9,11 @@ import torch
 from utils.dataset import Dataset
 from collections import Counter, defaultdict
 import utils.utils as utils
+import configparser
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+config = configparser.ConfigParser()
+config.read("config/model.ini")
 
 def fwd_n_rounds(model: AutoModelForCausalLM, input_ids: torch.tensor, attention_mask: torch.tensor, n: int):
     """
@@ -343,7 +346,7 @@ def main(logger, args):
                 tokenized_dataset.tensorize(train_data, test_data, add_newlines=add_newlines)
                 tokenized_dataset.print_tensorized_example()
             else:
-                tokenized_dataset = Dataset(curr_train_data, curr_test_data, add_newlines=add_newlines)
+                tokenized_dataset = Dataset(curr_train_data, curr_test_data, add_newlines=add_newlines, n_skips=args.n_skips)
                 tokenized_dataset.preprocess()
                 tokenized_dataset.tensorize(tokenizer)
             result = run(
@@ -382,6 +385,7 @@ if __name__=='__main__':
     parser.add_argument("--seed", type=str, default="100,13,21,42,87")
 
     parser.add_argument("--n_fwds", type=int, default=1)
+    parser.add_argument("--n_skips", type=int, default=0)
     parser.add_argument("--dtype", type=str, default="float16")
     parser.add_argument("--meta_icl", default=False, action="store_true")
     parser.add_argument("--test_batch_size", type=int, default=1)
