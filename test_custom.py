@@ -288,7 +288,7 @@ def run(
     return perf
 
 def main(logger, args):
-    tokenizer = AutoTokenizer.from_pretrained(args.model)
+    tokenizer = AutoTokenizer.from_pretrained(args.model, trust_remote_code=True)
     model = load_model(args)
     logger.info("Model loaded")
     
