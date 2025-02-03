@@ -236,6 +236,7 @@ def run(
             split_name += "-null"
         cache_path = os.path.join(
             args.out_dir,
+            dataset.task,
             seed,
             "{}-{}-{}{}{}{}{}{}.pkl".format(
                 task,
@@ -252,6 +253,7 @@ def run(
         assert add_newlines
         cache_path = os.path.join(
             args.out_dir,
+            dataset.task,
             seed,
             "{}-{}-{}{}{}{}{}.pkl".format(
                 task,
@@ -404,6 +406,8 @@ if __name__=='__main__':
     args = parser.parse_args()
     if args.out_dir is None:
         args.out_dir = "out/" + "/".join(args.model.split("/")[-1:])
+    
+    assert args.dataset is not None or args.task is not None, "Either dataset or task must be provided"
     
     if args.n_fwds == 1:
         # Currently only support one-by-one multi-round forward pass

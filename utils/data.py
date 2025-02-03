@@ -108,7 +108,7 @@ def load_data_by_task(task, split, k, seed=0, config_split=None, is_null=False):
         config = json.load(f)
     datasets = config[config_split]
 
-    data = load_data_by_datasets(datasets, k, seed, split, is_null)
+    data = load_data_by_datasets(datasets=datasets, k=k, seed=seed, split=split, is_null=is_null)
     return data
 
 def load_data_by_datasets(datasets, k, split, seed=0, is_null=False):

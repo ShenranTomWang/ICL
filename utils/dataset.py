@@ -8,6 +8,7 @@ class Dataset:
         self.n_skips = n_skips
         self.logger = logging.getLogger(__name__)
         self.verbose = verbose
+        self.task = train[0]["task"]
         if add_newlines:
             self.options = ["\n" + option for option in test[0]["options"]]
         else:
