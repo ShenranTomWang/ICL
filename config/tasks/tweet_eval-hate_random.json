@@ -1,0 +1,7 @@
+{
+    "task_type": "classification",
+    "options": [
+        "hate",
+        "non-hate"
+    ]
+}

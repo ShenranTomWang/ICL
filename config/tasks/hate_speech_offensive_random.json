@@ -1,0 +1,8 @@
+{
+    "task_type": "classification",
+    "options": [
+        "hate speech",
+        "neither",
+        "offensive language"
+    ]
+}

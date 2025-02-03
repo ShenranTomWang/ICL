@@ -1,0 +1,7 @@
+{
+    "task_type": "classification",
+    "options": [
+        "Dissimilar",
+        "Similar"
+    ]
+}

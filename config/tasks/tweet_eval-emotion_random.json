@@ -1,0 +1,9 @@
+{
+    "task_type": "classification",
+    "options": [
+        "anger",
+        "joy",
+        "optimism",
+        "sadness"
+    ]
+}

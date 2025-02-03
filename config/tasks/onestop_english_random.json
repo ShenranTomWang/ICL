@@ -1,0 +1,8 @@
+{
+    "task_type": "classification",
+    "options": [
+        "advance",
+        "elementary",
+        "intermediate"
+    ]
+}

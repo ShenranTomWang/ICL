@@ -1,0 +1,9 @@
+{
+    "task_type": "classification",
+    "options": [
+        "Business",
+        "Sci/Tech",
+        "Sports",
+        "World"
+    ]
+}

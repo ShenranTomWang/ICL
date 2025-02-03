@@ -7,6 +7,7 @@
 import os
 import json
 import numpy as np
+import logging
 
 def load_jsonl(path: os.PathLike) -> list:
     data = []
@@ -63,31 +64,40 @@ def random_handler(args: dict) -> None:
             - corpus_path (str): the path to the corpus file
     """
     seeds = [int(seed) for seed in args.seed.split(",")]
-    for seed in seeds:
-        train_data_path = os.path.join(args.data_dir, args.dataset, f"{args.dataset}_{args.k}_{seed}_train.jsonl")
-        train_data = load_jsonl(train_data_path)
-        train_data = random_option(train_data, seed)
-        
-        dev_data_path = os.path.join(args.data_dir, args.dataset, f"{args.dataset}_{args.k}_{seed}_dev.jsonl")
-        dev_data = load_jsonl(dev_data_path)
-        
-        test_data_path = os.path.join(args.data_dir, args.dataset, f"{args.dataset}_{args.k}_{seed}_test.jsonl")
-        test_data = load_jsonl(test_data_path)
-        
-        new_train_path = os.path.join(args.data_dir, args.dataset + "_random", f"{args.dataset}_random_{args.k}_{seed}_train.jsonl")
-        new_dev_path = os.path.join(args.data_dir, args.dataset + "_random", f"{args.dataset}_random_{args.k}_{seed}_dev.jsonl")
-        new_test_path = os.path.join(args.data_dir, args.dataset + "_random", f"{args.dataset}_random_{args.k}_{seed}_test.jsonl")
-        
-        save_jsonl(train_data, new_train_path)
-        save_jsonl(dev_data, new_dev_path)
-        save_jsonl(test_data, new_test_path)
-        
-        config_file = os.path.join(args.config_dir, "tasks", args.dataset)
-        with open(config_file + ".json", "r") as f:
-            config = json.load(f)
-        save_config(config, os.path.join(args.config_dir, "tasks", f"{args.dataset}_random.json"))
-        
-        print(f"Completed for seed {seed}")
+    for dataset in args.datasets:
+        data_dir = os.path.join(args.data_dir, dataset)
+        if os.path.exists(data_dir):
+            for seed in seeds:
+                try:
+                    train_data_path = os.path.join(data_dir, f"{dataset}_{args.k}_{seed}_train.jsonl")
+                    train_data = load_jsonl(train_data_path)
+                    train_data = random_option(train_data, seed)
+                    
+                    dev_data_path = os.path.join(data_dir, f"{dataset}_{args.k}_{seed}_dev.jsonl")
+                    dev_data = load_jsonl(dev_data_path)
+                    
+                    test_data_path = os.path.join(data_dir, f"{dataset}_{args.k}_{seed}_test.jsonl")
+                    test_data = load_jsonl(test_data_path)
+                    
+                    new_train_path = os.path.join(args.data_dir, dataset + "_random", f"{dataset}_random_{args.k}_{seed}_train.jsonl")
+                    new_dev_path = os.path.join(args.data_dir, dataset + "_random", f"{dataset}_random_{args.k}_{seed}_dev.jsonl")
+                    new_test_path = os.path.join(args.data_dir, dataset + "_random", f"{dataset}_random_{args.k}_{seed}_test.jsonl")
+                    
+                    save_jsonl(train_data, new_train_path)
+                    save_jsonl(dev_data, new_dev_path)
+                    save_jsonl(test_data, new_test_path)
+                    
+                    config_file = os.path.join(args.config_dir, "tasks", dataset)
+                    with open(config_file + ".json", "r") as f:
+                        config = json.load(f)
+                    save_config(config, os.path.join(args.config_dir, "tasks", f"{dataset}_random.json"))
+                    
+                    print(f"Completed for seed {seed} of dataset {dataset}")
+                except Exception as e:
+                    print(f"Failed for seed {seed} of dataset {dataset}")
+                    print(e)
+        else:
+            print(f"Data directory for {dataset} does not exist")
 
 
 def load_data_by_task(task, split, k, seed=0, config_split=None, is_null=False):
@@ -102,16 +112,21 @@ def load_data_by_task(task, split, k, seed=0, config_split=None, is_null=False):
     return data
 
 def load_data_by_datasets(datasets, k, split, seed=0, is_null=False):
+    logger = logging.getLogger(__name__)
     assert k <= 16
     data = []
     for dataset in datasets:
-        data_path = os.path.join("data", dataset, "{}_{}_{}_{}.jsonl".format(dataset, "16", seed, split))
-        with open(data_path, "r") as f:
-            for i, line in enumerate(f):
-                if k != -1 and i >= k:
-                    break
-                dp = json.loads(line)
-                if is_null:
-                    dp["input"] = "N/A"
-                data.append(dp)
+        try:
+            data_path = os.path.join("data", dataset, "{}_{}_{}_{}.jsonl".format(dataset, "16", seed, split))
+            with open(data_path, "r") as f:
+                for i, line in enumerate(f):
+                    if k != -1 and i >= k:
+                        break
+                    dp = json.loads(line)
+                    if is_null:
+                        dp["input"] = "N/A"
+                    data.append(dp)
+        except Exception as e:
+            logger.error(f"Error loading data for {dataset}")
+            logger.error(e)
     return data
