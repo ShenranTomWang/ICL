@@ -2,13 +2,13 @@ import logging, argparse, os, json
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from metaicl.model import MetaICLModel
 from metaicl.data import MetaICLData
-from utils.data import load_data_by_datasets, load_data_by_task
+from utils.utils import log_counters, init_counters
+from utils.data import load_data
 import pickle as pkl
 import numpy as np
 import torch
 from utils.dataset import Dataset
-from collections import Counter, defaultdict
-import utils.utils as utils
+from collections import defaultdict
 import configparser
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -77,23 +77,7 @@ def load_model(args: dict) -> any:
         model = model.to(device)
     return model
 
-def load_data(args, seed) -> tuple:
-    """Load train and test data from args using seed
-
-    Returns:
-        tuple<list<{task: str, input: str, output: str, options: list<str>}>>: train_data, test_data
-    """
-    if args.task != None:
-        config_split = "unseen_domain_test" if args.unseen_domain_only else "test"
-        train_data = load_data_by_task(args.task, "train", args.k, seed=seed, config_split=config_split)
-        test_data = load_data_by_task(args.task, args.split, args.n, seed=seed, config_split=config_split, is_null=args.is_null)
-    else:
-        assert args.dataset is not None
-        train_data = load_data_by_datasets(args.dataset.split(","), args.k, "train", seed=seed)
-        test_data = load_data_by_datasets(args.dataset.split(","), args.n, args.split, seed=seed, is_null=args.is_null)
-    logger.info("Loaded data for seed %s" % seed)
-    return train_data, test_data
-
+@torch.inference_mode()
 def do_inference_meta_icl(
     model: MetaICLModel, dataset: MetaICLData, cache_path: str, checkpoint: str, test_data: list
 ) -> list:
@@ -184,30 +168,6 @@ def do_inference_hf(model: AutoModelForCausalLM, dataset: Dataset, batch_size: i
     outputs = outputs.cpu().tolist()
     outputs = [options[i] for i in outputs]
     return outputs
-
-def log_counters(logger: logging.Logger, train_counter: Counter, test_counter: Counter) -> None:
-    """Log the counts of tasks in train and test data
-    """
-    for k, v in train_counter.items():
-        logger.info("[Train] %s\t%d" % (k, v))
-    for k, v in test_counter.items():
-        logger.info("[Test] %s\t%d" % (k, v))
-
-    logger.info("method %s on %s (%d train, %d test)" % (args.method, args.dataset, len(train_counter), len(test_counter)))
-
-def init_counters(train_data: list, test_data: list) -> tuple:
-    """Initiate train and test counters to cound tasks
-
-    Returns:
-        tuple<Counter>: train_counter, test_counter
-    """
-    train_counter = Counter()
-    test_counter = Counter()
-    for dp in train_data:
-        train_counter[dp["task"]] += 1
-    for dp in test_data:
-        test_counter[dp["task"]] += 1
-    return train_counter, test_counter
             
 def run(
     args, logger, task, dataset, model, test_data, seed, checkpoint, is_classification, add_newlines
@@ -315,7 +275,7 @@ def main(logger, args):
         train_data, test_data = load_data(args, seed)
 
         train_counter, test_counter = init_counters(train_data, test_data)
-        log_counters(logger, train_counter, test_counter)
+        log_counters(train_counter, test_counter)
         
         for test_task in test_counter:
             curr_test_data = [dp for dp in test_data if dp["task"] == test_task]

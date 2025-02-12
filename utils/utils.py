@@ -4,10 +4,8 @@
 # This source code is licensed under the license found in the
 # LICENSE file in the root directory of this source tree.
 
-import os
-import subprocess
-import torch
-from transformers import AutoModelForCausalLM, AutoTokenizer
+import os, logging, subprocess
+from collections import Counter
 
 
 all_settings = ["hr_to_lr", "hr_to_lr_noinst", "hr_to_lr_inst", "hr_to_lr_inst_all",
@@ -65,3 +63,27 @@ def download_file(_id, dest):
         else:
             print("Unzip {} ... [Success]".format(dest))
 
+def log_counters(train_counter: Counter, test_counter: Counter) -> None:
+    """Log the counts of tasks in train and test data
+    """
+    logger = logging.getLogger(__name__)
+    for k, v in train_counter.items():
+        logger.info("[Train] %s\t%d" % (k, v))
+    for k, v in test_counter.items():
+        logger.info("[Test] %s\t%d" % (k, v))
+
+    logger.info("%d train, %d test" % (len(train_counter), len(test_counter)))
+
+def init_counters(train_data: list, test_data: list) -> tuple:
+    """Initiate train and test counters to cound tasks
+
+    Returns:
+        tuple<Counter>: train_counter, test_counter
+    """
+    train_counter = Counter()
+    test_counter = Counter()
+    for dp in train_data:
+        train_counter[dp["task"]] += 1
+    for dp in test_data:
+        test_counter[dp["task"]] += 1
+    return train_counter, test_counter

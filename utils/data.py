@@ -47,6 +47,12 @@ def save_config(config: dict, path: os.PathLike) -> None:
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w") as f:
         json.dump(config, f, indent=4)
+        
+def load_config(test_task: str) -> dict:
+    config_file = "config/tasks/{}.json".format(test_task)
+    with open(config_file, "r") as f:
+        config = json.load(f)
+    return config
 
 
 def random_handler(args: dict) -> None:
@@ -99,6 +105,23 @@ def random_handler(args: dict) -> None:
         else:
             print(f"Data directory for {dataset} does not exist")
 
+def load_data(args, seed) -> tuple:
+    """Load train and test data from args using seed, handles both loading by task and dataset cases
+
+    Returns:
+        tuple<list<{task: str, input: str, output: str, options: list<str>}>>: train_data, test_data
+    """
+    logger = logging.getLogger(__name__)
+    if args.task != None:
+        config_split = "unseen_domain_test" if args.unseen_domain_only else "test"
+        train_data = load_data_by_task(args.task, "train", args.k, seed=seed, config_split=config_split)
+        test_data = load_data_by_task(args.task, args.split, args.n, seed=seed, config_split=config_split, is_null=args.is_null)
+    else:
+        assert args.dataset is not None
+        train_data = load_data_by_datasets(args.dataset.split(","), args.k, "train", seed=seed)
+        test_data = load_data_by_datasets(args.dataset.split(","), args.n, args.split, seed=seed, is_null=args.is_null)
+    logger.info("Loaded data for seed %s" % seed)
+    return train_data, test_data
 
 def load_data_by_task(task, split, k, seed=0, config_split=None, is_null=False):
     if config_split is None:

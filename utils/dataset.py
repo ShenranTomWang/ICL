@@ -37,6 +37,7 @@ class Dataset:
         
     def tensorize(self, tokenizer):
         """
+        TODO: should support batched tokenization
         Effects:
             self.inputs: list<{"input_ids": tensor, "attention_mask": tensor}>, 
             self.output_ids: list<int>, 
