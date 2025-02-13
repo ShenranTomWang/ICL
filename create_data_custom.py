@@ -1,9 +1,9 @@
 import argparse
-import utils.data
+import utils.handlers.create_data as handlers
 import os, json
 
 def main(args: dict) -> None:
-    handler = getattr(utils.data, args.variant + "_handler")
+    handler = getattr(handlers, args.variant + "_handler")
     handler(args)
 
 if __name__=='__main__':

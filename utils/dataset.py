@@ -1,7 +1,7 @@
 import logging
 
 class Dataset:
-    def __init__(self, train, test, verbose=False, add_newlines=True, n_skips=1):
+    def __init__(self, train: list, test: list, verbose=False, add_newlines=True, n_skips=1):
         self.train = train
         self.add_newlines = add_newlines
         self.test = test
@@ -9,16 +9,18 @@ class Dataset:
         self.logger = logging.getLogger(__name__)
         self.verbose = verbose
         self.task = train[0]["task"]
+        self.demo = None
         if add_newlines:
-            self.options = ["\n" + option for option in test[0]["options"]]
+            self.options = ["\n" + option for option in train[0]["options"]]
         else:
-            self.options = [" " + option for option in test[0]["options"]]
-        
-    def preprocess(self):
-        """Effects:
-            self.test: list<{"input": str, "output": str, "options": list<str>}>
-            self.inputs: list<str>, 
-            self.outputs: list<str>
+            self.options = [" " + option for option in train[0]["options"]]
+    
+    def prepare_demo(self):
+        """
+        Requires:
+            self.train is not None
+        Effects:
+            self.demo: str
         """
         demo = ""
         for dp_train in self.train:
@@ -28,9 +30,22 @@ class Dataset:
             demo += dp_train["output"]
             if self.add_newlines:
                 demo += "\n\n"
+        self.demo = demo
         
+    def preprocess(self):
+        """
+        Requires:
+            self.test is not None
+            self.train is not None
+        Effects:
+            self.test: list<{"input": str, "output": str, "options": list<str>}>
+            self.inputs: list<str>, 
+            self.outputs: list<str>
+        """
+        if self.demo is None:
+            self.prepare_demo()
         for i, dp_test in enumerate(self.test):
-            self.test[i]["input"] = demo + dp_test["input"] + ("\n" if self.add_newlines else " ")
+            self.test[i]["input"] = self.demo + dp_test["input"] + ("\n" if self.add_newlines else " ")
             self.test[i]["output"] = ("\n" if self.add_newlines else " ") + dp_test["output"]
         self.inputs = [dp["input"] for dp in self.test]
         self.outputs = [dp["output"] for dp in self.test]

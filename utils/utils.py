@@ -7,7 +7,6 @@
 import os, logging, subprocess
 from collections import Counter
 
-
 all_settings = ["hr_to_lr", "hr_to_lr_noinst", "hr_to_lr_inst", "hr_to_lr_inst_all",
                 "class_to_class", "non_class_to_class", "qa_to_qa", "non_qa_to_qa",
                 "non_nli_to_nli", "non_paraphrase_to_paraphrase"]

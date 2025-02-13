@@ -22,7 +22,9 @@ class TransformerOperator:
         """
         def extract_single_line(input: str) -> torch.Tensor:
             tokenized = self.tokenizer(input, return_tensors="pt", truncation=True)
-            output = self.model(**tokenized, output_hidden_states=True)
+            input_ids = tokenized.input_ids.to(self.model.device)
+            attention_mask = tokenized.attention_mask.to(self.model.device)
+            output = self.model(input_ids=input_ids, attention_mask=attention_mask, output_hidden_states=True)
             activation = output.hidden_states
             activation = [activation[layer] for layer in layers]
             activation = [activation_callback(act) for act in activation]
@@ -58,7 +60,9 @@ class TransformerOperator:
                 hooks.append((get_act_name(stream, layer=layer), get_act))
                 
             tokenized = self.tokenizer(input, return_tensors="pt", padding=True, truncation=True)
-            self.model.run_with_hooks(tokenized, fwd_hooks=hooks, return_type=None)
+            input_ids = tokenized.input_ids.to(self.model.device)
+            attention_mask = tokenized.attention_mask.to(self.model.device)
+            self.model.run_with_hooks(input_ids=input_ids, attention_mask=attention_mask, fwd_hooks=hooks, return_type=None)
             
             activation = torch.stack(activation, dim=0)
             return activation

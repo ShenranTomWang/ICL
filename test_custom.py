@@ -358,7 +358,7 @@ if __name__=='__main__':
     parser.add_argument("--out_dir", type=str, default=None)
     parser.add_argument("--verbose", default=False, action="store_true")
 
-    parser.add_argument("--split", type=str, default="test")
+    parser.add_argument("--split", type=str, default="test", choices=["test", "dev"])
     parser.add_argument("--is_null", default=False, action="store_true")
     parser.add_argument("--method", type=str, default="direct", choices=["direct", "channel"])
     parser.add_argument("--model", type=str, default="/scratch/st-jzhu71-1/shenranw/models/openai-community/gpt2")
