@@ -8,7 +8,7 @@ from interpretability.transformer_operator import TransformerOperator
 
 def main(args: object, logger: logging.Logger) -> None:
     tokenizer = AutoTokenizer.from_pretrained(args.model, trust_remote_code=True)
-    model = AutoModelForCausalLM.from_pretrained(args.model, trust_remote_code=True).to(args.device)
+    model = AutoModelForCausalLM.from_pretrained(args.model, trust_remote_code=True).to(args.device).to(args.dtype)
     operator = TransformerOperator(tokenizer, model)
     logger.info(model)
     
@@ -27,7 +27,7 @@ def main(args: object, logger: logging.Logger) -> None:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", type=str, required=True)
-    parser.add_argument("--dtype", type=str, default="float16")
+    parser.add_argument("--dtype", type=str, default="float16", choices=["float16", "float32", "bfloat16"])
     
     parser.add_argument("--add_newlines", default=False, action="store_true")
     parser.add_argument("--task", type=str, default=None)
@@ -48,6 +48,7 @@ if __name__ == "__main__":
     
     args.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     args.handler = getattr(handlers, args.split + "_handler")
+    args.dtype = getattr(torch, args.dtype)
     assert args.task is not None or args.dataset is not None, "Either task or dataset must be provided"
     
     handlers = [logging.StreamHandler()]

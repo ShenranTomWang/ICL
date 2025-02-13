@@ -8,6 +8,7 @@ class TransformerOperator:
     def __init__(self, tokenizer: AutoTokenizer, model):
         self.model = model
         self.tokenizer: AutoTokenizer = tokenizer
+        self.device = model.device
         
     def extract_tf(self, inputs: list, layers: list, activation_callback: Callable) -> list[torch.Tensor]:
         """
@@ -21,10 +22,8 @@ class TransformerOperator:
             list[torch.Tensor]: list of tensors (n_layers, seqlen, hidden_size)
         """
         def extract_single_line(input: str) -> torch.Tensor:
-            tokenized = self.tokenizer(input, return_tensors="pt", truncation=True)
-            input_ids = tokenized.input_ids.to(self.model.device)
-            attention_mask = tokenized.attention_mask.to(self.model.device)
-            output = self.model(input_ids=input_ids, attention_mask=attention_mask, output_hidden_states=True)
+            tokenized = self.tokenizer(input, return_tensors="pt", truncation=True).to(self.device)
+            output = self.model(**tokenized, output_hidden_states=True)
             activation = output.hidden_states
             activation = [activation[layer] for layer in layers]
             activation = [activation_callback(act) for act in activation]
