@@ -1,4 +1,4 @@
-from transformers import AutoTokenizer
+from transformers import AutoTokenizer, AutoModelForCausalLM
 import torch
 from .operator import Operator
 import os, logging
@@ -14,10 +14,8 @@ def callback(cache: tuple[tuple[torch.Tensor]]) -> tuple[torch.Tensor]:
     return ks, vs
 
 class TransformerOperator(Operator):
-    def __init__(self, tokenizer: AutoTokenizer, model):
-        self.model = model
-        self.tokenizer: AutoTokenizer = tokenizer
-        self.device = model.device
+    def __init__(self, tokenizer: AutoTokenizer, model: AutoModelForCausalLM):
+        super().__init__(tokenizer, model)
     
     @torch.inference_mode()
     def extract_cache(self, inputs: list, layers: list, activation_callback: Callable = callback) -> list[torch.Tensor]:

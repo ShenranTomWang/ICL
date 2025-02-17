@@ -1,6 +1,7 @@
 from transformer_lens.hook_points import HookPoint
 from transformer_lens.utils import get_act_name
-from transformers import AutoTokenizer
+from transformer_lens import HookedTransformer
+from transformers import AutoTokenizer, AutoModelForCausalLM
 import torch
 from typing import Callable
 from abc import ABC, abstractmethod
@@ -10,10 +11,11 @@ def callback(resid: torch.Tensor) -> torch.Tensor:
     return resid[..., -1, :]
 
 class Operator(ABC):
-    def __init__(self, tokenizer: AutoTokenizer, model):
-        self.model = model
+    def __init__(self, tokenizer: AutoTokenizer, model: AutoModelForCausalLM, tl_model: HookedTransformer = None):
+        self.model = model if tl_model == None else tl_model
         self.tokenizer: AutoTokenizer = tokenizer
         self.device = model.device
+        self.transformer_lens = tl_model != None
 
     @torch.inference_mode()
     def extract(self, inputs: list, stream: str, layers: list, activation_callback: Callable) -> list[torch.Tensor]:
@@ -27,7 +29,8 @@ class Operator(ABC):
         Returns:
             list[torch.Tensor]: list of tensors originally (n_layers, seqlen, hidden_size), but processed by activation_callback
         """
-        raise NotImplementedError("Method not implemented")
+        if not self.transformer_lens:
+            raise NotImplementedError("This method is only supported with transformer_lens models")
         def extract_single_line(input: str) -> torch.Tensor:
             activation = []
             def get_act(value: torch.Tensor, hook: HookPoint):
@@ -41,7 +44,6 @@ class Operator(ABC):
             tokenized = self.tokenizer(input, return_tensors="pt", padding=True, truncation=True)
             input_ids = tokenized.input_ids.to(self.model.device)
             attention_mask = tokenized.attention_mask.to(self.model.device)
-            # TODO: model currently is transformers model, need to change to transformer_lens model
             self.model.run_with_hooks(input_ids=input_ids, attention_mask=attention_mask, fwd_hooks=hooks, return_type=None)
             
             activation = torch.stack(activation, dim=0)
