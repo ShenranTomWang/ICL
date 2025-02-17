@@ -4,12 +4,12 @@ from transformers import AutoTokenizer, AutoModelForCausalLM
 from utils.data import load_data
 import utils.utils as utils
 import utils.handlers.extract_activations as handlers
-from interpretability.transformer_operator import TransformerOperator
+import interpretability
 
 def main(args: object, logger: logging.Logger) -> None:
     tokenizer = AutoTokenizer.from_pretrained(args.model, trust_remote_code=True)
     model = AutoModelForCausalLM.from_pretrained(args.model, trust_remote_code=True).to(args.device).to(args.dtype)
-    operator = TransformerOperator(tokenizer, model)
+    operator: interpretability.Operator = args.operator(tokenizer, model)
     logger.info(model)
     
     if args.layers == "-1":
@@ -40,6 +40,8 @@ if __name__ == "__main__":
     parser.add_argument("--is_null", default=False, action="store_true")
     
     parser.add_argument("--layers", type=str, default="-1", help="comma separated list of layer indices, or -1 for all layers")
+    parser.add_argument("--stream", type=str, default="resid", choices=["resid", "cache"])
+    parser.add_argument("--operator", type=str, default="TransformerOperator", choices=["TransformerOperator", "HymbaOperator", "RWKVOperator"])
     parser.add_argument("--verbose", default=False, action="store_true")
     
     parser.add_argument("--log_file", type=str, default=None)
@@ -47,7 +49,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
     
     args.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    args.handler = getattr(handlers, args.split + "_handler")
+    args.handler = getattr(handlers, f"{args.split}_handler")
+    args.operator = getattr(interpretability, args.operator)
     args.dtype = getattr(torch, args.dtype)
     assert args.task is not None or args.dataset is not None, "Either task or dataset must be provided"
     

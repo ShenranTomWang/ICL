@@ -1,5 +1,5 @@
 import argparse
-import utils.handlers.create_data as handlers
+import utils.handlers as handlers
 import os, json
 
 def main(args: dict) -> None:

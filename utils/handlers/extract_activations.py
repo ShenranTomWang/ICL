@@ -1,10 +1,11 @@
-import logging, os
+import logging
 from collections import Counter
 from utils.dataset import Dataset
-from interpretability.transformer_operator import TransformerOperator
-import torch
+from interpretability import Operator
 
-def demo_handler(train_counter: Counter, train_data: list, test_data: list, operator: TransformerOperator, args, seed: int) -> None:
+def demo_handler(
+    train_counter: Counter, train_data: list, test_data: list, operator: Operator, args, seed: int, fname: str = None
+) -> None:
     """
     Activation extraction handler for demo split
     
@@ -12,9 +13,10 @@ def demo_handler(train_counter: Counter, train_data: list, test_data: list, oper
         train_counter (Counter)
         train_data (list)
         test_data (list)
-        operator (TransformerOperator)
+        operator (Operator)
         args (NameSpace)
         seed (int)
+        fname (str): filename
     """
     logger = logging.getLogger(__name__)
     for train_task in train_counter:
@@ -23,51 +25,54 @@ def demo_handler(train_counter: Counter, train_data: list, test_data: list, oper
         
         dataset = Dataset(curr_train_data, [], add_newlines=args.add_newlines, verbose=args.verbose)
         dataset.prepare_demo()
-        activation = operator.extract_tf([dataset.demo], layers=args.layers, activation_callback=lambda x: x[..., -1, :])      # extract last token
-        activation = torch.stack(activation, dim=0)       # (n, n_layers, 1, hidden_size)
+        run_operator(operator, args, seed, fname, train_task, [dataset.demo])
         
-        out_path = f"{args.out_dir}/{train_task}/{seed}/post_resid.pt"
-        os.makedirs(os.path.dirname(out_path), exist_ok=True)
-        torch.save(activation, out_path)
-        logger.info(f"Saved activations to {out_path}")
-        
-def dev_handler(test_counter: Counter, train_data: list, test_data: list, operator: TransformerOperator, args, seed: int) -> None:
+def dev_handler(
+    test_counter: Counter, train_data: list, test_data: list, operator: Operator, args, seed: int, fname: str = None
+) -> None:
     """
-    Activation extraction handler for dev split
+    Activation extraction handler for dev split on residual stream
     Args:
         test_counter (Counter)
         train_data (list)
         test_data (list)
-        operator (TransformerOperator)
+        operator (Operator)
         args (NameSpace)
         seed (int)
+        fname (str): filename
     """
-    basic_handler(test_counter, train_data, test_data, operator, args, seed)
+    basic_handler(test_counter, train_data, test_data, operator, args, seed, fname)
     
-def test_handler(test_counter: Counter, train_data: list, test_data: list, operator: TransformerOperator, args, seed: int) -> None:
+def test_handler(
+    test_counter: Counter, train_data: list, test_data: list, operator: Operator, args, seed: int, fname: str = None
+) -> None:
     """
-    Activation extraction handler for test split
+    Activation extraction handler for test split on residual stream
     Args:
         test_counter (Counter)
         train_data (list)
         test_data (list)
-        operator (TransformerOperator)
+        operator (Operator)
         args (NameSpace)
         seed (int)
+        fname (str): filename
     """
-    basic_handler(test_counter, train_data, test_data, operator, args, seed)
+    basic_handler(test_counter, train_data, test_data, operator, args, seed, fname)
 
-def basic_handler(test_counter: Counter, train_data: list, test_data: list, operator: TransformerOperator, args, seed: int) -> None:
+def basic_handler(
+    test_counter: Counter, train_data: list, test_data: list, operator: Operator, args, seed: int, fname: str
+) -> None:
     """
-    Activation extraction handler for generic split
+    Activation extraction handler for generic split on residual stream
 
     Args:
         test_counter (Counter)
         train_data (list)
         test_data (list)
-        operator (TransformerOperator)
+        operator (Operator)
         args (NameSpace)
         seed (int)
+        fname (str): filename
     """
     logger = logging.getLogger(__name__)
     for test_task in test_counter:
@@ -78,10 +83,26 @@ def basic_handler(test_counter: Counter, train_data: list, test_data: list, oper
         
         dataset = Dataset(curr_train_data, curr_test_data, add_newlines=args.add_newlines, verbose=args.verbose)
         dataset.preprocess()
-        activation = operator.extract_tf(dataset.inputs, layers=args.layers, activation_callback=lambda x: x[..., -1, :])
-        activation = torch.stack(activation, dim=0)       # (n, n_layers, 1, hidden_size)
-        
-        out_path = f"{args.out_dir}/{test_task}/{seed}/post_resid.pt"
-        os.makedirs(os.path.dirname(out_path), exist_ok=True)
-        torch.save(activation, out_path)
-        logger.info(f"Saved activations to {out_path}")
+        run_operator(operator, args, seed, fname, test_task, dataset.inputs)
+
+def run_operator(operator: Operator, args, seed: int, fname: str, test_task: str, inputs: list[str]) -> None:
+    """
+    Run operator to extract activations from dataset
+    Args:
+        operator (Operator)
+        args (NameSpace)
+        seed (int)
+        fname (str)
+        test_task (str)
+        inputs (list[str])
+    """
+    if args.stream == "resid":
+        if fname is None:
+            fname = f"{args.split}_resid.pt"
+        activation = operator.extract_resid(inputs, layers=args.layers)
+        operator.store_resid(activation, f"{args.out_dir}/{test_task}/{seed}/{fname}")
+    elif args.stream == "cache":
+        if fname is None:
+            fname = f"{args.split}_cache.pt"
+        cache = operator.extract_cache(inputs, layers=args.layers)
+        operator.store_cache(cache, f"{args.out_dir}/{test_task}/{seed}/{fname}")
