@@ -7,13 +7,11 @@ import utils.handlers.extract_activations as handlers
 import interpretability
 
 def main(args: object, logger: logging.Logger) -> None:
-    tokenizer = AutoTokenizer.from_pretrained(args.model, trust_remote_code=True)
-    model = AutoModelForCausalLM.from_pretrained(args.model, trust_remote_code=True).to(args.device).to(args.dtype)
-    operator: interpretability.Operator = args.operator(tokenizer, model)
-    logger.info(model)
+    operator: interpretability.Operator = args.operator(args.model, args.device, args.dtype)
+    logger.info(operator.model)
     
     if args.layers == "-1":
-        args.layers = [i for i in range(model.config.num_hidden_layers)]
+        args.layers = [i for i in range(operator.model.config.num_hidden_layers)]
     else:
         args.layers = [int(layer) for layer in args.layers.split(",")]
     

@@ -14,7 +14,10 @@ def callback(cache: tuple[tuple[torch.Tensor]]) -> tuple[torch.Tensor]:
     return ks, vs
 
 class TransformerOperator(Operator):
-    def __init__(self, tokenizer: AutoTokenizer, model: AutoModelForCausalLM):
+    def __init__(self, path: str, device: torch.DeviceObjType, dtype: torch.dtype):
+        self.device = device
+        tokenizer = AutoTokenizer.from_pretrained(path, trust_remote_code=True)
+        model = AutoModelForCausalLM.from_pretrained(path, trust_remote_code=True).to(device).to(dtype)
         super().__init__(tokenizer, model)
     
     @torch.inference_mode()

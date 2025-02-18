@@ -133,7 +133,7 @@ def preprocess_batch(batch: list) -> tuple:
 @torch.inference_mode()
 def do_inference_hf(model: AutoModelForCausalLM, dataset: Dataset, batch_size: int) -> list:
     """Perform inference on dataset in batch with batch_size
-    
+    TODO: optimize this function to use cache for generation
     Args:
         model (AutoModelForCausalLM): model
         dataset (Dataset): dataset
