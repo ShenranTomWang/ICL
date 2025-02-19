@@ -1,6 +1,5 @@
 import argparse, logging
 import torch
-from transformers import AutoTokenizer, AutoModelForCausalLM
 from utils.data import load_data
 import utils.utils as utils
 import utils.handlers.extract_activations as handlers
@@ -8,12 +7,12 @@ import interpretability
 
 def main(args: object, logger: logging.Logger) -> None:
     operator: interpretability.Operator = args.operator(args.model, args.device, args.dtype)
-    logger.info(operator.model)
     
     if args.layers == "-1":
         args.layers = [i for i in range(operator.model.config.num_hidden_layers)]
     else:
         args.layers = [int(layer) for layer in args.layers.split(",")]
+    logger.info(f"Layers: {args.layers}")
     
     args.seed = [int(seed) for seed in args.seed.split(",")]
     for seed in args.seed:
