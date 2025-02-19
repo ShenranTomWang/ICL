@@ -9,8 +9,8 @@ def callback(cache: tuple[tuple[torch.Tensor]]) -> tuple[torch.Tensor]:
     for k, v in cache:
         ks.append(k[0, ...])
         vs.append(v[0, ...])
-    ks = torch.stack(ks, dim=0)
-    vs = torch.stack(vs, dim=0)
+    ks = torch.stack(ks, dim=0)     # (n_layers, n_heads, seqlen, headdim)
+    vs = torch.stack(vs, dim=0)     # (n_layers, n_heads, seqlen, headdim)
     return ks, vs
 
 class TransformerOperator(Operator):
@@ -29,7 +29,7 @@ class TransformerOperator(Operator):
             layers (list): list of layer indices
             activation_callback (function(tuple[torch.Tensor])): callback function for cache, applied to all cache from all layers
         Returns:
-            tuple[torch.Tensor]: tuple of 2 tensors (n_layers, seqlen, hidden_size)
+            tuple[torch.Tensor]: tuple of 2 tensors kv of shape (n_layers, n_heads, seqlen, headdim)
         """
 
         def extract_single_line(input: str) -> torch.Tensor:
@@ -39,14 +39,17 @@ class TransformerOperator(Operator):
             cache = activation_callback(cache)
             return cache
         
-        caches = []
+        ks, vs = [], []
         for input in inputs:
-            cache = extract_single_line(input)
-            caches.append(cache)
+            k, v = extract_single_line(input)
+            ks.append(k)
+            vs.append(v)
+        ks = torch.stack(ks, dim=0)
+        vs = torch.stack(vs, dim=0)
         
-        return caches
+        return ks, vs
 
-    def store_cache(self, kvs: tuple[tuple[torch.Tensor]], path: str) -> None:
+    def store_cache(self, kvs: tuple[torch.Tensor], path: str) -> None:
         """
         Store cache to specified path
         Args:
@@ -54,7 +57,7 @@ class TransformerOperator(Operator):
             path (str): path to store cache
         """
         logger = logging.getLogger(__name__)
-        k, v = kvs[0][0], kvs[0][1]     # (n, n_heads, seqlen, headdim)
+        k, v = kvs[0], kvs[0]       # (n, n_layers, n_heads, seqlen, headdim)
         if path.endswith(".pt"):
             path = path[:-3]
         out_path = path + "_k.pt"
