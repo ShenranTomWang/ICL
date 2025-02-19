@@ -15,20 +15,19 @@ class RWKVOperator(Operator):
     @torch.inference_mode()
     def extract_cache(self, inputs: list, layers: list, activation_callback: Callable = lambda x: x) -> list[torch.Tensor]:
         """
-        TODO: implement this method
         Extract internal representations at specified layers of cache
         Args:
             inputs (list): list of inputs
             layers (list): list of layer indices
             activation_callback_k (function(tuple[torch.Tensor])): callback function for cache, applied to all cache from all layers
         Returns:
-            torch.Tensor: tensor of shape (n_inputs, n_layers, n_heads, head_dim_k, head_dim_v)
+            torch.Tensor: tensor of shape (n_inputs, n_layers, n_heads, head_dim, head_dim)
         """
         def extract_single_line(input: str) -> torch.Tensor:
             tokenized = self.tokenizer(input, return_tensors="pt", truncation=True).to(self.device)
             cache = self.model(**tokenized, use_cache=True).state
             kv = cache[1]
-            cache = torch.movedim(kv[..., layers], -1, 0).squeeze(1)     # (n_layers, n_heads, head_dim_k, head_dim_v)
+            cache = torch.movedim(kv[..., layers], -1, 0).squeeze(1)     # (n_layers, n_heads, head_dim, head_dim)
             cache = cache.cpu()
             cache = activation_callback(cache)
             return cache
