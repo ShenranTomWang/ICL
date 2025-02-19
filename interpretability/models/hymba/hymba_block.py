@@ -39,7 +39,7 @@ class HymbaBlock(nn.Module):
         self.k_hidden_size = int(self.num_key_value_heads/self.num_attention_heads * self.attn_hidden_size)
         self.v_hidden_size = int(self.num_key_value_heads/self.num_attention_heads * self.attn_hidden_size * config.mamba_expand)
 
-        self.self_attn = HymbaFlexAttention
+        self.self_attn = HymbaFlexAttention(config, layer_idx, attn_only_wo_proj=True, reuse_kv=reuse_kv)
 
         self.time_step_rank = config.mamba_dt_rank
         self.use_conv_bias = config.mamba_conv_bias
