@@ -57,14 +57,14 @@ class Operator(ABC):
         return activations
     
     @torch.inference_mode()
-    def extract_resid(self, inputs: list, layers: list, layer_callback: Callable = layer_callback, all_calllback: Callable = lambda x: x) -> list[torch.Tensor]:
+    def extract_resid(self, inputs: list, layers: list, layer_callback: Callable = layer_callback, all_callback: Callable = lambda x: x) -> list[torch.Tensor]:
         """
         Extract internal representations at specified layers of residual stream using vanilla transformers implementation
         Args:
             inputs (list): list of inputs
             layers (list): list of layer indices
             layer_callback (function(torch.Tensor)): callback function to extracted activations, applied to activation values at each layer
-            all_callback (function(list[torch.Tensor])): callback function all extracted activations corresponding to each input
+            all_callback (function(torch.Tensor)): callback function all extracted activations corresponding to each input
         Returns:
             torch.Tensor: (n_inputs, n_layers, hidden_size)
         """
@@ -74,15 +74,15 @@ class Operator(ABC):
             activation = output.hidden_states
             activation = [activation[layer] for layer in layers]
             activation = [layer_callback(act) for act in activation]
-            activation = torch.stack(activation, dim=0)
+            activation = torch.stack(activation, dim=0).cpu()
             return activation
         
         activations = []
         for input in inputs:
             activation = extract_single_line(input)
             activations.append(activation)
-        activations = all_calllback(activations)
         activations = torch.stack(activations, dim=0)
+        activations = all_callback(activations)
         
         return activations
     
