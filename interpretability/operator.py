@@ -65,7 +65,7 @@ class Operator(ABC):
             layers (list): list of layer indices
             activation_callback (function(torch.Tensor)): callback function to extract activations, applied to activation values at each layer
         Returns:
-            list[torch.Tensor]: list of tensors (n_layers, seqlen, hidden_size)
+            torch.Tensor: (n_inputs, n_layers, seqlen, hidden_size)
         """
         def extract_single_line(input: str) -> torch.Tensor:
             tokenized = self.tokenizer(input, return_tensors="pt", truncation=True).to(self.device)
@@ -80,11 +80,12 @@ class Operator(ABC):
         for input in inputs:
             activation = extract_single_line(input)
             activations.append(activation)
+        activations = torch.stack(activations, dim=0)
         
         return activations
     
     @abstractmethod
-    def extract_cache(self, inputs: list, layers: list, activation_callback: Callable = lambda x: x) -> list[torch.Tensor]:
+    def extract_cache(self, inputs: list, layers: list, activation_callback: Callable = lambda x: x) -> torch.Tensor:
         """
         Extract cache at specified layers
         Args:
@@ -92,7 +93,7 @@ class Operator(ABC):
             layers (list): list of layer indices
             activation_callback_k (function(tuple[torch.Tensor])): callback function for cache, applied to all cache from all layers
         Returns:
-            list[torch.Tensor]: list of tensors (n_layers, seqlen, hidden_size)
+            torch.Tensor
         """
         pass
     
@@ -114,7 +115,6 @@ class Operator(ABC):
             path (str): path to store residual
         """
         logger = logging.getLogger(__name__)
-        activation = torch.stack(activation, dim=0)       # (n, n_layers, hidden_size)
         path = path + ".pt" if not path.endswith(".pt") else path
         os.makedirs(os.path.dirname(path), exist_ok=True)
         torch.save(activation, path)
