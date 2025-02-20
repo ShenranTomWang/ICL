@@ -7,8 +7,8 @@ from typing import Callable
 from abc import ABC, abstractmethod
 import os, logging
 
-def callback(resid: torch.Tensor) -> torch.Tensor:
-    return resid[..., -1, :]
+def layer_callback(resid: torch.Tensor) -> torch.Tensor:
+    return resid[0, -1, :]
 
 class Operator(ABC):
     def __init__(self, tokenizer: AutoTokenizer, model: AutoModelForCausalLM, tl_model: HookedTransformer = None):
@@ -57,22 +57,23 @@ class Operator(ABC):
         return activations
     
     @torch.inference_mode()
-    def extract_resid(self, inputs: list, layers: list, activation_callback: Callable = callback) -> list[torch.Tensor]:
+    def extract_resid(self, inputs: list, layers: list, layer_callback: Callable = layer_callback, all_calllback: Callable = lambda x: x) -> list[torch.Tensor]:
         """
         Extract internal representations at specified layers of residual stream using vanilla transformers implementation
         Args:
             inputs (list): list of inputs
             layers (list): list of layer indices
-            activation_callback (function(torch.Tensor)): callback function to extract activations, applied to activation values at each layer
+            layer_callback (function(torch.Tensor)): callback function to extracted activations, applied to activation values at each layer
+            all_callback (function(list[torch.Tensor])): callback function all extracted activations corresponding to each input
         Returns:
-            torch.Tensor: (n_inputs, n_layers, seqlen, hidden_size)
+            torch.Tensor: (n_inputs, n_layers, hidden_size)
         """
         def extract_single_line(input: str) -> torch.Tensor:
             tokenized = self.tokenizer(input, return_tensors="pt", truncation=True).to(self.device)
             output = self.model(**tokenized, output_hidden_states=True)
             activation = output.hidden_states
             activation = [activation[layer] for layer in layers]
-            activation = [activation_callback(act) for act in activation]
+            activation = [layer_callback(act) for act in activation]
             activation = torch.stack(activation, dim=0)
             return activation
         
@@ -80,6 +81,7 @@ class Operator(ABC):
         for input in inputs:
             activation = extract_single_line(input)
             activations.append(activation)
+        activations = all_calllback(activations)
         activations = torch.stack(activations, dim=0)
         
         return activations
