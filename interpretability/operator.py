@@ -3,7 +3,7 @@ from transformer_lens.utils import get_act_name
 from transformer_lens import HookedTransformer
 from transformers import AutoTokenizer, AutoModelForCausalLM
 import torch
-from typing import Callable
+from typing import Callable, Any
 from abc import ABC, abstractmethod
 import os, logging
 
@@ -57,7 +57,7 @@ class Operator(ABC):
         return activations
     
     @torch.inference_mode()
-    def extract_resid(self, inputs: list, layers: list, layer_callback: Callable = layer_callback, all_callback: Callable = lambda x: x) -> list[torch.Tensor]:
+    def extract_resid(self, inputs: list, layers: list, layer_callback: Callable = layer_callback, all_callback: Callable = lambda x: x) -> torch.Tensor:
         """
         Extract internal representations at specified layers of residual stream using vanilla transformers implementation
         Args:
@@ -87,7 +87,7 @@ class Operator(ABC):
         return activations
     
     @abstractmethod
-    def extract_cache(self, inputs: list, layers: list, activation_callback: Callable = lambda x: x) -> torch.Tensor:
+    def extract_cache(self, inputs: list, layers: list, activation_callback: Callable = lambda x: x) -> Any:
         """
         Extract cache at specified layers
         Args:
@@ -95,16 +95,16 @@ class Operator(ABC):
             layers (list): list of layer indices
             activation_callback_k (function(tuple[torch.Tensor])): callback function for cache, applied to all cache from all layers
         Returns:
-            torch.Tensor
+            cache (Any): cache
         """
         pass
     
     @abstractmethod
-    def store_cache(self, cache: tuple[tuple[torch.Tensor]], path: str) -> None:
+    def store_cache(self, cache: tuple[Any], path: str) -> None:
         """
         Store cache to specified path
         Args:
-            cache (tuple[tuple[torch.Tensor]]): cache
+            cache (tuple[Any]): cache
             path (str): path to store cache
         """
         pass

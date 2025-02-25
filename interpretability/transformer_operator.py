@@ -21,7 +21,7 @@ class TransformerOperator(Operator):
         super().__init__(tokenizer, model)
     
     @torch.inference_mode()
-    def extract_cache(self, inputs: list, layers: list, activation_callback: Callable = callback) -> list[torch.Tensor]:
+    def extract_cache(self, inputs: list, layers: list, activation_callback: Callable = callback) -> tuple[list[torch.Tensor]]:
         """
         Extract kv cache at specified layers
         Args:
@@ -29,7 +29,7 @@ class TransformerOperator(Operator):
             layers (list): list of layer indices
             activation_callback (function(tuple[torch.Tensor])): callback function for cache, applied to all cache from all layers
         Returns:
-            tuple[torch.Tensor]: tuple of 2 tensors kv of shape (n_layers, n_heads, seqlen, headdim)
+            tuple[list[torch.Tensor]]: tuple of 2 list of tensors kv of shape (n_layers, n_heads, seqlen, headdim)
         """
 
         def extract_single_line(input: str) -> torch.Tensor:
@@ -44,12 +44,10 @@ class TransformerOperator(Operator):
             k, v = extract_single_line(input)
             ks.append(k)
             vs.append(v)
-        ks = torch.stack(ks, dim=0)
-        vs = torch.stack(vs, dim=0)
         
         return ks, vs
 
-    def store_cache(self, kvs: tuple[torch.Tensor], path: str) -> None:
+    def store_cache(self, kvs: tuple[list[torch.Tensor]], path: str) -> None:
         """
         Store cache to specified path
         Args:
@@ -57,12 +55,13 @@ class TransformerOperator(Operator):
             path (str): path to store cache
         """
         logger = logging.getLogger(__name__)
-        k, v = kvs[0], kvs[0]       # (n, n_layers, n_heads, seqlen, headdim)
+        ks, vs = kvs[0], kvs[1]       # (n, n_layers, n_heads, seqlen, headdim)
         if path.endswith(".pt"):
             path = path[:-3]
-        out_path = path + "_k.pt"
-        os.makedirs(os.path.dirname(out_path), exist_ok=True)
-        torch.save(k, out_path)
-        out_path = path + "_v.pt"
-        torch.save(v, out_path)
-        logger.info(f"Saved activations to {out_path}")
+        for i, (k, v) in enumerate(zip(ks, vs)):
+            out_path = path + f"_k_{i}.pt"
+            os.makedirs(os.path.dirname(out_path), exist_ok=True)
+            torch.save(k, out_path)
+            out_path = path + "_v.pt"
+            torch.save(v, out_path)
+            logger.info(f"Saved activations to {out_path}")

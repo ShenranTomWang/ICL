@@ -13,7 +13,7 @@ class RWKVOperator(Operator):
         super().__init__(tokenizer, model)
     
     @torch.inference_mode()
-    def extract_cache(self, inputs: list, layers: list, activation_callback: Callable = lambda x: x) -> list[torch.Tensor]:
+    def extract_cache(self, inputs: list, layers: list, activation_callback: Callable = lambda x: x) -> tuple[torch.Tensor]:
         """
         Extract internal representations at specified layers of cache
         Args:
