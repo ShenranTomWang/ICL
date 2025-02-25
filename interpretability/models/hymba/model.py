@@ -452,6 +452,9 @@ class HymbaForCausalLM(HymbaPreTrainedModel):
 
     def get_decoder(self):
         return self.model
+
+    def get_cache_instance(self, batch_size: int, device: torch.DeviceObjType, dtype: torch.dtype, layer_type: list[str]):
+        return HybridMambaAttentionDynamicCache(self.config, batch_size, dtype=dtype, device=device, layer_type=layer_type)
     
     @add_start_docstrings_to_model_forward(HYMBA_INPUTS_DOCSTRING)
     @replace_return_docstrings(output_type=MoeCausalLMOutputWithPast, config_class=_CONFIG_FOR_DOC)
