@@ -61,7 +61,7 @@ class HymbaOperator(Operator):
         if path.endswith(".pt"):
             path = path[:-3]
         if not os.path.exists(path):
-            os.makedirs(path, exist_ok=True)
+            os.makedirs(os.path.dirname(path), exist_ok=True)
         for i, (k, v, ssm_state) in enumerate(zip(ks, vs, ssm_states)):
             torch.save(k, f"{path}_k_{i}.pt")
             torch.save(v, f"{path}_v_{i}.pt")
