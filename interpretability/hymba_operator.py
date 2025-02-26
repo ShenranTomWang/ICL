@@ -109,7 +109,7 @@ class HymbaOperator(Operator):
         """
         k, v, ssm_state = cache
         cache_instance = self.get_cache_instance()
-        k, v, ssm_state = k.tolist(), v.tolist(), ssm_state.tolist()
+        k, v, ssm_state = k.tolist(), v.tolist(), ssm_state.tolist()        # TODO: probably shouldn't use tolist
         k_list, v_list = [], []
         if keep_kv:
             for layer in range(self.model.config.num_hidden_layers):
