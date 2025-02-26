@@ -16,6 +16,14 @@ class Operator(ABC):
         self.tokenizer: AutoTokenizer = tokenizer
         self.device = model.device
         self.transformer_lens = tl_model != None
+        
+    def __call__(self, text: str, **kwargs) -> torch.Tensor:
+        self.forward(text, **kwargs)
+    
+    def forward(self, text: str, **kwargs) -> torch.Tensor:
+        tokenized = self.tokenizer(text, return_tensors="pt", padding=True, truncation=True)
+        output = self.model(**tokenized, **kwargs)
+        return output
 
     @torch.inference_mode()
     def extract(self, inputs: list, stream: str, layers: list, activation_callback: Callable) -> list[torch.Tensor]:
@@ -87,7 +95,7 @@ class Operator(ABC):
         return activations
     
     @abstractmethod
-    def extract_cache(self, inputs: list, layers: list, activation_callback: Callable = lambda x: x) -> Any:
+    def extract_cache(self, inputs: list, layers: list, activation_callback: Callable = lambda x: x) -> tuple[list[torch.Tensor]]:
         """
         Extract cache at specified layers
         Args:
@@ -95,7 +103,7 @@ class Operator(ABC):
             layers (list): list of layer indices
             activation_callback_k (function(tuple[torch.Tensor])): callback function for cache, applied to all cache from all layers
         Returns:
-            cache (Any): cache
+            cache (tuple[list[torch.Tensor]]): cache
         """
         pass
     
@@ -106,6 +114,32 @@ class Operator(ABC):
         Args:
             cache (tuple[Any]): cache
             path (str): path to store cache
+        """
+        pass
+    
+    @abstractmethod
+    def load_cache(self, dir: str, split: str, index: int) -> tuple:
+        """
+        Load cache from specified directory
+        Args:
+            dir (str): directory to load cache
+            split (str): split of cache
+            index (int): index of cache
+        Returns:
+            tuple: cache
+        """
+        pass
+    
+    
+    @abstractmethod
+    def cache2kwargs(self, cache: tuple, **kwargs: dict) -> dict:
+        """
+        Convert cache to kwargs for forward pass
+        Args:
+            cache (tuple): cache
+            kwargs (dict): kwargs
+        Returns:
+            dict: kwargs
         """
         pass
     

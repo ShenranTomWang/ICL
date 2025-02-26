@@ -13,7 +13,7 @@ class RWKVOperator(Operator):
         super().__init__(tokenizer, model)
     
     @torch.inference_mode()
-    def extract_cache(self, inputs: list, layers: list, activation_callback: Callable = lambda x: x) -> tuple[torch.Tensor]:
+    def extract_cache(self, inputs: list, layers: list, activation_callback: Callable = lambda x: x) -> tuple[list[torch.Tensor]]:
         """
         Extract internal representations at specified layers of cache
         Args:
@@ -21,7 +21,8 @@ class RWKVOperator(Operator):
             layers (list): list of layer indices
             activation_callback_k (function(tuple[torch.Tensor])): callback function for cache, applied to all cache from all layers
         Returns:
-            tuple[torch.Tensor]: (n_inputs, n_layers, hidden_size), (n_inputs, n_layers, n_heads, head_dim, head_dim), (n_inputs, n_layers, hidden_size)
+            tuple[list[torch.Tensor]]: list of x (n_inputs, n_layers, hidden_size), list of kv (n_inputs, n_layers, n_heads, head_dim, head_dim),
+                    list of ffn (n_inputs, n_layers, hidden_size)
         """
         def extract_single_line(input: str) -> torch.Tensor:
             tokenized = self.tokenizer(input, return_tensors="pt", truncation=True).to(self.device)
@@ -40,34 +41,32 @@ class RWKVOperator(Operator):
             xs.append(x)
             kvs.append(kv)
             ffns.append(ffn)
-        xs = torch.stack(xs, dim=0)
-        kvs = torch.stack(kvs, dim=0)
-        ffns = torch.stack(ffns, dim=0)
         
         return xs, kvs, ffns
     
-    def store_cache(self, cache: tuple[torch.Tensor], path: str) -> None:
+    def store_cache(self, cache: tuple[list[torch.Tensor]], path: str) -> None:
         """
         Store cache to path
         Args:
-            cache (tuple[torch.Tensor]): (n_inputs, n_layers, hidden_size), (n_inputs, n_layers, n_heads, head_dim, head_dim), (n_inputs, n_layers, hidden_size)
+            cache (tuple[list[torch.Tensor]]): list of x (n_inputs, n_layers, hidden_size), 
+                    list of kv (n_inputs, n_layers, n_heads, head_dim, head_dim), list of ffn (n_inputs, n_layers, hidden_size)
             path (str)
         """
         logger = logging.getLogger(__name__)
         xs, kvs, ffns = cache
         if path.endswith(".pt"):
             path = path[:-3]
+        os.makedirs(os.path.dirname(path), exist_ok=True)
             
-        out_path = f"{path}_x.pt"
-        os.makedirs(os.path.dirname(out_path), exist_ok=True)
-        torch.save(cache, out_path)
-        
-        out_path = f"{path}_kv.pt"
-        os.makedirs(os.path.dirname(out_path), exist_ok=True)
-        torch.save(cache, out_path)
-        
-        out_path = f"{path}_ffn.pt"
-        os.makedirs(os.path.dirname(out_path), exist_ok=True)
-        torch.save(cache, out_path)
+        for i, (x, kv, ffn) in enumerate(zip(xs, kvs, ffns)):
+            torch.save(x, f"{path}_x_{i}.pt")
+            torch.save(kv, f"{path}_kv_{i}.pt")
+            torch.save(ffn, f"{path}_ffn_{i}.pt")
         
         logger.info(f"Saved activations to {path}")
+        
+    def load_cache(self, dir: str, split: str, index: int) -> tuple:
+        raise NotImplementedError("This method is not implemented yet")
+    
+    def cache2kwargs(self, cache: tuple, **kwargs) -> dict:
+        raise NotImplementedError("This method is not implemented yet")

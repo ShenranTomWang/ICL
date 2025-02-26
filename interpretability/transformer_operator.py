@@ -65,3 +65,9 @@ class TransformerOperator(Operator):
             out_path = path + "_v.pt"
             torch.save(v, out_path)
             logger.info(f"Saved activations to {out_path}")
+            
+    def load_cache(self, dir: str, split: str, index: int) -> tuple:
+        raise NotImplementedError("This method is not implemented yet")
+    
+    def cache2kwargs(self, cache: tuple, **kwargs) -> dict:
+        raise NotImplementedError("This method is not implemented yet")

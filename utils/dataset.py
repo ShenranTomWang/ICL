@@ -14,8 +14,13 @@ class Dataset:
             self.options = ["\n" + option for option in train[0]["options"]]
         else:
             self.options = [" " + option for option in train[0]["options"]]
+        self.inputs = None
+        self.outputs = None
+        self.output_ids = None
+        self.indices = None
+        self.option_ids = None
     
-    def prepare_demo(self):
+    def prepare_demo(self) -> None:
         """
         Requires:
             self.train is not None
@@ -32,8 +37,10 @@ class Dataset:
                 demo += "\n\n"
         self.demo = demo
         
-    def preprocess(self):
+    def preprocess(self, use_demo=True) -> None:
         """
+        Args:
+            use_demo (bool): whether to add demo in front of test data
         Requires:
             self.test is not None
             self.train is not None
@@ -42,17 +49,20 @@ class Dataset:
             self.inputs: list<str>, 
             self.outputs: list<str>
         """
-        if self.demo is None:
+        if self.demo is None and use_demo:
             self.prepare_demo()
         for i, dp_test in enumerate(self.test):
-            self.test[i]["input"] = self.demo + dp_test["input"] + ("\n" if self.add_newlines else " ")
+            self.test[i]["input"] = (self.demo if use_demo else "") + dp_test["input"] + ("\n" if self.add_newlines else " ")
             self.test[i]["output"] = ("\n" if self.add_newlines else " ") + dp_test["output"]
         self.inputs = [dp["input"] for dp in self.test]
         self.outputs = [dp["output"] for dp in self.test]
         
-    def tensorize(self, tokenizer):
+    def tensorize(self, tokenizer, use_demo=True) -> None:
         """
         TODO: should support batched tokenization
+        Args:
+            tokenizer: transformers tokenizer
+            use_demo (bool): whether to add demo in front of test data
         Effects:
             self.inputs: list<{"input_ids": tensor, "attention_mask": tensor}>, 
             self.output_ids: list<int>, 
@@ -60,7 +70,7 @@ class Dataset:
             self.option_ids: list<int>
         """
         if self.inputs is None or self.outputs is None:
-            self.preprocess()
+            self.preprocess(use_demo)
         inputs = self.inputs
         if tokenizer.pad_token is None:
             tokenizer.pad_token = tokenizer.eos_token
