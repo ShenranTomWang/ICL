@@ -109,9 +109,9 @@ class HymbaOperator(Operator):
         """
         k, v, ssm_state = cache
         cache_instance = self.get_cache_instance()
-        k = [k[i, ...] for i in range(k.shape[0])]
-        v = [v[i, ...] for i in range(v.shape[0])]
-        ssm_state = [ssm_state[i, ...] for i in range(ssm_state.shape[0])]
+        k = [k[i: i + 1, ...] for i in range(k.shape[0])]
+        v = [v[i: i + 1, ...] for i in range(v.shape[0])]
+        ssm_state = [ssm_state[i: i + 1, ...] for i in range(ssm_state.shape[0])]
         k_list, v_list = [], []
         if keep_kv:
             for layer in range(self.model.config.num_hidden_layers):
