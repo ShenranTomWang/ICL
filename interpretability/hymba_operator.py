@@ -97,7 +97,6 @@ class HymbaOperator(Operator):
     def cache2kwargs(self, cache: tuple[torch.Tensor], kv_layers: list[int] = KV_LAYERS, keep_kv: bool = True, keep_ssm: bool = True, **kwargs) -> dict:
         """
         Convert cache to kwargs
-        TODO: debug this function
         Args:
             cache (tuple[torch.Tensor])
             kv_layers (list[int]): list of layers kv cache maps to
