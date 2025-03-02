@@ -1,0 +1,9 @@
+{
+    "task_type": "classification",
+    "options": [
+        "false",
+        "mixture",
+        "true",
+        "unproven"
+    ]
+}

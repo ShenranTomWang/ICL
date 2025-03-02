@@ -195,6 +195,8 @@ def main(args):
                     layers = list(range(operator.model.config.num_hidden_layers))
                     dataset.prepare_demo()
                     cache = operator.extract_cache([dataset.demo], layers)
+                    if args.save_demo_cache:
+                        operator.store_cache(cache, os.path.join(args.out_dir, test_task, seed, "demo"))
                     for key in cache.keys():
                         cache[key] = cache[key][0]
                 cache_kwargs = operator.cache2kwargs(cache)
@@ -253,6 +255,7 @@ if __name__=='__main__':
     
     parser.add_argument("--demo_cache_dir", default=None, help="out dir of demo cache previously extracted, should contain all children dirs of tasks. If not provided, will extract cache from scratch")
     parser.add_argument("--use_demo_cache", default=False, action="store_true", help="use cache for demo of each task")
+    parser.add_argument("--save_demo_cache", default=False, action="store_true", help="save cache for demo of each task")
     parser.add_argument("--cache2kwargs_kwargs", default="{}", help="kwargs for operator.cache2kwargs")
 
     parser.add_argument("--out_dir", type=str, default=None)
