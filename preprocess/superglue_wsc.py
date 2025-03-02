@@ -30,7 +30,7 @@ class Superglue_Wsc(FewshotGymClassificationDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset('super_glue', 'wsc.fixed')
+        return datasets.load_dataset('super_glue', 'wsc.fixed', trust_remote_code=True)
 
 def main():
     dataset = Superglue_Wsc()

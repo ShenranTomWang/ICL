@@ -35,7 +35,7 @@ class YelpReviewFull(FewshotGymClassificationDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset('yelp_review_full')
+        return datasets.load_dataset('yelp_review_full', trust_remote_code=True)
 
 def main():
     dataset = YelpReviewFull()

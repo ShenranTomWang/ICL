@@ -34,7 +34,7 @@ class HotpotQA(FewshotGymTextToTextDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset("hotpot_qa", "distractor")
+        return datasets.load_dataset("hotpot_qa", "distractor", trust_remote_code=True)
 
 def main():
     dataset = HotpotQA()

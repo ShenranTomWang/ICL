@@ -25,7 +25,7 @@ class AdversarialQA(FewshotGymTextToTextDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset('adversarial_qa', "adversarialQA")
+        return datasets.load_dataset('adversarial_qa', "adversarialQA", trust_remote_code=True)
 
 def main():
     dataset = AdversarialQA()

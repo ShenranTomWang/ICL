@@ -32,7 +32,7 @@ class DuoRC(FewshotGymTextToTextDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset('duorc', 'SelfRC')
+        return datasets.load_dataset('duorc', 'SelfRC', trust_remote_code=True)
 
 def main():
     dataset = DuoRC()

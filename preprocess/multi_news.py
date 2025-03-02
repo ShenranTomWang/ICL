@@ -26,7 +26,7 @@ class MultiNews(FewshotGymTextToTextDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset('multi_news')
+        return datasets.load_dataset('multi_news', trust_remote_code=True)
 
 def main():
     dataset = MultiNews()

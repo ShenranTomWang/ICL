@@ -46,7 +46,7 @@ class AdeCorpusV2_Classfication(FewshotGymClassificationDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset('ade_corpus_v2', 'Ade_corpus_v2_classification')
+        return datasets.load_dataset('ade_corpus_v2', 'Ade_corpus_v2_classification', trust_remote_code=True)
 
 def main():
     dataset = AdeCorpusV2_Classfication()

@@ -220,7 +220,7 @@ class Discovery(FewshotGymClassificationDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset('discovery', 'discovery')
+        return datasets.load_dataset('discovery', 'discovery', trust_remote_code=True)
 
 def main():
     dataset = Discovery()

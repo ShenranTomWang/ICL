@@ -119,7 +119,7 @@ class BLIMP(FewshotGymClassificationDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset('blimp', self.subset_identifier)
+        return datasets.load_dataset('blimp', self.subset_identifier, trust_remote_code=True)
 
 def main():
     np.random.seed(42)

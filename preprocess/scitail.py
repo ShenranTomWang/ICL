@@ -37,7 +37,7 @@ class SciTail(FewshotGymClassificationDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset('scitail', 'snli_format')
+        return datasets.load_dataset('scitail', 'snli_format', trust_remote_code=True)
 
 def main():
     dataset = SciTail()

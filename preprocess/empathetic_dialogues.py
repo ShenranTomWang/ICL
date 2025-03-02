@@ -54,7 +54,7 @@ class EmpatheticDialogues(FewshotGymTextToTextDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset('empathetic_dialogues')
+        return datasets.load_dataset('empathetic_dialogues', trust_remote_code=True)
 
 def main():
     dataset = EmpatheticDialogues()

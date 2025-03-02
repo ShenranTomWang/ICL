@@ -54,7 +54,7 @@ class FinancialPhrasebank(FewshotGymClassificationDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset('financial_phrasebank', 'sentences_allagree')
+        return datasets.load_dataset('financial_phrasebank', 'sentences_allagree', trust_remote_code=True)
 
 def main():
     dataset = FinancialPhrasebank()

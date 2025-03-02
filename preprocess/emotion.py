@@ -27,7 +27,7 @@ class Emotion(FewshotGymClassificationDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset('emotion')
+        return datasets.load_dataset('emotion', trust_remote_code=True)
 
 def main():
     dataset = Emotion()

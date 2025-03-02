@@ -45,7 +45,7 @@ class SMS_Spam(FewshotGymClassificationDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset('sms_spam')
+        return datasets.load_dataset('sms_spam', trust_remote_code=True)
 
 def main():
     dataset = SMS_Spam()

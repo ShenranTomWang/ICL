@@ -39,7 +39,7 @@ class ASLG_PC12(FewshotGymTextToTextDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset("aslg_pc12")
+        return datasets.load_dataset("aslg_pc12", trust_remote_code=True)
 
 def main():
     dataset = ASLG_PC12()

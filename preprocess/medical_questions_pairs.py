@@ -50,7 +50,7 @@ class MedicalQuestionPairs(FewshotGymClassificationDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset('medical_questions_pairs')
+        return datasets.load_dataset('medical_questions_pairs', trust_remote_code=True)
 
 def main():
     dataset = MedicalQuestionPairs()

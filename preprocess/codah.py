@@ -36,7 +36,7 @@ class CODAH(FewshotGymTextToTextDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset("codah", "fold_0")
+        return datasets.load_dataset("codah", "fold_0", trust_remote_code=True)
 
 def main():
     dataset = CODAH()

@@ -24,7 +24,7 @@ class QA_SRL(FewshotGymTextToTextDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset('qa_srl')
+        return datasets.load_dataset('qa_srl', trust_remote_code=True)
 
 def main():
     dataset = QA_SRL()

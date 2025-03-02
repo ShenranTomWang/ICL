@@ -36,7 +36,7 @@ class PoemSentiment(FewshotGymClassificationDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset('poem_sentiment')
+        return datasets.load_dataset('poem_sentiment', trust_remote_code=True)
 
 def main():
     dataset = PoemSentiment()

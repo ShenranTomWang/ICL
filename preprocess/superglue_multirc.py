@@ -54,7 +54,7 @@ class Superglue_MultiRC(FewshotGymTextToTextDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset("super_glue", "multirc")
+        return datasets.load_dataset("super_glue", "multirc", trust_remote_code=True)
 
 def main():
     dataset = Superglue_MultiRC()

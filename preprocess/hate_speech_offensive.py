@@ -46,7 +46,7 @@ class HateSpeechOffensive(FewshotGymClassificationDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset('hate_speech_offensive')
+        return datasets.load_dataset('hate_speech_offensive', trust_remote_code=True)
 
 def main():
     dataset = HateSpeechOffensive()

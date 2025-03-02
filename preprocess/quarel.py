@@ -41,7 +41,7 @@ class QUAREL(FewshotGymTextToTextDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset("quarel")
+        return datasets.load_dataset("quarel", trust_remote_code=True)
 
 def main():
     dataset = QUAREL()
