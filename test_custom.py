@@ -197,8 +197,8 @@ def main(args):
                     cache = operator.extract_cache([dataset.demo], layers)
                     if args.save_demo_cache:
                         operator.store_cache(cache, os.path.join(args.out_dir, test_task, seed, "demo"))
-                    for key in cache.keys():
-                        cache[key] = cache[key][0]
+                    for i in range(len(cache)):
+                        cache[i] = cache[i][0]
                 cache_kwargs = operator.cache2kwargs(cache)
             else:
                 cache_kwargs = None
