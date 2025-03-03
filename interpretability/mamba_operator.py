@@ -1,4 +1,4 @@
-from transformers import AutoTokenizer, MambaForCausalLM
+from transformers import AutoTokenizer, AutoModelForCausalLM
 from transformers.cache_utils import MambaCache
 import torch
 from typing import Callable
@@ -10,12 +10,12 @@ class MambaOperator(Operator):
         self.device = device
         self.dtype = dtype
         tokenizer = AutoTokenizer.from_pretrained(path, trust_remote_code=True)
-        model = MambaForCausalLM.from_pretrained(path).to(device).to(dtype)
-        self.ALL_LAYERS = [i for i in range(model.config.n_layers)]
+        model = AutoModelForCausalLM.from_pretrained(path).to(device).to(dtype)
+        self.ALL_LAYERS = [i for i in range(model.config.n_layer)]
         super().__init__(tokenizer, model)
     
     def get_cache_instance(self):
-        cache = MambaCache(self.model.config, dtype=self.dtype, device=self.device)
+        cache = MambaCache(self.model.config, 1, dtype=self.dtype, device=self.device)
         return cache
     
     @torch.inference_mode()
@@ -30,10 +30,10 @@ class MambaOperator(Operator):
             tuple[list[torch.Tensor]]: list of ssm_states (n_layers, ssm_intermediate_size, ssm_state_size), list of conv_states (n_layers, conv_intermediate_size, conv_state_size)
         """
         cache = self.get_cache_instance()
-        ssm_states, conv_states = [], [], [], []
+        ssm_states, conv_states = [], []
         for input in inputs:
             tokenized = self.tokenizer(input, return_tensors="pt", truncation=True).to(self.device)
-            _ = self.model(**tokenized, use_cache=True, cache_params=cache)
+            _ = self.model(**tokenized, use_cache=True, cache_params=cache)     # TODO: left off here, need to check cache args
             ssm_state = cache.ssm_states
             conv_state = cache.conv_states
             ssm_state = [ssm_state[layer] for layer in layers]

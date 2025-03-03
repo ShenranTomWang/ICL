@@ -1,4 +1,4 @@
-from transformers import AutoTokenizer, HymbaForCausalLM
+from transformers import AutoTokenizer, AutoModelForCausalLM
 from interpretability.models.hymba import HybridMambaAttentionDynamicCache
 import torch
 from typing import Callable
@@ -13,7 +13,7 @@ class HymbaOperator(Operator):
         self.device = device
         self.dtype = dtype
         tokenizer = AutoTokenizer.from_pretrained(path, trust_remote_code=True)
-        model = HymbaForCausalLM.from_pretrained(path).to(device).to(dtype)
+        model = AutoModelForCausalLM.from_pretrained(path).to(device).to(dtype)
         self.ALL_LAYERS = [i for i in range(model.config.num_hidden_layers)]
         super().__init__(tokenizer, model)
     
