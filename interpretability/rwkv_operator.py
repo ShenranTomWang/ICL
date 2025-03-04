@@ -9,6 +9,7 @@ class RWKVOperator(Operator):
     def __init__(self, path: str, device: torch.DeviceObjType, dtype: torch.dtype):
         model = AutoModelForCausalLM.from_pretrained(path, trust_remote_code=True).to(device).to(dtype)
         tokenizer = AutoTokenizer.from_pretrained(path, trust_remote_code=True)
+        self.dtype = dtype
         self.device = device
         super().__init__(tokenizer, model)
     
@@ -28,9 +29,9 @@ class RWKVOperator(Operator):
             tokenized = self.tokenizer(input, return_tensors="pt", truncation=True).to(self.device)
             cache = self.model(**tokenized, use_cache=True).state
             x, kv, ffn = cache[0], cache[1], cache[2]
-            x = torch.movedim(x[..., layers], -1, 0).squeeze(1).cpu()       # (n_layers, hidden_size)
-            kv = torch.movedim(kv[..., layers], -1, 0).squeeze(1).cpu()     # (n_layers, n_heads, head_dim, head_dim)
-            ffn = torch.movedim(ffn[..., layers], -1, 0).squeeze(1).cpu()   # (n_layers, hidden_size)
+            x = torch.movedim(x[..., layers], -1, 0).squeeze(1)       # (n_layers, hidden_size)
+            kv = torch.movedim(kv[..., layers], -1, 0).squeeze(1)     # (n_layers, n_heads, head_dim, head_dim)
+            ffn = torch.movedim(ffn[..., layers], -1, 0).squeeze(1)   # (n_layers, hidden_size)
             cache = (x, kv, ffn)
             cache = activation_callback(cache)
             return cache
@@ -66,7 +67,32 @@ class RWKVOperator(Operator):
         logger.info(f"Saved activations to {path}")
         
     def load_cache(self, dir: str, split: str, index: int) -> tuple:
-        raise NotImplementedError("This method is not implemented yet")
+        xs_path = os.path.join(dir, f"{split}_x_{index}.pt")
+        kvs_path = os.path.join(dir, f"{split}_kv_{index}.pt")
+        ffns_path = os.path.join(dir, f"{split}_ffn_{index}.pt")
+        xs = torch.load(xs_path, map_location=self.device).to(self.dtype)
+        kvs = torch.load(kvs_path, map_location=self.device).to(self.dtype)
+        ffns = torch.load(ffns_path, map_location=self.device).to(self.dtype)
+        return xs, kvs, ffns
     
-    def cache2kwargs(self, cache: tuple, **kwargs) -> dict:
-        raise NotImplementedError("This method is not implemented yet")
+    def cache2kwargs(self, cache: tuple[torch.Tensor], keep_x: bool = True, keep_kv: bool = True, keep_ffn: bool = True, **kwargs) -> dict:
+        """
+        Convert cache to kwargs
+        Args:
+            cache (tuple[torch.Tensor])
+            keep_x (bool, optional): whether to use x cache. Defaults to True.
+            keep_kv (bool, optional): whether to use kv cache. Defaults to True.
+            keep_ffn (bool, optional): whether to use ffn cache. Defaults to True.
+
+        Returns:
+            dict: kwargs
+        """
+        x, kv, ffn = cache
+        if keep_kv:
+            kv = torch.movedim(kv, 0, -1).unsqueeze(0)
+        if keep_x:
+            x = torch.movedim(x, 0, -1).unsqueeze(0)
+        if keep_ffn:
+            ffn = torch.movedim(ffn, 0, -1).unsqueeze(0)
+        kwargs = {"use_cache": True, "state": [x, kv, ffn]}
+        return kwargs

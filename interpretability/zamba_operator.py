@@ -133,8 +133,8 @@ class ZambaOperator(Operator):
         if keep_kv:
             for layer in range(self.model.config.num_hidden_layers):
                 if layer in kv_layers and layer in layers:
-                    k_list.append(k[0])
-                    v_list.append(v[0])
+                    k_list.append(k[layer])
+                    v_list.append(v[layer])
                 else:
                     k_list.append(torch.zeros((1, 0)))
                     v_list.append(torch.zeros((1, 0)))
