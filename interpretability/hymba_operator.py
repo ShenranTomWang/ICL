@@ -94,10 +94,10 @@ class HymbaOperator(Operator):
         v_path = os.path.join(dir, f"{split}_cache_v_{index}.pt")
         ssm_state_path = os.path.join(dir, f"{split}_cache_ssm_state_{index}.pt")
         conv_state_path = os.path.join(dir, f"{split}_cache_conv_state_{index}.pt")
-        k = torch.load(k_path)
-        v = torch.load(v_path)
-        ssm_state = torch.load(ssm_state_path)
-        conv_state = torch.load(conv_state_path)
+        k = torch.load(k_path, map_location=self.device).to(self.dtype)
+        v = torch.load(v_path, map_location=self.device).to(self.dtype)
+        ssm_state = torch.load(ssm_state_path, map_location=self.device).to(self.dtype)
+        conv_state = torch.load(conv_state_path, map_location=self.device).to(self.dtype)
         return k, v, ssm_state, conv_state
     
     def cache2kwargs(
