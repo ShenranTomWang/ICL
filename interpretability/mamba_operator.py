@@ -10,7 +10,7 @@ class MambaOperator(Operator):
         self.device = device
         self.dtype = dtype
         tokenizer = AutoTokenizer.from_pretrained(path, trust_remote_code=True)
-        model = AutoModelForCausalLM.from_pretrained(path).to(device).to(dtype)
+        model = AutoModelForCausalLM.from_pretrained(path, trust_remote_code=True).to(device).to(dtype)
         self.ALL_LAYERS = [i for i in range(model.config.n_layer)]
         super().__init__(tokenizer, model)
     
