@@ -13,7 +13,7 @@ class MambaOperator(Operator):
         model = AutoModelForCausalLM.from_pretrained(path, trust_remote_code=True).to(device).to(dtype)
         self.ALL_LAYERS = [i for i in range(model.config.n_layer)]
         super().__init__(tokenizer, model)
-    
+        
     def get_cache_instance(self):
         cache = MambaCache(self.model.config, 1, dtype=self.dtype, device=self.device)
         return cache
@@ -25,15 +25,14 @@ class MambaOperator(Operator):
         Args:
             inputs (list): list of inputs
             layers (list): list of layer indices
-            activation_callback_k (function(tuple[torch.Tensor]) -> tuple[torch.Tensor]): callback function for k, v, ssm_state, applied to all cache from all layers
+            activation_callback_k (function(tuple[torch.Tensor]) -> tuple[torch.Tensor]): callback function for ssm_state, conv_state applied to all cache from all layers
         Returns:
             tuple[list[torch.Tensor]]: list of ssm_states (n_layers, ssm_intermediate_size, ssm_state_size), list of conv_states (n_layers, conv_intermediate_size, conv_state_size)
         """
-        cache = self.get_cache_instance()
         ssm_states, conv_states = [], []
         for input in inputs:
             tokenized = self.tokenizer(input, return_tensors="pt", truncation=True).to(self.device)
-            _ = self.model(**tokenized, use_cache=True, cache_params=cache)     # TODO: left off here, need to check cache args
+            cache = self.model(**tokenized, use_cache=True).cache_params     # TODO: left off here, need to check cache args
             ssm_state = cache.ssm_states
             conv_state = cache.conv_states
             ssm_state = [ssm_state[layer] for layer in layers]
@@ -78,8 +77,8 @@ class MambaOperator(Operator):
         """
         ssm_state_path = os.path.join(dir, f"{split}_cache_ssm_state_{index}.pt")
         conv_state_path = os.path.join(dir, f"{split}_cache_conv_state_{index}.pt")
-        ssm_state = torch.load(ssm_state_path)
-        conv_state = torch.load(conv_state_path)
+        ssm_state = torch.load(ssm_state_path, map_location=self.device).to(self.dtype)
+        conv_state = torch.load(conv_state_path, map_location=self.device).to(self.dtype)
         return ssm_state, conv_state
     
     def cache2kwargs(self, cache: tuple[torch.Tensor], layers: list[int] = None, keep_ssm: bool = True, keep_conv: bool = True, **kwargs) -> dict:
