@@ -1,3 +1,4 @@
+import shutup; shutup.please()
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from transformers.cache_utils import DynamicCache
 import torch

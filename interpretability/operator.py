@@ -1,3 +1,4 @@
+import shutup; shutup.please()
 from transformer_lens.hook_points import HookPoint
 from transformer_lens.utils import get_act_name
 from transformer_lens import HookedTransformer

@@ -1,3 +1,4 @@
+import shutup; shutup.please()
 from transformers import AutoTokenizer, AutoModelForCausalLM
 import torch
 from typing import Callable

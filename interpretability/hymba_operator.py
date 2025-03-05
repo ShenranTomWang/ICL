@@ -1,3 +1,4 @@
+import shutup; shutup.please()
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from interpretability.models.hymba import HybridMambaAttentionDynamicCache
 import torch
