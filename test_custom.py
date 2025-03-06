@@ -105,7 +105,6 @@ def run(
     Returns:
         (float): performance, macro-F1 for classification tasks, accuracy for non-classification tasks, none if args.is_null
     """
-
     if args.do_zeroshot:
         split_name = args.split
         if args.is_null:
@@ -146,18 +145,22 @@ def run(
     if not os.path.exists(prediction_path):
         os.makedirs(os.path.dirname(prediction_path), exist_ok=True)
 
-    predictions = do_inference_hf(operator, dataset, args.test_batch_size, cache_kwargs)
+    try:
+        predictions = do_inference_hf(operator, dataset, args.test_batch_size, cache_kwargs)
 
-    groundtruths = dataset.outputs
-    perf = evaluate(predictions, groundtruths, is_classification)
-    logger.info(f"{'F1' if is_classification else 'Accuracy'} = {perf}")
+        groundtruths = dataset.outputs
+        perf = evaluate(predictions, groundtruths, is_classification)
+        logger.info(f"{'F1' if is_classification else 'Accuracy'} = {perf}")
 
-    with open(prediction_path, "w") as f:
-        for prediction in predictions:
-            f.write(prediction)
-            f.write("\n")
+        with open(prediction_path, "w") as f:
+            for prediction in predictions:
+                f.write(prediction)
+                f.write("\n")
 
-    return perf
+        return perf
+    except Exception as e:
+        logger.error(e)
+        return None
 
 def main(args):
     operator: Operator = args.operator(args.model, device, args.dtype)
