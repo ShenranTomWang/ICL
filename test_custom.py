@@ -23,8 +23,8 @@ def evaluate(predictions: list, groundtruths: list, is_classification: bool) -> 
         if prediction is None:
             pass
         prediction = prediction.strip()
-        groundtruth = [gt.strip() for gt in groundtruth] if type(groundtruth)==list else groundtruth.strip()
-        is_correct = prediction in groundtruth if type(groundtruth)==list else prediction==groundtruth
+        groundtruth = [gt.strip() for gt in groundtruth] if type(groundtruth) == list else groundtruth.strip()
+        is_correct = prediction in groundtruth if type(groundtruth) == list else prediction == groundtruth
         accs.append(is_correct)
         if is_classification:
             recalls[groundtruth].append(is_correct)
@@ -37,10 +37,10 @@ def evaluate(predictions: list, groundtruths: list, is_classification: bool) -> 
     for key in recalls:
         precision = np.mean(precisions[key]) if key in precisions else 1.0
         recall = np.mean(recalls[key])
-        if precision+recall==0:
+        if precision + recall == 0:
             f1s.append(0)
         else:
-            f1s.append(2*precision*recall / (precision+recall))
+            f1s.append(2 * precision * recall / (precision + recall))
 
     return np.mean(f1s)
 
