@@ -20,6 +20,8 @@ def evaluate(predictions: list, groundtruths: list, is_classification: bool) -> 
     precisions = defaultdict(list)
     recalls = defaultdict(list)
     for prediction, groundtruth in zip(predictions, groundtruths):
+        if prediction is None:
+            pass
         prediction = prediction.strip()
         groundtruth = [gt.strip() for gt in groundtruth] if type(groundtruth)==list else groundtruth.strip()
         is_correct = prediction in groundtruth if type(groundtruth)==list else prediction==groundtruth
@@ -77,16 +79,22 @@ def do_inference_hf(operator: Operator, dataset: Dataset, batch_size: int, cache
         batch = inputs[i:upper]
         index = torch.tensor(indices[i:upper]).to(device)
         input_ids, attention_mask = preprocess_batch(batch)
-        output = operator.model(input_ids=input_ids, attention_mask=attention_mask, **cache_kwargs)
-        logit = output.logits
-        output_logits = logit[..., index, :].squeeze(-2)        # (batch_size, vocab_size)
-        output_logits = output_logits[..., option_ids]          # (batch_size, num_options)
-        output = torch.argmax(output_logits, dim=-1)            # (batch_size)
-        outputs.append(output)
+        try:
+            output = operator.model(input_ids=input_ids, attention_mask=attention_mask, **cache_kwargs)
+            logit = output.logits
+            output_logits = logit[..., index, :].squeeze(-2)        # (batch_size, vocab_size)
+            output_logits = output_logits[..., option_ids]          # (batch_size, num_options)
+            output = torch.argmax(output_logits, dim=-1)            # (batch_size)
+            outputs.append(output.cpu())
+        except Exception as e:
+            logger.error(e)
+            output = torch.tensor(len(batch_size), device="cpu", dtype=torch.long)
+            output[...] = -1
+            outputs.append(output)
     
     outputs = torch.cat(outputs, dim=0).flatten()
     outputs = outputs.cpu().tolist()
-    outputs = [options[i] for i in outputs]
+    outputs = [options[i] if i != -1 else None for i in outputs]
     return outputs
             
 def run(
