@@ -25,6 +25,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", type=str, required=True)
     parser.add_argument("--dtype", type=str, default="float16", choices=["float16", "float32", "bfloat16"])
+    parser.add_argument("--device", type=str, default="cuda:0")
     
     parser.add_argument("--add_newlines", default=False, action="store_true")
     parser.add_argument("--task", type=str, default=None)
@@ -45,7 +46,7 @@ if __name__ == "__main__":
     parser.add_argument("--out_dir", type=str, default="out/activations")
     args = parser.parse_args()
     
-    args.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    args.device = torch.device(args.device)
     args.handler = getattr(handlers, f"{args.split}_handler")
     args.operator = getattr(interpretability, args.operator)
     args.dtype = getattr(torch, args.dtype)

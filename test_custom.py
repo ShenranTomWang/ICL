@@ -1,5 +1,4 @@
 import logging, argparse, os, json
-from transformers import AutoTokenizer, AutoModelForCausalLM
 from utils.utils import log_counters, init_counters
 from utils.data import load_data
 import numpy as np
@@ -11,7 +10,6 @@ import interpretability
 # from english_words import english_words_set
 
 # english_words_set = sorted(english_words_set)
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 def evaluate(predictions: list, groundtruths: list, is_classification: bool) -> float:
     """Evaluate the predictions against the groundtruths. Return accuracy for non-classification tasks, and macro-F1 for classification tasks.
@@ -53,18 +51,19 @@ def preprocess_batch(batch: list) -> tuple:
     input_ids = [input["input_ids"][0, :] for input in batch]
     attention_mask = [input["attention_mask"][0, :] for input in batch]
     
-    input_ids = torch.nn.utils.rnn.pad_sequence(input_ids, batch_first=True, padding_value=0).to(device)
-    attention_mask = torch.nn.utils.rnn.pad_sequence(attention_mask, batch_first=True, padding_value=0).to(device)
+    input_ids = torch.nn.utils.rnn.pad_sequence(input_ids, batch_first=True, padding_value=0)
+    attention_mask = torch.nn.utils.rnn.pad_sequence(attention_mask, batch_first=True, padding_value=0)
     return input_ids, attention_mask
 
 @torch.inference_mode()
-def do_inference_hf(operator: Operator, dataset: Dataset, batch_size: int, cache_kwargs: dict) -> list:
+def do_inference_hf(operator: Operator, dataset: Dataset, batch_size: int, cache_kwargs: dict, device: torch.DeviceObjType) -> list:
     """Perform inference on dataset in batch with batch_size
     Args:
         operator (Operator)
         dataset (Dataset): dataset
         batch_size (int): batch size
         cache_kwargs (dict): cache kwargs for model fwd pass
+        device (torch.DeviceObjType): device
 
     Returns:
         list<str>: predictions
@@ -79,6 +78,8 @@ def do_inference_hf(operator: Operator, dataset: Dataset, batch_size: int, cache
         batch = inputs[i:upper]
         index = torch.tensor(indices[i:upper]).to(device)
         input_ids, attention_mask = preprocess_batch(batch)
+        input_ids = input_ids.to(device)
+        attention_mask = attention_mask.to(device)
         try:
             output = operator.model(input_ids=input_ids, attention_mask=attention_mask, **cache_kwargs)
             logit = output.logits
@@ -154,7 +155,7 @@ def run(
         os.makedirs(os.path.dirname(prediction_path), exist_ok=True)
 
     try:
-        predictions = do_inference_hf(operator, dataset, args.test_batch_size, cache_kwargs)
+        predictions = do_inference_hf(operator, dataset, args.test_batch_size, cache_kwargs, args.device)
 
         groundtruths = dataset.outputs
         perf = evaluate(predictions, groundtruths, is_classification)
@@ -171,7 +172,7 @@ def run(
         return None
 
 def main(args):
-    operator: Operator = args.operator(args.model, device, args.dtype)
+    operator: Operator = args.operator(args.model, args.device, args.dtype)
     logger.info("Model loaded")
     
     use_demonstrations = args.k != 0
@@ -263,6 +264,7 @@ if __name__=='__main__':
 
     parser.add_argument("--n_skips", type=int, default=0, help="number of tokens to skip in the output, assumes having <bos> token, set to -1 if tokenizer has no <bos> token")
     parser.add_argument("--dtype", type=str, default="float16")
+    parser.add_argument("--device", type=str, default="cuda:0")
     parser.add_argument("--test_batch_size", type=int, default=1)
     parser.add_argument("--use_random_english_words", default=False, action="store_true")
     
@@ -287,6 +289,7 @@ if __name__=='__main__':
     assert args.dataset is not None or args.task is not None, "Either dataset or task must be provided"
         
     args.dtype = getattr(torch, args.dtype)
+    args.device = torch.device(args.device)
     args.operator = getattr(interpretability, args.operator)
     args.cache2kwargs_kwargs = json.loads(args.cache2kwargs_kwargs)
 
