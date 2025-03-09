@@ -19,7 +19,7 @@ def evaluate(predictions: list, groundtruths: list, is_classification: bool) -> 
     recalls = defaultdict(list)
     for prediction, groundtruth in zip(predictions, groundtruths):
         if prediction is None:
-            pass
+            continue
         prediction = prediction.strip()
         groundtruth = [gt.strip() for gt in groundtruth] if type(groundtruth) == list else groundtruth.strip()
         is_correct = prediction in groundtruth if type(groundtruth) == list else prediction == groundtruth
@@ -71,7 +71,7 @@ def do_inference_hf(operator: Operator, dataset: Dataset, batch_size: int, cache
     outputs = []
     inputs = dataset.inputs
     indices = dataset.indices
-    option_ids = torch.tensor(dataset.option_ids, device=device)
+    option_ids = torch.tensor(dataset.option_ids, device=device, dtype=torch.long)
     options = dataset.options
     for i in range(0, len(inputs), batch_size):
         upper = min(i + batch_size, len(inputs))
@@ -88,9 +88,8 @@ def do_inference_hf(operator: Operator, dataset: Dataset, batch_size: int, cache
             output = torch.argmax(output_logits, dim=-1)            # (batch_size)
             outputs.append(output.cpu())
         except Exception as e:
-            logger.error(e)
-            output = torch.tensor(len(batch_size), device="cpu", dtype=torch.long)
-            output[...] = -1
+            logger.exception(e)
+            output = torch.full((batch_size,), -1, device="cpu", dtype=torch.long)
             outputs.append(output)
     
     outputs = torch.cat(outputs, dim=0).flatten()
@@ -154,22 +153,21 @@ def run(
     if not os.path.exists(prediction_path):
         os.makedirs(os.path.dirname(prediction_path), exist_ok=True)
 
-    try:
-        predictions = do_inference_hf(operator, dataset, args.test_batch_size, cache_kwargs, args.device)
+    predictions = do_inference_hf(operator, dataset, args.test_batch_size, cache_kwargs, args.device)
 
-        groundtruths = dataset.outputs
-        perf = evaluate(predictions, groundtruths, is_classification)
-        logger.info(f"{'F1' if is_classification else 'Accuracy'} = {perf}")
+    groundtruths = dataset.outputs
+    perf = evaluate(predictions, groundtruths, is_classification)
+    logger.info(f"{'F1' if is_classification else 'Accuracy'} = {perf}")
 
-        with open(prediction_path, "w") as f:
-            for prediction in predictions:
+    with open(prediction_path, "w") as f:
+        for prediction in predictions:
+            if prediction is None:
+                f.write("None")
+            else:
                 f.write(prediction)
                 f.write("\n")
 
-        return perf
-    except Exception as e:
-        logger.error(e)
-        return None
+    return perf
 
 def main(args):
     operator: Operator = args.operator(args.model, args.device, args.dtype)
@@ -263,7 +261,7 @@ if __name__=='__main__':
     parser.add_argument("--seed", type=str, default="100,13,21,42,87")
 
     parser.add_argument("--n_skips", type=int, default=0, help="number of tokens to skip in the output, assumes having <bos> token, set to -1 if tokenizer has no <bos> token")
-    parser.add_argument("--dtype", type=str, default="float16")
+    parser.add_argument("--dtype", type=str, default="bfloat16", choices=["bfloat16", "float16", "float32"])
     parser.add_argument("--device", type=str, default="cuda:0")
     parser.add_argument("--test_batch_size", type=int, default=1)
     parser.add_argument("--use_random_english_words", default=False, action="store_true")
@@ -300,6 +298,7 @@ if __name__=='__main__':
                         datefmt='%m/%d/%Y %H:%M:%S',
                         level=logging.INFO,
                         handlers=handlers)
+    logging.basicConfig(level=logging.ERROR, format='%(asctime)s - %(levelname)s - %(message)s')
     logger = logging.getLogger(__name__)
     logger.info(args)
 

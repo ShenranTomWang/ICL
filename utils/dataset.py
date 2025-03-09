@@ -77,7 +77,7 @@ class Dataset:
         inputs = [tokenizer(input, return_tensors="pt", padding=True, truncation=True) for input in inputs]
         inputs = [
             {
-                "input_ids": input["input_ids"],
+                "input_ids": input["input_ids"][..., 1:] if not use_demo else input["input_ids"],        # skip bos token if not using demo
                 "attention_mask": input["attention_mask"]
             }
             for input in inputs

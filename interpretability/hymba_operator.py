@@ -37,7 +37,8 @@ class HymbaOperator(Operator):
         cache = self.get_cache_instance()
         ks, vs, ssm_states, conv_states = [], [], [], []
         for input in inputs:
-            tokenized = self.tokenizer(input, return_tensors="pt", truncation=True).to(self.device)
+            tokenized = self.tokenizer(input, return_tensors="pt", truncation=True)
+            tokenized = {k: v.to(self.device) for k, v in tokenized.items()}
             _ = self.model(**tokenized, use_cache=True, past_key_values=cache)
             k = cache.key_cache
             v = cache.value_cache
