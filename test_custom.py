@@ -88,7 +88,10 @@ def do_inference_hf(operator: Operator, dataset: Dataset, batch_size: int, cache
             output = torch.argmax(output_logits, dim=-1)            # (batch_size)
             outputs.append(output.cpu())
         except Exception as e:
-            logger.exception(e)
+            if args.verbose:
+                logger.exception(e)
+            else:
+                logger.error(e)
             output = torch.full((batch_size,), -1, device="cpu", dtype=torch.long)
             outputs.append(output)
     
