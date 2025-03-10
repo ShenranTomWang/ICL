@@ -47,7 +47,7 @@ class WikiBio(FewshotGymTextToTextDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset("wiki_bio", trust_remote_code=True)
+        return datasets.load_dataset("wiki_bio")
 
 def main():
     dataset = WikiBio()

@@ -51,7 +51,7 @@ class ClimateFever(FewshotGymClassificationDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset('climate_fever', trust_remote_code=True)
+        return datasets.load_dataset('climate_fever')
 
 def main():
     dataset = ClimateFever()

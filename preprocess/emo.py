@@ -48,7 +48,7 @@ class Emo(FewshotGymClassificationDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset('emo', trust_remote_code=True)
+        return datasets.load_dataset('emo')
 
 def main():
     dataset = Emo()

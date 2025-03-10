@@ -36,7 +36,7 @@ class HatExplain(FewshotGymClassificationDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset('hatexplain', trust_remote_code=True)
+        return datasets.load_dataset('hatexplain')
 
 def main():
     dataset = HatExplain()

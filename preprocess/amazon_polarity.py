@@ -55,7 +55,7 @@ class AmazonPolarity(FewshotGymClassificationDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset('amazon_polarity', trust_remote_code=True)
+        return datasets.load_dataset('amazon_polarity')
 
 def main():
     dataset = AmazonPolarity()

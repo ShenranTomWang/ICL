@@ -41,7 +41,7 @@ class Quartz(FewshotGymTextToTextDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset("quartz", trust_remote_code=True)
+        return datasets.load_dataset("quartz")
 
 def main():
     for mode in ["with_knowledge", "no_knowledge"]:

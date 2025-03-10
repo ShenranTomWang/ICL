@@ -35,7 +35,7 @@ class OpenbookQA(FewshotGymTextToTextDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset("openbookqa", "main", trust_remote_code=True)
+        return datasets.load_dataset("openbookqa", "main")
 
 def main():
     dataset = OpenbookQA()

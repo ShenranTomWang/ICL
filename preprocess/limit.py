@@ -35,7 +35,7 @@ class Limit(FewshotGymTextToTextDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset('limit', trust_remote_code=True)
+        return datasets.load_dataset('limit')
 
 def main():
     dataset = Limit()

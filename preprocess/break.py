@@ -25,7 +25,7 @@ class Break(FewshotGymTextToTextDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset('break_data', self.subset_identifier, trust_remote_code=True)
+        return datasets.load_dataset('break_data', self.subset_identifier)
 
 def main():
 

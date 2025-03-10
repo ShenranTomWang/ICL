@@ -39,7 +39,7 @@ class Jeopardy(FewshotGymTextToTextDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset("jeopardy", trust_remote_code=True)
+        return datasets.load_dataset("jeopardy")
 
 def main():
     dataset = Jeopardy()

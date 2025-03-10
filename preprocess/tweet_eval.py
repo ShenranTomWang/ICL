@@ -85,7 +85,7 @@ class TweetEval(FewshotGymClassificationDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset('tweet_eval', self.subset_name, trust_remote_code=True)
+        return datasets.load_dataset('tweet_eval', self.subset_name)
 
 def main():
     for subset_name in ['emoji', 'emotion', 'hate', 'irony', 'offensive', 'sentiment', 'stance_abortion', 'stance_atheism', 'stance_climate', 'stance_feminist', 'stance_hillary']:

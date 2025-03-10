@@ -31,7 +31,7 @@ class PIQA(FewshotGymClassificationDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset('piqa', trust_remote_code=True)
+        return datasets.load_dataset('piqa')
 
 def main():
     dataset = PIQA()

@@ -28,7 +28,7 @@ class Mocha(FewshotGymClassificationDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset('mocha', trust_remote_code=True)
+        return datasets.load_dataset('mocha')
 
 def main():
     dataset = Mocha()

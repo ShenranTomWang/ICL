@@ -24,7 +24,7 @@ class SearchQA(FewshotGymTextToTextDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset("search_qa", "train_test_val", trust_remote_code=True)
+        return datasets.load_dataset("search_qa", "train_test_val")
 
 def main():
     dataset = SearchQA()

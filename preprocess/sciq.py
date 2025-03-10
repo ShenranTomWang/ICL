@@ -42,7 +42,7 @@ class SciQ(FewshotGymTextToTextDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset("sciq", trust_remote_code=True)
+        return datasets.load_dataset("sciq")
 
 def main():
     dataset = SciQ()

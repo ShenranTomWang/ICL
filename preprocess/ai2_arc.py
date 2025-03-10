@@ -34,7 +34,7 @@ class AI2_ARC(FewshotGymTextToTextDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset("ai2_arc", "ARC-Challenge", trust_remote_code=True)
+        return datasets.load_dataset("ai2_arc", "ARC-Challenge")
 
 def main():
     dataset = AI2_ARC()

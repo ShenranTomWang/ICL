@@ -31,7 +31,7 @@ class Sick(FewshotGymClassificationDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset('sick', trust_remote_code=True)
+        return datasets.load_dataset('sick')
 
 def main():
     dataset = Sick()

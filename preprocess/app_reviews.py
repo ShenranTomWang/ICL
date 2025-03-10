@@ -40,7 +40,7 @@ class AppReviews(FewshotGymClassificationDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset('app_reviews', trust_remote_code=True)
+        return datasets.load_dataset('app_reviews')
 
 def main():
     dataset = AppReviews()

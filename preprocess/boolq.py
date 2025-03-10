@@ -30,7 +30,7 @@ class BoolQ(FewshotGymClassificationDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset('boolq', trust_remote_code=True)
+        return datasets.load_dataset('boolq')
 
 def main():
     dataset = BoolQ()

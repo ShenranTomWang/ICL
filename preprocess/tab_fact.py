@@ -36,7 +36,7 @@ class TabFact(FewshotGymClassificationDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset('tab_fact', 'tab_fact', trust_remote_code=True)
+        return datasets.load_dataset('tab_fact', 'tab_fact')
 
 def main():
     dataset = TabFact()

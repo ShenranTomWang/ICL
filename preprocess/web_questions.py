@@ -40,7 +40,7 @@ class WebQuestions(FewshotGymTextToTextDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset("web_questions", trust_remote_code=True)
+        return datasets.load_dataset("web_questions")
 
 def main():
     dataset = WebQuestions()

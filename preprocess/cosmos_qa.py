@@ -35,7 +35,7 @@ class CosmosQA(FewshotGymTextToTextDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset("cosmos_qa", trust_remote_code=True)
+        return datasets.load_dataset("cosmos_qa")
 
 def main():
     dataset = CosmosQA()

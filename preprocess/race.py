@@ -38,7 +38,7 @@ class Race(FewshotGymTextToTextDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset("race", self.subset, trust_remote_code=True)
+        return datasets.load_dataset("race", self.subset)
 
 def main():
     for subset in ["middle", "high"]:

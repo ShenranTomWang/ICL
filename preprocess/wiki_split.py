@@ -25,7 +25,7 @@ class WikiSplit(FewshotGymTextToTextDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset("wiki_split", trust_remote_code=True)
+        return datasets.load_dataset("wiki_split")
 
 def main():
     dataset = WikiSplit()

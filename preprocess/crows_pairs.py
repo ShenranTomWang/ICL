@@ -50,7 +50,7 @@ class CrowsPairs(FewshotGymClassificationDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset('crows_pairs', trust_remote_code=True)
+        return datasets.load_dataset('crows_pairs')
 
 def main():
     dataset = CrowsPairs()

@@ -36,7 +36,7 @@ class QUAIL(FewshotGymTextToTextDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset("quail", trust_remote_code=True)
+        return datasets.load_dataset("quail")
 
 def main():
     dataset = QUAIL()

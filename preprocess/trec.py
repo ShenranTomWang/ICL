@@ -49,7 +49,7 @@ class TREC(FewshotGymClassificationDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset('trec', trust_remote_code=True)
+        return datasets.load_dataset('trec')
 
 def main():
     dataset = TREC()

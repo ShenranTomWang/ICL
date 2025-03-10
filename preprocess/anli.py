@@ -41,7 +41,7 @@ class ANLI(FewshotGymClassificationDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset('anli', trust_remote_code=True)
+        return datasets.load_dataset('anli')
 
 def main():
     dataset = ANLI()

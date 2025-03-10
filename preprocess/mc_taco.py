@@ -47,7 +47,7 @@ class MC_TACO(FewshotGymClassificationDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset('mc_taco', trust_remote_code=True)
+        return datasets.load_dataset('mc_taco')
 
 def main():
     dataset = MC_TACO()

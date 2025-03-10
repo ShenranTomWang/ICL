@@ -38,7 +38,7 @@ class AdeCorpusV2_Effect(FewshotGymTextToTextDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset('ade_corpus_v2', "Ade_corpus_v2_drug_ade_relation", trust_remote_code=True)
+        return datasets.load_dataset('ade_corpus_v2', "Ade_corpus_v2_drug_ade_relation")
 
 def main():
     dataset = AdeCorpusV2_Effect()

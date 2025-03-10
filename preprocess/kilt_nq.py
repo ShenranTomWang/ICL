@@ -24,7 +24,7 @@ class Kilt_NQ(FewshotGymTextToTextDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset('kilt_tasks','nq', trust_remote_code=True)
+        return datasets.load_dataset('kilt_tasks','nq')
 
 def main():
     dataset = Kilt_NQ()

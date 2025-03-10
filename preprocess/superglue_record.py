@@ -24,7 +24,7 @@ class Superglue_Record(FewshotGymTextToTextDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset("super_glue", "record", trust_remote_code=True)
+        return datasets.load_dataset("super_glue", "record")
 
 def main():
     dataset = Superglue_Record()

@@ -25,7 +25,7 @@ class WikiSQL(FewshotGymTextToTextDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset("wikisql", trust_remote_code=True)
+        return datasets.load_dataset("wikisql")
 
 def main():
     dataset = WikiSQL()

@@ -24,7 +24,7 @@ class AESLC(FewshotGymTextToTextDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset("aeslc", trust_remote_code=True)
+        return datasets.load_dataset("aeslc")
 
 def main():
     dataset = AESLC()

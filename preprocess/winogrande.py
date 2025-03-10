@@ -27,7 +27,7 @@ class Winogrande(FewshotGymTextToTextDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset('winogrande', 'winogrande_xl', trust_remote_code=True)
+        return datasets.load_dataset('winogrande', 'winogrande_xl')
 
 def main():
     dataset = Winogrande()

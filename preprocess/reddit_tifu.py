@@ -40,7 +40,7 @@ class Reddit_TIFU(FewshotGymTextToTextDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset("reddit_tifu", "long", trust_remote_code=True)
+        return datasets.load_dataset("reddit_tifu", "long")
 
 def main():
     dataset = Reddit_TIFU("tldr")

@@ -30,7 +30,7 @@ class CommonGen(FewshotGymTextToTextDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset('common_gen', trust_remote_code=True)
+        return datasets.load_dataset('common_gen')
 
 def main():
     dataset = CommonGen()

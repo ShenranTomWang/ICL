@@ -39,7 +39,7 @@ class WIQA(FewshotGymTextToTextDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset("wiqa", trust_remote_code=True)
+        return datasets.load_dataset("wiqa")
 
 def main():
     dataset = WIQA()

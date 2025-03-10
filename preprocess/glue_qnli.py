@@ -30,7 +30,7 @@ class Glue_QNLI(FewshotGymClassificationDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset('glue', 'qnli', trust_remote_code=True)
+        return datasets.load_dataset('glue', 'qnli')
 
 def main():
     dataset = Glue_QNLI()

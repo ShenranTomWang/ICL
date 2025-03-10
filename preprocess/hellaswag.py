@@ -36,7 +36,7 @@ class HellaSwag(FewshotGymTextToTextDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset("hellaswag", trust_remote_code=True)
+        return datasets.load_dataset("hellaswag")
 
 def main():
     dataset = HellaSwag()

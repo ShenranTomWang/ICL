@@ -31,7 +31,7 @@ class DefinitePronounResolution(FewshotGymTextToTextDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset('definite_pronoun_resolution', trust_remote_code=True)
+        return datasets.load_dataset('definite_pronoun_resolution')
 
 def main():
     dataset = DefinitePronounResolution()

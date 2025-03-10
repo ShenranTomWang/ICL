@@ -54,7 +54,7 @@ class Circa(FewshotGymClassificationDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset('circa', trust_remote_code=True)
+        return datasets.load_dataset('circa')
 
 def main():
     dataset = Circa()

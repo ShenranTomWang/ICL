@@ -63,7 +63,7 @@ class Ethos(FewshotGymClassificationDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset('ethos', 'multilabel', trust_remote_code=True)
+        return datasets.load_dataset('ethos', 'multilabel')
 
 def main():
     for dimension in ["directed_vs_generalized", "disability", "gender", "national_origin", "race", "religion", "sexual_orientation"]:

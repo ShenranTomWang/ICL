@@ -24,7 +24,7 @@ class Kilt_AY2(FewshotGymTextToTextDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset('kilt_tasks','aidayago2', trust_remote_code=True)
+        return datasets.load_dataset('kilt_tasks','aidayago2')
 
 def main():
     dataset = Kilt_AY2()

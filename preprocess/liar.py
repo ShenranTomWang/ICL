@@ -35,7 +35,7 @@ class Liar(FewshotGymClassificationDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset('liar', trust_remote_code=True)
+        return datasets.load_dataset('liar')
 
 def main():
     dataset = Liar()

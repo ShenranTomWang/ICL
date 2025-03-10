@@ -24,7 +24,7 @@ class Kilt_ZSRE(FewshotGymTextToTextDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset('kilt_tasks','structured_zeroshot', trust_remote_code=True)
+        return datasets.load_dataset('kilt_tasks','structured_zeroshot')
 
 def main():
     dataset = Kilt_ZSRE()

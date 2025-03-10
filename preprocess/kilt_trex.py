@@ -24,7 +24,7 @@ class Kilt_TREX(FewshotGymTextToTextDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset('kilt_tasks','trex', trust_remote_code=True)
+        return datasets.load_dataset('kilt_tasks','trex')
 
 def main():
     dataset = Kilt_TREX()

@@ -30,7 +30,7 @@ class RottenTomatos(FewshotGymClassificationDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset('rotten_tomatoes', trust_remote_code=True)
+        return datasets.load_dataset('rotten_tomatoes')
 
 def main():
     dataset = RottenTomatos()

@@ -24,7 +24,7 @@ class Kilt_Fever(FewshotGymTextToTextDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset('kilt_tasks','fever', trust_remote_code=True)
+        return datasets.load_dataset('kilt_tasks','fever')
 
 def main():
     dataset = Kilt_Fever()

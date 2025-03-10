@@ -48,7 +48,7 @@ class LAMA(FewshotGymTextToTextDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset("lama", self.subset_name, trust_remote_code=True)
+        return datasets.load_dataset("lama", self.subset_name)
 
 def main():
     for subset in ["trex", "squad", "google_re", "conceptnet"]: 

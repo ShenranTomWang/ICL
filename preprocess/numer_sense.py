@@ -39,7 +39,7 @@ class NumerSense(FewshotGymTextToTextDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset('numer_sense', trust_remote_code=True)
+        return datasets.load_dataset('numer_sense')
 
 def main():
     dataset = NumerSense()
