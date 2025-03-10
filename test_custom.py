@@ -81,7 +81,10 @@ def do_inference_hf(operator: Operator, dataset: Dataset, batch_size: int, cache
         input_ids = input_ids.to(device)
         attention_mask = attention_mask.to(device)
         try:
-            output = operator.model(input_ids=input_ids, attention_mask=attention_mask, **cache_kwargs)
+            if cache_kwargs is None:
+                output = operator.model(input_ids=input_ids, attention_mask=attention_mask)
+            else:
+                output = operator.model(input_ids=input_ids, attention_mask=attention_mask, **cache_kwargs)
             logit = output.logits
             output_logits = logit[..., index, :].squeeze(-2)        # (batch_size, vocab_size)
             output_logits = output_logits[..., option_ids]          # (batch_size, num_options)
