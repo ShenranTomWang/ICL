@@ -1,0 +1,11 @@
+{
+    "task_type": "classification",
+    "options": [
+        "ABBR",
+        "DESC",
+        "ENTY",
+        "HUM",
+        "LOC",
+        "NUM"
+    ]
+}
