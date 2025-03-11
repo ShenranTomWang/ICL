@@ -217,7 +217,7 @@ def main(args):
                     for i in range(len(cache)):
                         cache[i] = cache[i][0]
                     cache = tuple(cache)
-                cache_kwargs = operator.cache2kwargs(cache)
+                cache_kwargs = operator.cache2kwargs(cache, **args.cache2kwargs_kwargs)
             else:
                 cache_kwargs = None
 

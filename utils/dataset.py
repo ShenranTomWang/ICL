@@ -49,7 +49,7 @@ class Dataset:
             self.inputs: list<str>, 
             self.outputs: list<str>
         """
-        if self.demo is None and use_demo:
+        if self.demo is None or use_demo:
             self.prepare_demo()
         for i, dp_test in enumerate(self.test):
             self.test[i]["input"] = (self.demo if use_demo else "") + dp_test["input"] + ("\n" if self.add_newlines else " ")
@@ -71,14 +71,19 @@ class Dataset:
         """
         if self.inputs is None or self.outputs is None:
             self.preprocess(use_demo)
+            
         inputs = self.inputs
+        
         if tokenizer.pad_token is None:
             tokenizer.pad_token = tokenizer.eos_token
+            
+        self.demo_tokenized = tokenizer([self.demo], return_tensors="pt", padding=True, truncation=True)
+        
         inputs = [tokenizer(input, return_tensors="pt", padding=True, truncation=True) for input in inputs]
         inputs = [
             {
-                "input_ids": input["input_ids"][..., 1:] if not use_demo else input["input_ids"],        # skip bos token if not using demo
-                "attention_mask": input["attention_mask"]
+                "input_ids": input["input_ids"][..., 1:] if not use_demo else input["input_ids"],                   # skip bos token if not using demo
+                "attention_mask": input["attention_mask"][..., 1:] if not use_demo else input["attention_mask"]     # skip bos token if not using demo
             }
             for input in inputs
         ]
