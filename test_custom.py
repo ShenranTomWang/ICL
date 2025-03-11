@@ -274,7 +274,7 @@ if __name__=='__main__':
 
     parser.add_argument("--n_skips", type=int, default=0, help="number of tokens to skip in the output, assumes having <bos> token, set to -1 if tokenizer has no <bos> token")
     parser.add_argument("--dtype", type=str, default="bfloat16", choices=["bfloat16", "float16", "float32"])
-    parser.add_argument("--device", type=str, default="cuda:0")
+    parser.add_argument("--device", type=str, default="cuda")
     parser.add_argument("--test_batch_size", type=int, default=1)
     parser.add_argument("--use_random_english_words", default=False, action="store_true")
     
@@ -292,7 +292,6 @@ if __name__=='__main__':
     parser.add_argument("--model", type=str, required=True)
     parser.add_argument("--operator", type=str, required=True, choices=["TransformerOperator", "HymbaOperator", "RWKVOperator", "MambaOperator", "ZambaOperator"])
 
-    torch.cuda.empty_cache()
     args = parser.parse_args()
     if args.out_dir is None:
         args.out_dir = "out/" + "/".join(args.model.split("/")[-1:])
