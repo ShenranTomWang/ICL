@@ -32,8 +32,10 @@ class MambaOperator(Operator):
             cache = self.model(**tokenized, use_cache=True).cache_params     # TODO: left off here, need to check cache args
             ssm_state = cache.ssm_states
             conv_state = cache.conv_states
-            ssm_state = ssm_state[layers, 0, ...]    # (n_layers, ssm_intermediate_size, ssm_state_size)
-            conv_state = conv_state[layers, 0, ...]  # (n_layers, conv_intermediate_size, conv_state_size)
+            ssm_state = [ssm_state[layer] for layer in layers]
+            conv_state = [conv_state[layer] for layer in layers]
+            ssm_state = torch.stack(ssm_state, dim=0).squeeze(1)    # (n_layers, ssm_intermediate_size, ssm_state_size)
+            conv_state = torch.stack(conv_state, dim=0).squeeze(1)  # (n_layers, conv_intermediate_size, conv_state_size)
             cache = (ssm_state, conv_state)
             ssm_state, conv_state = activation_callback(cache)
             ssm_states.append(ssm_state)
@@ -79,6 +81,7 @@ class MambaOperator(Operator):
     def cache2kwargs(
         self,
         cache: tuple[torch.Tensor],
+        demo_length: int,
         layers: list[int] = None,
         keep_ssm: bool = True,
         keep_conv: bool = True,
@@ -88,7 +91,7 @@ class MambaOperator(Operator):
         Convert cache to kwargs
         Args:
             cache (tuple[torch.Tensor])
-            cache_position (int): position of cache
+            demo_length (int): length of demo, tokenized
             layers (list[int], optional): list of layers to use cache, if None, use all layers. Defaults to None.
             keep_ssm (bool, optional): whether to keep ssm cache. Defaults to True.
             keep_conv (bool, optional): whether to keep conv cache. Defaults to True.
@@ -101,28 +104,34 @@ class MambaOperator(Operator):
         ssm_state, conv_state = cache
         ssm_state = ssm_state.unsqueeze(1)      # (n_layers, batch_size=1, ssm_intermediate_size, ssm_state_size)
         conv_state = conv_state.unsqueeze(1)    # (n_layers, batch_size=1, conv_intermediate_size, conv_state_size)
+        ssm_state = [ssm_state[i] for i in self.ALL_LAYERS]
+        conv_state = [conv_state[i] for i in self.ALL_LAYERS]
         ssm_states, conv_states = None, None
         if keep_ssm:
             i = 0
             ssm_states = []
             for layer in self.ALL_LAYERS:
                 if layer in layers:
-                    ssm_states.append(ssm_state[i, ...])
+                    ssm_state_layer = ssm_state[i]
                     i += 1
                 else:
-                    ssm_states.append(torch.zeros_like(ssm_state[0, ...]))
-            ssm_states = torch.stack(ssm_states, dim=0)
+                    ssm_state_layer = torch.zeros_like(ssm_state[0])
+                torch._dynamo.mark_static_address(ssm_state_layer)
+                ssm_states.append(ssm_state_layer)
         if keep_conv:
             i = 0
             conv_states = []
             for layer in self.ALL_LAYERS:
                 if layer in layers:
-                    conv_states.append(conv_state[i, ...])
+                    conv_state_layer = conv_state[i]
                     i += 1
                 else:
-                    conv_states.append(torch.zeros_like(conv_state[0, ...]))
-            conv_states = torch.stack(conv_states, dim=0)
+                    conv_state_layer = torch.zeros_like(conv_state[0])
+                torch._dynamo.mark_static_address(conv_state_layer)
+                conv_states.append(conv_state_layer)
         cache_instance = MambaCache(self.model.config, 1, dtype=self.dtype, device=self.device, ssm_states=ssm_states, conv_states=conv_states)
-        kwargs = {"use_cache": True, "cache_params": cache_instance, "cache_position": torch.arange(0, conv_state.shape[-1], dtype=torch.long, device=self.device)}
-        return kwargs
+        cache_kwargs = {"use_cache": True, "cache_params": cache_instance, "cache_position": torch.tensor([demo_length], device=self.device, dtype=self.dtype)}
+        outputs = {}
+        cache_kwargs = self.model._update_model_kwargs_for_generation(outputs, cache_kwargs)
+        return cache_kwargs
         
