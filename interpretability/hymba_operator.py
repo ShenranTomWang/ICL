@@ -92,10 +92,10 @@ class HymbaOperator(Operator):
         Returns:
             tuple[torch.Tensor]: k, v, ssm_state, conv_state
         """
-        k_path = os.path.join(dir, f"{split}_cache_k_{index}.pt")
-        v_path = os.path.join(dir, f"{split}_cache_v_{index}.pt")
-        ssm_state_path = os.path.join(dir, f"{split}_cache_ssm_state_{index}.pt")
-        conv_state_path = os.path.join(dir, f"{split}_cache_conv_state_{index}.pt")
+        k_path = os.path.join(dir, f"{split}_k_{index}.pt")
+        v_path = os.path.join(dir, f"{split}_v_{index}.pt")
+        ssm_state_path = os.path.join(dir, f"{split}_ssm_state_{index}.pt")
+        conv_state_path = os.path.join(dir, f"{split}_conv_state_{index}.pt")
         k = torch.load(k_path, map_location=self.device).to(self.dtype)
         v = torch.load(v_path, map_location=self.device).to(self.dtype)
         ssm_state = torch.load(ssm_state_path, map_location=self.device).to(self.dtype)
