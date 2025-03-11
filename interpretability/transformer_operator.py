@@ -123,6 +123,5 @@ class TransformerOperator(Operator):
                     v_list.append(torch.zeros((1, 0)))
         cache_instance.key_cache = k_list
         cache_instance.value_cache = v_list
-        # TODO: left off here last time
-        kwargs = {"past_key_values": cache_instance}
+        kwargs = {"past_key_values": cache_instance, "cache_position": torch.tensor([0], device=self.device, dtype=self.dtype)}
         return kwargs

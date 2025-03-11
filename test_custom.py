@@ -81,9 +81,12 @@ def do_inference_hf(operator: Operator, dataset: Dataset, batch_size: int, cache
         input_ids = input_ids.to(device)
         attention_mask = attention_mask.to(device)
         try:
+            # import pdb; pdb.set_trace()
             if cache_kwargs is None:
                 output = operator.model(input_ids=input_ids, attention_mask=attention_mask)
             else:
+                # input_length = input_ids.shape[1]
+                # cache_kwargs = operator.prepare_cache_kwargs_for_inputs(cache_kwargs, input_length)
                 output = operator.model(input_ids=input_ids, attention_mask=attention_mask, **cache_kwargs)
             logit = output.logits
             output_logits = logit[..., index, :].squeeze(-2)        # (batch_size, vocab_size)
@@ -91,10 +94,12 @@ def do_inference_hf(operator: Operator, dataset: Dataset, batch_size: int, cache
             output = torch.argmax(output_logits, dim=-1)            # (batch_size)
             outputs.append(output.cpu())
         except Exception as e:
+            # import pdb; pdb.set_trace()
             if args.verbose:
                 logger.exception(e)
             else:
                 logger.error(e)
+                # pass
             output = torch.full((batch_size,), -1, device="cpu", dtype=torch.long)
             outputs.append(output)
     
@@ -217,7 +222,8 @@ def main(args):
                     for i in range(len(cache)):
                         cache[i] = cache[i][0]
                     cache = tuple(cache)
-                cache_kwargs = operator.cache2kwargs(cache, **args.cache2kwargs_kwargs)
+                demo_length = dataset.demo_tokenized["input_ids"].shape[1]
+                cache_kwargs = operator.cache2kwargs(cache, demo_length=demo_length, **args.cache2kwargs_kwargs)
             else:
                 cache_kwargs = None
 
@@ -286,6 +292,7 @@ if __name__=='__main__':
     parser.add_argument("--model", type=str, required=True)
     parser.add_argument("--operator", type=str, required=True, choices=["TransformerOperator", "HymbaOperator", "RWKVOperator", "MambaOperator", "ZambaOperator"])
 
+    torch.cuda.empty_cache()
     args = parser.parse_args()
     if args.out_dir is None:
         args.out_dir = "out/" + "/".join(args.model.split("/")[-1:])

@@ -1,6 +1,6 @@
 import shutup; shutup.please()
-from transformers import AutoTokenizer, AutoModelForCausalLM
-from interpretability.models.mamba import MambaCache
+from transformers import AutoTokenizer
+from interpretability.models.mamba import MambaCache, MambaForCausalLM
 import torch
 from typing import Callable
 from .operator import Operator
@@ -11,7 +11,7 @@ class MambaOperator(Operator):
         self.device = device
         self.dtype = dtype
         tokenizer = AutoTokenizer.from_pretrained(path, trust_remote_code=True)
-        model = AutoModelForCausalLM.from_pretrained(path, trust_remote_code=True).to(device).to(dtype)
+        model = MambaForCausalLM.from_pretrained(path).to(device).to(dtype)
         self.ALL_LAYERS = [i for i in range(model.config.n_layer)]
         super().__init__(tokenizer, model)
     
@@ -130,8 +130,19 @@ class MambaOperator(Operator):
                 torch._dynamo.mark_static_address(conv_state_layer)
                 conv_states.append(conv_state_layer)
         cache_instance = MambaCache(self.model.config, 1, dtype=self.dtype, device=self.device, ssm_states=ssm_states, conv_states=conv_states)
-        cache_kwargs = {"use_cache": True, "cache_params": cache_instance, "cache_position": torch.tensor([demo_length], device=self.device, dtype=self.dtype)}
-        outputs = {}
-        cache_kwargs = self.model._update_model_kwargs_for_generation(outputs, cache_kwargs)
+        cache_kwargs = {"use_cache": True, "cache_params": cache_instance, "cache_position": torch.tensor([demo_length], device=self.device)}
         return cache_kwargs
         
+        
+    def prepare_cache_kwargs_for_inputs(self, cache_kwargs: dict, input_length: int) -> dict:
+        """
+        Prepare cache kwargs for inputs
+        Args:
+            cache_kwargs (dict)
+            input_length (int): length of input, tokenized
+        Returns:
+            dict: cache_kwargs
+        """
+        outputs = {}
+        cache_kwargs = self.model._update_model_kwargs_for_generation(outputs, cache_kwargs, num_new_tokens=input_length)
+        return cache_kwargs

@@ -144,6 +144,17 @@ class Operator(ABC):
         """
         pass
     
+    def prepare_cache_kwargs_for_inputs(self, cache_kwargs: dict, input_length: int) -> dict:
+        """
+        Prepare cache kwargs for inputs
+        Args:
+            cache_kwargs (dict)
+            input_length (int): length of input, tokenized
+        Returns:
+            dict: cache_kwargs
+        """
+        return cache_kwargs
+    
     def store_resid(self, activation: torch.Tensor, path: str) -> None:
         """
         Store residual to specified path
