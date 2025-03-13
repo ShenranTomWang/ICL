@@ -3,6 +3,7 @@ from transformer_lens.hook_points import HookPoint
 from transformer_lens.utils import get_act_name
 from transformer_lens import HookedTransformer
 from transformers import AutoTokenizer, AutoModelForCausalLM
+from transformers.cache_utils import Cache, MambaCache
 import torch
 from typing import Callable, Any
 from abc import ABC, abstractmethod
@@ -12,10 +13,11 @@ def layer_callback(resid: torch.Tensor) -> torch.Tensor:
     return resid[0, -1, :]
 
 class Operator(ABC):
-    def __init__(self, tokenizer: AutoTokenizer, model: AutoModelForCausalLM, tl_model: HookedTransformer = None):
+    def __init__(self, tokenizer: AutoTokenizer, model: AutoModelForCausalLM, device: torch.DeviceObjType, dtype: torch.dtype, tl_model: HookedTransformer = None):
         self.model = model if tl_model == None else tl_model
         self.tokenizer: AutoTokenizer = tokenizer
-        self.device = model.device
+        self.device = device
+        self.dtype = dtype
         self.transformer_lens = tl_model != None
         
     def __call__(self, text: str, **kwargs) -> torch.Tensor:
@@ -96,30 +98,29 @@ class Operator(ABC):
         return activations
     
     @abstractmethod
-    def extract_cache(self, inputs: list, layers: list, activation_callback: Callable = lambda x: x) -> tuple[list[torch.Tensor]]:
+    def extract_cache(self, inputs: list, activation_callback: Callable = lambda x: x) -> Cache | MambaCache:
         """
-        Extract cache at specified layers
+        Extract cache
         Args:
             inputs (list): list of inputs
-            layers (list): list of layer indices
             activation_callback_k (function(tuple[torch.Tensor])): callback function for cache, applied to all cache from all layers
         Returns:
-            cache (tuple[list[torch.Tensor]]): cache
+            cache (Cache | MambaCache): transformers cache
         """
         pass
     
     @abstractmethod
-    def store_cache(self, cache: tuple[Any], path: str) -> None:
+    def store_cache(self, cache: Cache | MambaCache, path: str) -> None:
         """
         Store cache to specified path
         Args:
-            cache (tuple[Any]): cache
+            cache (Cache | MambaCache): cache
             path (str): path to store cache
         """
         pass
     
     @abstractmethod
-    def load_cache(self, dir: str, split: str, index: int) -> tuple:
+    def load_cache(self, dir: str, split: str, index: int) -> Cache | MambaCache:
         """
         Load cache from specified directory
         Args:
@@ -127,17 +128,17 @@ class Operator(ABC):
             split (str): split of cache
             index (int): index of cache
         Returns:
-            tuple: cache
+            Cache | MambaCache: cache
         """
         pass
     
     
     @abstractmethod
-    def cache2kwargs(self, cache: tuple, **kwargs: dict) -> dict:
+    def cache2kwargs(self, cache: Cache | MambaCache, **kwargs: dict) -> dict:
         """
         Convert cache to kwargs for forward pass
         Args:
-            cache (tuple): cache
+            cache (Cache | MambaCache): cache
             kwargs (dict): kwargs
         Returns:
             dict: kwargs

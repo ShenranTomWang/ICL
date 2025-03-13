@@ -1,6 +1,6 @@
 import shutup; shutup.please()
 from transformers import AutoTokenizer, AutoModelForCausalLM
-from interpretability.models.zamba import ZambaHybridDynamicCache
+from interpretability.models.zamba2 import ZambaHybridDynamicCache
 import torch
 from typing import Callable
 from .operator import Operator
@@ -25,6 +25,7 @@ class ZambaOperator(Operator):
     @torch.inference_mode()
     def extract_cache(self, inputs: list, layers: list, activation_callback: Callable = lambda x: x) -> tuple[list[torch.Tensor]]:
         """
+        TODO: should return a cache object
         Extract internal representations at specified layers of cache
         Args:
             inputs (list): list of inputs
@@ -61,7 +62,7 @@ class ZambaOperator(Operator):
     
     def store_cache(self, cache: tuple[list[torch.Tensor]], path: str) -> None:
         """
-        TODO: modify this method
+        TODO: modify this method to take a cache object and save
         Store cache to path
         Args:
             cache (tuple[list[torch.Tensor]])
@@ -82,6 +83,7 @@ class ZambaOperator(Operator):
         
     def load_cache(self, dir: str, split: str, index: int) -> tuple[torch.Tensor]:
         """
+        TODO: should load into a cache object
         Load cache from specified directory
         Args:
             dir (str)
@@ -112,6 +114,7 @@ class ZambaOperator(Operator):
         **kwargs
     ) -> dict:
         """
+        TODO: should take a cache object and return kwargs
         Convert cache to kwargs
         Args:
             cache (tuple[torch.Tensor])

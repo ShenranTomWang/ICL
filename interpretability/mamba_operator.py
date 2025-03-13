@@ -8,20 +8,18 @@ import logging, os
 
 class MambaOperator(Operator):
     def __init__(self, path: str, device: torch.DeviceObjType, dtype: torch.dtype):
-        self.device = device
-        self.dtype = dtype
         tokenizer = AutoTokenizer.from_pretrained(path, trust_remote_code=True)
         model = MambaForCausalLM.from_pretrained(path).to(device).to(dtype)
         self.ALL_LAYERS = [i for i in range(model.config.n_layer)]
-        super().__init__(tokenizer, model)
+        super().__init__(tokenizer, model, device, dtype)
     
     @torch.inference_mode()
-    def extract_cache(self, inputs: list, layers: list, activation_callback: Callable = lambda x: x) -> tuple[list[torch.Tensor]]:
+    def extract_cache(self, inputs: list, activation_callback: Callable = lambda x: x) -> tuple[list[torch.Tensor]]:
         """
+        TODO: should return a cache object
         Extract internal representations at specified layers of cache
         Args:
             inputs (list): list of inputs
-            layers (list): list of layer indices
             activation_callback_k (function(tuple[torch.Tensor]) -> tuple[torch.Tensor]): callback function for ssm_state, conv_state applied to all cache from all layers
         Returns:
             tuple[list[torch.Tensor]]: list of ssm_states (n_layers, ssm_intermediate_size, ssm_state_size), list of conv_states (n_layers, conv_intermediate_size, conv_state_size)
@@ -32,8 +30,6 @@ class MambaOperator(Operator):
             cache = self.model(**tokenized, use_cache=True).cache_params     # TODO: left off here, need to check cache args
             ssm_state = cache.ssm_states
             conv_state = cache.conv_states
-            ssm_state = [ssm_state[layer] for layer in layers]
-            conv_state = [conv_state[layer] for layer in layers]
             ssm_state = torch.stack(ssm_state, dim=0).squeeze(1)    # (n_layers, ssm_intermediate_size, ssm_state_size)
             conv_state = torch.stack(conv_state, dim=0).squeeze(1)  # (n_layers, conv_intermediate_size, conv_state_size)
             cache = (ssm_state, conv_state)
@@ -45,6 +41,7 @@ class MambaOperator(Operator):
     
     def store_cache(self, cache: tuple[list[torch.Tensor]], path: str) -> None:
         """
+        TODO: should take a cache object and save
         Store cache to path
         Args:
             cache (tuple[list[torch.Tensor]])
@@ -63,6 +60,7 @@ class MambaOperator(Operator):
         
     def load_cache(self, dir: str, split: str, index: int) -> tuple[torch.Tensor]:
         """
+        TODO: should load into a cache object
         Load cache from specified directory
         Args:
             dir (str)
@@ -88,6 +86,7 @@ class MambaOperator(Operator):
         **kwargs
     ) -> dict:
         """
+        TODO: debug this function for proper cache conversion, should take a cache object
         Convert cache to kwargs
         Args:
             cache (tuple[torch.Tensor])

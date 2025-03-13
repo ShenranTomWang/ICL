@@ -10,17 +10,15 @@ class RWKVOperator(Operator):
     def __init__(self, path: str, device: torch.DeviceObjType, dtype: torch.dtype):
         model = AutoModelForCausalLM.from_pretrained(path, trust_remote_code=True).to(device).to(dtype)
         tokenizer = AutoTokenizer.from_pretrained(path, trust_remote_code=True)
-        self.dtype = dtype
-        self.device = device
-        super().__init__(tokenizer, model)
+        super().__init__(tokenizer, model, device, dtype)
     
     @torch.inference_mode()
-    def extract_cache(self, inputs: list, layers: list, activation_callback: Callable = lambda x: x) -> tuple[list[torch.Tensor]]:
+    def extract_cache(self, inputs: list, activation_callback: Callable = lambda x: x) -> tuple[list[torch.Tensor]]:
         """
+        TODO: should return a cache object
         Extract internal representations at specified layers of cache
         Args:
             inputs (list): list of inputs
-            layers (list): list of layer indices
             activation_callback_k (function(tuple[torch.Tensor])): callback function for cache, applied to all cache from all layers
         Returns:
             tuple[list[torch.Tensor]]: list of x (n_inputs, n_layers, hidden_size), list of kv (n_inputs, n_layers, n_heads, head_dim, head_dim),
@@ -30,9 +28,9 @@ class RWKVOperator(Operator):
             tokenized = self.tokenizer(input, return_tensors="pt", truncation=True).to(self.device)
             cache = self.model(**tokenized, use_cache=True).state
             x, kv, ffn = cache[0], cache[1], cache[2]
-            x = torch.movedim(x[..., layers], -1, 0).squeeze(1)       # (n_layers, hidden_size)
-            kv = torch.movedim(kv[..., layers], -1, 0).squeeze(1)     # (n_layers, n_heads, head_dim, head_dim)
-            ffn = torch.movedim(ffn[..., layers], -1, 0).squeeze(1)   # (n_layers, hidden_size)
+            x = torch.movedim(x, -1, 0).squeeze(1)       # (n_layers, hidden_size)
+            kv = torch.movedim(kv, -1, 0).squeeze(1)     # (n_layers, n_heads, head_dim, head_dim)
+            ffn = torch.movedim(ffn, -1, 0).squeeze(1)   # (n_layers, hidden_size)
             cache = (x, kv, ffn)
             cache = activation_callback(cache)
             return cache
@@ -48,6 +46,7 @@ class RWKVOperator(Operator):
     
     def store_cache(self, cache: tuple[list[torch.Tensor]], path: str) -> None:
         """
+        TODO: should take a cache object and save
         Store cache to path
         Args:
             cache (tuple[list[torch.Tensor]]): list of x (n_inputs, n_layers, hidden_size), 
@@ -68,6 +67,17 @@ class RWKVOperator(Operator):
         logger.info(f"Saved activations to {path}")
         
     def load_cache(self, dir: str, split: str, index: int) -> tuple:
+        """
+        TODO: should load into a cache object
+        Load cache from specified directory
+        Args:
+            dir (str): directory to load cache from
+            split (str): cache split
+            index (int): index of cache
+
+        Returns:
+            tuple
+        """
         xs_path = os.path.join(dir, f"{split}_x_{index}.pt")
         kvs_path = os.path.join(dir, f"{split}_kv_{index}.pt")
         ffns_path = os.path.join(dir, f"{split}_ffn_{index}.pt")
@@ -78,6 +88,7 @@ class RWKVOperator(Operator):
     
     def cache2kwargs(self, cache: tuple[torch.Tensor], keep_x: bool = True, keep_kv: bool = True, keep_ffn: bool = True, **kwargs) -> dict:
         """
+        TODO: should take a cache object and return kwargs
         Convert cache to kwargs
         Args:
             cache (tuple[torch.Tensor])

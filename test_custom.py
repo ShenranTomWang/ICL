@@ -94,12 +94,11 @@ def do_inference_hf(operator: Operator, dataset: Dataset, batch_size: int, cache
             output = torch.argmax(output_logits, dim=-1)            # (batch_size)
             outputs.append(output.cpu())
         except Exception as e:
-            # import pdb; pdb.set_trace()
+            import pdb; pdb.set_trace()
             if args.verbose:
                 logger.exception(e)
             else:
                 logger.error(e)
-                # pass
             output = torch.full((batch_size,), -1, device="cpu", dtype=torch.long)
             outputs.append(output)
     
@@ -213,15 +212,11 @@ def main(args):
                     demo_cache_dir = os.path.join(args.demo_cache_dir, test_task, seed)
                     cache = operator.load_cache(demo_cache_dir, "demo", 0)
                 else:
-                    layers = list(range(operator.model.config.num_hidden_layers))
                     dataset.prepare_demo()
-                    cache = operator.extract_cache([dataset.demo], layers)
+                    cache = operator.extract_cache([dataset.demo])
                     if args.save_demo_cache:
                         operator.store_cache(cache, os.path.join(args.out_dir, test_task, seed, "demo"))
-                    cache = list(cache)
-                    for i in range(len(cache)):
-                        cache[i] = cache[i][0]
-                    cache = tuple(cache)
+                    cache = cache[0]
                 demo_length = dataset.demo_tokenized["input_ids"].shape[1]
                 cache_kwargs = operator.cache2kwargs(cache, demo_length=demo_length, **args.cache2kwargs_kwargs)
             else:

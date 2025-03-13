@@ -11,24 +11,22 @@ class HymbaOperator(Operator):
     KV_LAYERS = [0, 1, 3, 5, 7, 9, 11, 13, 15, 16, 19, 21, 23, 25, 27, 29, 31]
     
     def __init__(self, path: str, device: torch.DeviceObjType, dtype: torch.dtype):
-        self.device = device
-        self.dtype = dtype
         tokenizer = AutoTokenizer.from_pretrained(path, trust_remote_code=True)
         model = AutoModelForCausalLM.from_pretrained(path, trust_remote_code=True).to(device).to(dtype)
         self.ALL_LAYERS = [i for i in range(model.config.num_hidden_layers)]
-        super().__init__(tokenizer, model)
+        super().__init__(tokenizer, model, device, dtype)
     
     def get_cache_instance(self):
         cache = HybridMambaAttentionDynamicCache(self.model.config, 1, device=self.device, dtype=self.dtype, layer_type=self.model.config.layer_type)
         return cache
     
     @torch.inference_mode()
-    def extract_cache(self, inputs: list, layers: list, activation_callback: Callable = lambda x: x) -> tuple[list[torch.Tensor]]:
+    def extract_cache(self, inputs: list, activation_callback: Callable = lambda x: x) -> tuple[list[torch.Tensor]]:
         """
+        TODO: should return cache object
         Extract internal representations at specified layers of cache
         Args:
             inputs (list): list of inputs
-            layers (list): list of layer indices
             activation_callback_k (function(tuple[torch.Tensor]) -> tuple[torch.Tensor]): callback function for k, v, ssm_state, applied to all cache from all layers
         Returns:
             tuple[list[torch.Tensor]]: list of k (n_layers, n_heads, seqlen, k_head_dim), list of v (n_layers, n_heads, seqlen, v_head_dim),
@@ -44,10 +42,8 @@ class HymbaOperator(Operator):
             v = cache.value_cache
             ssm_state = cache.ssm_states
             conv_state = cache.conv_states
-            k = [k[layer] for layer in layers if len(k[layer].shape) == 4]
-            v = [v[layer] for layer in layers if len(v[layer].shape) == 4]
-            ssm_state = [ssm_state[layer] for layer in layers]
-            conv_state = [conv_state[layer] for layer in layers]
+            k = [k[layer] for layer in len(k) if len(k[layer].shape) == 4]
+            v = [v[layer] for layer in len(v) if len(v[layer].shape) == 4]
             k = torch.stack(k, dim=0).squeeze(1)                    # (n_layers, n_heads, seqlen, k_head_dim)
             v = torch.stack(v, dim=0).squeeze(1)                    # (n_layers, n_heads, seqlen, v_head_dim)
             ssm_state = torch.stack(ssm_state, dim=0).squeeze(1)    # (n_layers, ssm_intermediate_size, ssm_state_size)
@@ -63,6 +59,7 @@ class HymbaOperator(Operator):
     
     def store_cache(self, cache: tuple[list[torch.Tensor]], path: str) -> None:
         """
+        TODO: should take a cache object then save
         Store cache to path
         Args:
             cache (tuple[list[torch.Tensor]])
@@ -83,6 +80,7 @@ class HymbaOperator(Operator):
         
     def load_cache(self, dir: str, split: str, index: int) -> tuple[torch.Tensor]:
         """
+        TODO: should load into a cache object
         Load cache from specified directory
         Args:
             dir (str)
@@ -113,6 +111,7 @@ class HymbaOperator(Operator):
         **kwargs
     ) -> dict:
         """
+        TODO: debug this function for proper cache conversion, should take a cache object
         Convert cache to kwargs
         Args:
             cache (tuple[torch.Tensor])

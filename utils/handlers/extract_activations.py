@@ -104,5 +104,5 @@ def run_operator(operator: Operator, args, seed: int, fname: str, test_task: str
     elif args.stream == "cache":
         if fname is None:
             fname = f"{args.split}_cache.pt"
-        cache = operator.extract_cache(inputs, layers=args.layers)
+        cache = operator.extract_cache(inputs)
         operator.store_cache(cache, f"{args.out_dir}/{test_task}/{seed}/{fname}")
