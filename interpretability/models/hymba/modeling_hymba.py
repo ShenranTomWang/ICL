@@ -2311,7 +2311,7 @@ class HymbaModel(HymbaPreTrainedModel):
                     use_cache=use_cache,
                     kv_last_layer=kv_last_layer if self.inter_layer_kv_reuse else None,
                     use_swa=self.sliding_window is not None and i not in self.global_attn_idx,
-                    attention_override=attention_overrides[i]
+                    attention_override=attention_overrides[i] if attention_overrides is not None else None
                 )
 
             hidden_states = layer_outputs[0]
