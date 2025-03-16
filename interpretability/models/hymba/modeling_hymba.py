@@ -1474,7 +1474,18 @@ class HymbaBlock(nn.Module):
             C = self.C_layernorm(C)
         return dt, B, C
 
-    def cuda_kernels_forward(self, hidden_states: torch.Tensor, cache_params: HybridMambaAttentionDynamicCache = None, output_attentions: bool = False, attention_mask=None, position_ids=None, kv_last_layer=None, use_cache=False, use_swa=False):
+    def cuda_kernels_forward(
+        self,
+        hidden_states: torch.Tensor,
+        cache_params: HybridMambaAttentionDynamicCache = None,
+        output_attentions: bool = False,
+        attention_mask=None,
+        position_ids=None,
+        kv_last_layer=None, 
+        use_cache=False,
+        use_swa=False,
+        attention_override: tuple = None
+    ):
         projected_states = self.in_proj(hidden_states).transpose(1, 2)  ## (bs, latent_dim, seq_len) 
 
         ## Handle padding for Mamba: Set padding tokens to 0
@@ -1601,6 +1612,11 @@ class HymbaBlock(nn.Module):
                 cache_params.ssm_states[self.layer_idx].copy_(ssm_state)
                 
         scan_outputs = scan_outputs.transpose(1, 2)
+        
+        if attention_override is not None:
+            attn_hook, attn_intervention, scan_hook, scan_intervention = attention_override
+            attn_outputs = attn_hook(attn_outputs, attn_intervention)
+            scan_outputs = scan_hook(scan_outputs, scan_intervention)
 
         hidden_states = (self.pre_avg_layernorm1(attn_outputs) + self.pre_avg_layernorm2(scan_outputs)) / 2
         contextualized_states = self.out_proj(hidden_states)
@@ -1613,7 +1629,18 @@ class HymbaBlock(nn.Module):
         return outputs
 
 
-    def mixer_forward(self, hidden_states, output_attentions: bool = False, cache_params: HybridMambaAttentionDynamicCache = None, attention_mask=None, position_ids=None, kv_last_layer=None, use_cache=False, use_swa=False):
+    def mixer_forward(
+        self,
+        hidden_states,
+        output_attentions: bool = False,
+        cache_params: HybridMambaAttentionDynamicCache = None,
+        attention_mask=None,
+        position_ids=None,
+        kv_last_layer=None,
+        use_cache=False,
+        use_swa=False,
+        attention_override: tuple = None
+    ):
         if self.use_fast_kernels:
             if not is_fast_path_available or "cuda" not in self.x_proj[0].weight.device.type:
             # if not is_fast_path_available or "cuda" not in self.x_proj.weight.device.type:
@@ -1628,7 +1655,8 @@ class HymbaBlock(nn.Module):
                 position_ids=position_ids,
                 kv_last_layer=kv_last_layer,
                 use_cache=use_cache,
-                use_swa=use_swa
+                use_swa=use_swa,
+                attention_override=attention_override
             )
         else:
             raise ValueError("Support Mamba kernel only")
@@ -1639,6 +1667,7 @@ class HymbaBlock(nn.Module):
             hidden_states: torch.Tensor,
             past_key_value: Optional[HybridMambaAttentionDynamicCache] = None,
             output_attentions: bool = False,
+            attention_override: tuple = None,
             **kwargs,
     ) -> Tuple[torch.Tensor, Optional[Tuple[torch.Tensor]]]:
 
@@ -1650,7 +1679,8 @@ class HymbaBlock(nn.Module):
             kv_last_layer=kwargs['kv_last_layer'],
             position_ids=kwargs['position_ids'],
             use_cache=kwargs['use_cache'],
-            use_swa=kwargs['use_swa']
+            use_swa=kwargs['use_swa'],
+            attention_override=attention_override
         )
         
         outputs += (past_key_value,)
@@ -1811,6 +1841,7 @@ class HymbaDecoderLayer(nn.Module):
             use_cache: Optional[bool] = False,
             kv_last_layer = None,
             use_swa=False,
+            attention_override: tuple = None,
             **kwargs,
     ) -> Tuple[torch.FloatTensor, Optional[Tuple[torch.FloatTensor, torch.FloatTensor]]]:
         if "padding_mask" in kwargs:
@@ -1846,7 +1877,8 @@ class HymbaDecoderLayer(nn.Module):
             kv_last_layer=kv_last_layer,
             use_cache=use_cache,
             use_swa=use_swa,
-            output_attentions=output_attentions
+            output_attentions=output_attentions,
+            attention_override=attention_override
         )
         if output_attentions:
             hidden_states, attn_key_value, attention_output, scan_outputs, present_key_value = outputs
@@ -2090,6 +2122,7 @@ class HymbaModel(HymbaPreTrainedModel):
             output_hidden_states: Optional[bool] = None,
             output_router_logits: Optional[bool] = None,
             return_dict: Optional[bool] = None,
+            attention_overrides: Optional[tuple] = None
     ) -> Union[Tuple, MoeModelOutputWithPast]:
         output_attentions = output_attentions if output_attentions is not None else self.config.output_attentions
         output_router_logits = (
@@ -2278,6 +2311,7 @@ class HymbaModel(HymbaPreTrainedModel):
                     use_cache=use_cache,
                     kv_last_layer=kv_last_layer if self.inter_layer_kv_reuse else None,
                     use_swa=self.sliding_window is not None and i not in self.global_attn_idx,
+                    attention_override=attention_overrides[i]
                 )
 
             hidden_states = layer_outputs[0]
@@ -2395,10 +2429,10 @@ class HymbaForCausalLM(HymbaPreTrainedModel):
             output_router_logits: Optional[bool] = None,
             return_dict: Optional[bool] = None,
             calc_logits_for_entire_prompt: Optional[bool] = True,
+            attention_overrides: Optional[tuple] = None,
     ) -> Union[Tuple, MoeCausalLMOutputWithPast]:
                 
         r"""
-        TODO: add feature to perform intervention on attention outputs
         Args:
             labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
                 Labels for computing the masked language modeling loss. Indices should either be in `[0, ...,
@@ -2409,6 +2443,13 @@ class HymbaForCausalLM(HymbaPreTrainedModel):
                 Whether or not to calculate the logits for the entire prompt, or just the last token. Only last token
                 logits are needed for generation, and calculating them only for that token can save memory,
                 which becomes pretty significant for long sequences.
+                
+            attention_overrides (`tuple`, *optional*):
+                Tuple of attention overrides for each layer. Each element of the tuple is a tuple of 4 elements:
+                the first element is the intervention function that takes two parameters: the original attention weights
+                and the intervention value, outputs the modified attention weights. The second element is the intervention
+                value that will be passed to the intervention function.
+                The third and fourth elements are for scan outputs.
 
         Returns:
         ```"""
@@ -2435,6 +2476,7 @@ class HymbaForCausalLM(HymbaPreTrainedModel):
             output_hidden_states=output_hidden_states,
             output_router_logits=output_router_logits,
             return_dict=return_dict,
+            attention_overrides=attention_overrides,
         )
 
         hidden_states = outputs[0]
