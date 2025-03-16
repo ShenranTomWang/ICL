@@ -1219,7 +1219,7 @@ class Zamba2HybridLayer(nn.Module):
         transformer_hidden_states = layer_outputs[0]
 
         if output_attentions:
-            self_attn_weights = layer_outputs[1]
+            self_attn_weights, attn_output = layer_outputs[1], layer_outputs[2]
 
         transformer_hidden_states = self.linear(transformer_hidden_states)
 
@@ -1234,7 +1234,7 @@ class Zamba2HybridLayer(nn.Module):
         )
 
         if output_attentions:
-            layer_outputs = (layer_outputs[0], self_attn_weights) + layer_outputs[2:]
+            layer_outputs = (layer_outputs[0], self_attn_weights, attn_output) + layer_outputs[3:]
 
         return layer_outputs
 
@@ -1487,7 +1487,6 @@ class Zamba2Model(Zamba2PreTrainedModel):
         all_hidden_states = () if output_hidden_states else None
         all_self_attns = () if output_attentions else None
         all_attn_outputs = () if output_attentions else None
-        all_scan_outputs = () if output_attentions else None
 
         for layer_idx, layer in enumerate(self.layers):
             if output_hidden_states:
@@ -1524,7 +1523,6 @@ class Zamba2Model(Zamba2PreTrainedModel):
             if output_attentions:
                 all_self_attns += (layer_outputs[1],)
                 all_attn_outputs += (layer_outputs[2],)
-                all_scan_outputs += (layer_outputs[3],)
 
         hidden_states = self.final_layernorm(hidden_states)
 
@@ -1539,7 +1537,7 @@ class Zamba2Model(Zamba2PreTrainedModel):
             last_hidden_state=hidden_states,
             past_key_values=past_key_values if use_cache else None,
             hidden_states=all_hidden_states,
-            attentions=(all_self_attns, all_attn_outputs, all_scan_outputs) if output_attentions else None
+            attentions=(all_self_attns, all_attn_outputs) if output_attentions else None
         )
         return output if return_dict else output.to_tuple()
 

@@ -23,6 +23,67 @@ class ZambaOperator(Operator):
         return cache
     
     @torch.inference_mode()
+    def extract_attention_outputs(self, inputs: list[str], activation_callback: Callable = lambda x: x) -> tuple[torch.Tensor]:
+        """
+        Extract attentions from the model
+        Args:
+            inputs (_type_): list of inputs (string)
+            activation_callback (Callable, optional): callback function to process attentions. Defaults to ....
+
+        Returns:
+            tuple[torch.Tensor]: attentions
+        """
+        all_attns, attn_outputs = [], []
+        for input in inputs:
+            tokenized = self.tokenizer(input, return_tensors="pt", truncation=True)
+            tokenized = {k: v.to(self.device) for k, v in tokenized.items()}
+            output = self.model(**tokenized, output_attentions=True)
+            all_attn, attn_output = output.attentions
+            all_attn = torch.stack(all_attn, dim=0).squeeze(1)  # (n_layers, n_heads, pad_len + seqlen, pad_len + seqlen)
+            attn_output = torch.stack(attn_output, dim=0).squeeze(1)  # (n_layers, n_heads, pad_len + seqlen, attn_channels)
+            all_attn, attn_output = activation_callback((all_attn, attn_output))
+            all_attns.append(all_attn)
+            attn_outputs.append(attn_output)
+        return all_attns, attn_outputs
+    
+    def store_attention_outputs(self, attention_outputs: tuple[list[torch.Tensor]], path: str) -> None:
+        """
+        Store attention outputs to path
+        Args:
+            attention_outputs (tuple[list[torch.Tensor]]): attentions (self-attention and scan)
+            path (str): path to store
+        """
+        logger = logging.getLogger(__name__)
+        all_attns, attn_outputs = attention_outputs
+        if not os.path.exists(path):
+            os.makedirs(os.path.dirname(path), exist_ok=True)
+        if path.endswith(".pt"):
+            path = path[:-3]
+        for i, (all_attn, attn_output) in enumerate(zip(all_attns, attn_outputs)):
+            torch.save(all_attn, f"{path}_all_attn_{i}.pt")
+            torch.save(attn_output, f"{path}_attn_output_{i}.pt")
+        logger.info(f"Stored attention outputs to {path}")
+        
+    def load_attention_outputs(self, dir: str, split: str, index: int) -> tuple[torch.Tensor]:
+        """
+        Load attention outputs from specified directory
+        Args:
+            dir (str): directory
+            split (str): one of demo, test and train
+            index (int): index
+        
+        Returns:
+            tuple[torch.Tensor]: all_attn, attn_output, scan_output
+        """
+        all_attn_path = os.path.join(dir, f"{split}_all_attn_{index}.pt")
+        attn_output_path = os.path.join(dir, f"{split}_attn_output_{index}.pt")
+        all_attn = torch.load(all_attn_path, map_location=self.device).to(self.dtype)
+        attn_output = torch.load(attn_output_path, map_location=self.device).to(self.dtype)
+        all_attn = [all_attn[layer: layer + 1] for layer in all_attn.shape[0]]
+        attn_output = [attn_output[layer: layer + 1] for layer in attn_output.shape[0]]
+        return all_attn, attn_output
+    
+    @torch.inference_mode()
     def extract_cache(self, inputs: list, layers: list, activation_callback: Callable = lambda x: x) -> tuple[list[torch.Tensor]]:
         """
         TODO: should return a cache object

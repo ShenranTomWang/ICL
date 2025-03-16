@@ -20,6 +20,7 @@ class HymbaOperator(Operator):
         cache = HybridMambaAttentionDynamicCache(self.model.config, 1, device=self.device, dtype=self.dtype, layer_type=self.model.config.layer_type)
         return cache
     
+    @torch.inference_mode()
     def extract_attention_outputs(self, inputs: list[str], activation_callback: Callable = lambda x: x) -> tuple[torch.Tensor]:
         """
         Extract attentions from the model
