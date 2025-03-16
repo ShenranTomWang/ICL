@@ -106,3 +106,10 @@ def run_operator(operator: Operator, args, seed: int, fname: str, test_task: str
             fname = f"{args.split}_cache.pt"
         cache = operator.extract_cache(inputs)
         operator.store_cache(cache, f"{args.out_dir}/{test_task}/{seed}/{fname}")
+    elif args.stream == "attn":
+        if fname is None:
+            fname = f"{args.split}_attn.pt"
+        attn = operator.extract_attention_outputs(inputs)
+        operator.store_attention_outputs(attn, f"{args.out_dir}/{test_task}/{seed}/{fname}")
+    else:
+        raise ValueError(f"Invalid stream: {args.stream}")

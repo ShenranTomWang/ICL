@@ -98,7 +98,42 @@ class Operator(ABC):
         return activations
     
     @abstractmethod
-    def extract_cache(self, inputs: list, activation_callback: Callable = lambda x: x) -> Cache | MambaCache:
+    def extract_attention_outputs(self, inputs: list[str], activation_callback: Callable = lambda x: x) -> list[torch.Tensor]:
+        """
+        Extract attentions at specified layers of attention stream
+        Args:
+            inputs (list): list of inputs
+            activation_callback (function(torch.Tensor)): callback function to extracted activations, applied to activation values at each layer
+        Returns:
+            list[torch.Tensor]: list of tensors originally (n_layers, n_heads, seqlen, seqlen), but processed by activation_callback
+        """
+        pass
+    
+    @abstractmethod
+    def store_attention_outputs(self, attention_outputs: list[torch.Tensor], path: str) -> None:
+        """
+        Store attention outputs to specified path
+        Args:
+            attention_outputs (list): list of attention outputs
+            path (str): path to store attention outputs
+        """
+        pass
+    
+    @abstractmethod
+    def load_attention_outputs(self, dir: str, split: str, index: int) -> tuple[torch.Tensor]:
+        """
+        Load attention outputs from specified directory
+        Args:
+            dir (str): directory to load attention outputs
+            split (str): split of attention outputs
+            index (int): index of attention outputs
+        Returns:
+            tuple[torch.Tensor]: attention outputs
+        """
+        pass
+    
+    @abstractmethod
+    def extract_cache(self, inputs: list[str], activation_callback: Callable = lambda x: x) -> Cache | MambaCache:
         """
         Extract cache
         Args:
