@@ -27,8 +27,8 @@ class ZambaOperator(Operator):
         """
         Extract attentions from the model
         Args:
-            inputs (_type_): list of inputs (string)
-            activation_callback (Callable, optional): callback function to process attentions. Defaults to ....
+            inputs (string): list of inputs
+            activation_callback (Callable, optional): callback function to process attentions. Defaults to lambda x: x.
 
         Returns:
             tuple[torch.Tensor]: attentions
@@ -50,7 +50,7 @@ class ZambaOperator(Operator):
         """
         Store attention outputs to path
         Args:
-            attention_outputs (tuple[list[torch.Tensor]]): attentions (self-attention and scan)
+            attention_outputs (tuple[list[torch.Tensor]]): attentions (attention map and self-attention)
             path (str): path to store
         """
         logger = logging.getLogger(__name__)
@@ -73,7 +73,7 @@ class ZambaOperator(Operator):
             index (int): index
         
         Returns:
-            tuple[torch.Tensor]: all_attn, attn_output, scan_output
+            tuple[torch.Tensor]: all_attn, attn_output
         """
         all_attn_path = os.path.join(dir, f"{split}_all_attn_{index}.pt")
         attn_output_path = os.path.join(dir, f"{split}_attn_output_{index}.pt")
