@@ -61,9 +61,9 @@ class HymbaOperator(Operator):
         if not os.path.exists(path):
             os.makedirs(os.path.dirname(path), exist_ok=True)
         for i, (all_attn, attn_output, scan_output) in enumerate(zip(all_attns, attn_outputs, scan_outputs)):
-            torch.save(all_attn, f"{path}_{fname}_all_attn_{i}.pt")
-            torch.save(attn_output, f"{path}_{fname}_attn_output_{i}.pt")
-            torch.save(scan_output, f"{path}_{fname}_scan_output_{i}.pt")
+            torch.save(all_attn, f"{path}_attn_{fname}_all_attn_{i}.pt")
+            torch.save(attn_output, f"{path}_attn_{fname}_attn_output_{i}.pt")
+            torch.save(scan_output, f"{path}_attn_{fname}_scan_output_{i}.pt")
         logger.info(f"Stored attention outputs to {path}")
         
     def load_attention_outputs(self, dir: str, split: str, index: int, fname: str = "") -> tuple[torch.Tensor]:
@@ -78,9 +78,9 @@ class HymbaOperator(Operator):
         Returns:
             tuple[torch.Tensor]: all_attn, attn_output, scan_output
         """
-        all_attn_path = os.path.join(dir, f"{split}_{fname}_all_attn_{index}.pt")
-        attn_output_path = os.path.join(dir, f"{split}_{fname}_attn_output_{index}.pt")
-        scan_output_path = os.path.join(dir, f"{split}_{fname}_scan_output_{index}.pt")
+        all_attn_path = os.path.join(dir, f"{split}_attn_{fname}_all_attn_{index}.pt")
+        attn_output_path = os.path.join(dir, f"{split}_attn_{fname}_attn_output_{index}.pt")
+        scan_output_path = os.path.join(dir, f"{split}_attn_{fname}_scan_output_{index}.pt")
         all_attn = torch.load(all_attn_path, map_location=self.device).to(self.dtype)
         attn_output = torch.load(attn_output_path, map_location=self.device).to(self.dtype)
         scan_output = torch.load(scan_output_path, map_location=self.device).to(self.dtype)
