@@ -1066,6 +1066,8 @@ class Zamba2AttentionDecoderLayer(nn.Module):
             position_embeddings (`Tuple[torch.FloatTensor, torch.FloatTensor]`, *optional*):
                 Tuple containing the cosine and sine positional embeddings of shape `(batch_size, seq_len, head_dim)`,
                 with `head_dim` being the embedding dimension of each attention head.
+        Returns:
+            (hidden_states, self_attn_weights, scan_output, None, None)
         """
         hidden_states = torch.concatenate([hidden_states, original_hidden_states], dim=-1)
         hidden_states = self.input_layernorm(hidden_states)
@@ -1088,7 +1090,7 @@ class Zamba2AttentionDecoderLayer(nn.Module):
         outputs = (hidden_states,)
 
         if output_attentions:
-            outputs += (self_attn_weights, attn_output,)
+            outputs += (self_attn_weights, attn_output, None, None)
 
         return outputs
 
@@ -1129,6 +1131,8 @@ class Zamba2MambaDecoderLayer(nn.Module):
                 (see `past_key_values`).
             cache_position (`torch.LongTensor` of shape `(sequence_length)`, *optional*):
                 Indices depicting the position of the input sequence tokens in the sequence.
+        Returns:
+            (hidden_states, None, None, self_attn_weights, scan_output, past_key_value)
         """
 
         residual = hidden_states
@@ -1157,7 +1161,7 @@ class Zamba2MambaDecoderLayer(nn.Module):
         outputs = (hidden_states,)
 
         if output_attentions:
-            outputs += (self_attn_weights, scan_output,)
+            outputs += (None, None, self_attn_weights, scan_output,)
 
         if use_cache:
             outputs += (past_key_value,)
@@ -1185,6 +1189,7 @@ class Zamba2HybridLayer(nn.Module):
         output_attentions: Optional[bool] = False,
         use_cache: Optional[bool] = False,
         position_embeddings: Optional[torch.LongTensor] = None,
+        attention_override: tuple = None,
     ) -> Tuple[torch.FloatTensor, Optional[Tuple[torch.FloatTensor, torch.FloatTensor]]]:
         """
         Args:
@@ -1214,6 +1219,7 @@ class Zamba2HybridLayer(nn.Module):
             past_key_value=past_key_value,
             output_attentions=output_attentions,
             position_embeddings=position_embeddings,
+            attention_override=attention_override[:2] if attention_override is not None else None,
         )
 
         transformer_hidden_states = layer_outputs[0]
@@ -1231,10 +1237,12 @@ class Zamba2HybridLayer(nn.Module):
             output_attentions=output_attentions,
             use_cache=use_cache,
             position_embeddings=position_embeddings,
+            attention_override=attention_override[2:] if attention_override is not None else None,
         )
 
         if output_attentions:
-            layer_outputs = (layer_outputs[0], self_attn_weights, attn_output) + layer_outputs[3:]
+            mamba_weights, scan_output = layer_outputs[3], layer_outputs[4]
+            layer_outputs = (layer_outputs[0], self_attn_weights, attn_output, mamba_weights, scan_output) + layer_outputs[3:]
 
         return layer_outputs
 
@@ -1487,6 +1495,7 @@ class Zamba2Model(Zamba2PreTrainedModel):
         all_hidden_states = () if output_hidden_states else None
         all_self_attns = () if output_attentions else None
         all_attn_outputs = () if output_attentions else None
+        all_scan_outputs = () if output_attentions else None
 
         for layer_idx, layer in enumerate(self.layers):
             if output_hidden_states:
@@ -1523,6 +1532,7 @@ class Zamba2Model(Zamba2PreTrainedModel):
             if output_attentions:
                 all_self_attns += (layer_outputs[1],)
                 all_attn_outputs += (layer_outputs[2],)
+                all_scan_outputs += (layer_outputs[4],)
 
         hidden_states = self.final_layernorm(hidden_states)
 
@@ -1537,7 +1547,7 @@ class Zamba2Model(Zamba2PreTrainedModel):
             last_hidden_state=hidden_states,
             past_key_values=past_key_values if use_cache else None,
             hidden_states=all_hidden_states,
-            attentions=(all_self_attns, all_attn_outputs) if output_attentions else None
+            attentions=(all_self_attns, all_attn_outputs, all_scan_outputs) if output_attentions else None
         )
         return output if return_dict else output.to_tuple()
 

@@ -110,23 +110,25 @@ class Operator(ABC):
         pass
     
     @abstractmethod
-    def store_attention_outputs(self, attention_outputs: list[torch.Tensor], path: str) -> None:
+    def store_attention_outputs(self, attention_outputs: list[torch.Tensor], path: str, fname: str = "") -> None:
         """
         Store attention outputs to specified path
         Args:
             attention_outputs (list): list of attention outputs
             path (str): path to store attention outputs
+            fname (str): special filename
         """
         pass
     
     @abstractmethod
-    def load_attention_outputs(self, dir: str, split: str, index: int) -> tuple[torch.Tensor]:
+    def load_attention_outputs(self, dir: str, split: str, index: int, fname: str = "") -> tuple[torch.Tensor]:
         """
         Load attention outputs from specified directory
         Args:
             dir (str): directory to load attention outputs
             split (str): split of attention outputs
             index (int): index of attention outputs
+            fname (str): special filename
         Returns:
             tuple[torch.Tensor]: attention outputs
         """
@@ -145,23 +147,25 @@ class Operator(ABC):
         pass
     
     @abstractmethod
-    def store_cache(self, cache: Cache | MambaCache, path: str) -> None:
+    def store_cache(self, cache: Cache | MambaCache, path: str, fname: str = "") -> None:
         """
         Store cache to specified path
         Args:
             cache (Cache | MambaCache): cache
             path (str): path to store cache
+            fname (str): special filename
         """
         pass
     
     @abstractmethod
-    def load_cache(self, dir: str, split: str, index: int) -> Cache | MambaCache:
+    def load_cache(self, dir: str, split: str, index: int, fname: str = "") -> Cache | MambaCache:
         """
         Load cache from specified directory
         Args:
             dir (str): directory to load cache
             split (str): split of cache
             index (int): index of cache
+            fname (str): special filename
         Returns:
             Cache | MambaCache: cache
         """

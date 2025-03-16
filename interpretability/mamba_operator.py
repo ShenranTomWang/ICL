@@ -39,13 +39,14 @@ class MambaOperator(Operator):
         
         return ssm_states, conv_states
     
-    def store_cache(self, cache: tuple[list[torch.Tensor]], path: str) -> None:
+    def store_cache(self, cache: tuple[list[torch.Tensor]], path: str, fname: str = "") -> None:
         """
         TODO: should take a cache object and save
         Store cache to path
         Args:
             cache (tuple[list[torch.Tensor]])
             path (str)
+            fname (str, optional): special filename, Defaults to "".
         """
         logger = logging.getLogger(__name__)
         ssm_states, conv_states = cache
@@ -54,11 +55,11 @@ class MambaOperator(Operator):
         if not os.path.exists(path):
             os.makedirs(os.path.dirname(path), exist_ok=True)
         for i, (ssm_state, conv_state) in enumerate(zip(ssm_states, conv_states)):
-            torch.save(ssm_state, f"{path}_ssm_state_{i}.pt")
-            torch.save(conv_state, f"{path}_conv_state_{i}.pt")
+            torch.save(ssm_state, f"{path}_cache_{fname}_ssm_state_{i}.pt")
+            torch.save(conv_state, f"{path}_cache_{fname}_conv_state_{i}.pt")
         logger.info(f"Stored cache to {path}")
         
-    def load_cache(self, dir: str, split: str, index: int) -> tuple[torch.Tensor]:
+    def load_cache(self, dir: str, split: str, index: int, fname: str = "") -> tuple[torch.Tensor]:
         """
         TODO: should load into a cache object
         Load cache from specified directory
@@ -66,12 +67,13 @@ class MambaOperator(Operator):
             dir (str)
             split (str): one of demo, test and train
             index (int)
+            fname (str, optional): special filename, Defaults to "".
 
         Returns:
             tuple[torch.Tensor]: ssm_state
         """
-        ssm_state_path = os.path.join(dir, f"{split}_cache_ssm_state_{index}.pt")
-        conv_state_path = os.path.join(dir, f"{split}_cache_conv_state_{index}.pt")
+        ssm_state_path = os.path.join(dir, f"{split}_cache_{fname}_ssm_state_{index}.pt")
+        conv_state_path = os.path.join(dir, f"{split}_cache_{fname}_conv_state_{index}.pt")
         ssm_state = torch.load(ssm_state_path, map_location=self.device).to(self.dtype)
         conv_state = torch.load(conv_state_path, map_location=self.device).to(self.dtype)
         return ssm_state, conv_state

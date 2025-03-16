@@ -46,12 +46,13 @@ class HymbaOperator(Operator):
             scan_outputs.append(scan_output)
         return all_attns, attn_outputs, scan_outputs
     
-    def store_attention_outputs(self, attention_outputs: tuple[list[torch.Tensor]], path: str) -> None:
+    def store_attention_outputs(self, attention_outputs: tuple[list[torch.Tensor]], path: str, fname: str = "") -> None:
         """
         Store attention outputs to path
         Args:
             attention_outputs (tuple[list[torch.Tensor]]): attentions (self-attention and scan)
             path (str): path to store
+            fname (str, optional): filename. Defaults to "".
         """
         logger = logging.getLogger(__name__)
         all_attns, attn_outputs, scan_outputs = attention_outputs
@@ -60,25 +61,26 @@ class HymbaOperator(Operator):
         if not os.path.exists(path):
             os.makedirs(os.path.dirname(path), exist_ok=True)
         for i, (all_attn, attn_output, scan_output) in enumerate(zip(all_attns, attn_outputs, scan_outputs)):
-            torch.save(all_attn, f"{path}_all_attn_{i}.pt")
-            torch.save(attn_output, f"{path}_attn_output_{i}.pt")
-            torch.save(scan_output, f"{path}_scan_output_{i}.pt")
+            torch.save(all_attn, f"{path}_{fname}_all_attn_{i}.pt")
+            torch.save(attn_output, f"{path}_{fname}_attn_output_{i}.pt")
+            torch.save(scan_output, f"{path}_{fname}_scan_output_{i}.pt")
         logger.info(f"Stored attention outputs to {path}")
         
-    def load_attention_outputs(self, dir: str, split: str, index: int) -> tuple[torch.Tensor]:
+    def load_attention_outputs(self, dir: str, split: str, index: int, fname: str = "") -> tuple[torch.Tensor]:
         """
         Load attention outputs from specified directory
         Args:
             dir (str): directory
             split (str): one of demo, test and train
             index (int): index
+            fname (str, optional): filename. Defaults to "".
         
         Returns:
             tuple[torch.Tensor]: all_attn, attn_output, scan_output
         """
-        all_attn_path = os.path.join(dir, f"{split}_all_attn_{index}.pt")
-        attn_output_path = os.path.join(dir, f"{split}_attn_output_{index}.pt")
-        scan_output_path = os.path.join(dir, f"{split}_scan_output_{index}.pt")
+        all_attn_path = os.path.join(dir, f"{split}_{fname}_all_attn_{index}.pt")
+        attn_output_path = os.path.join(dir, f"{split}_{fname}_attn_output_{index}.pt")
+        scan_output_path = os.path.join(dir, f"{split}_{fname}_scan_output_{index}.pt")
         all_attn = torch.load(all_attn_path, map_location=self.device).to(self.dtype)
         attn_output = torch.load(attn_output_path, map_location=self.device).to(self.dtype)
         scan_output = torch.load(scan_output_path, map_location=self.device).to(self.dtype)
@@ -124,13 +126,14 @@ class HymbaOperator(Operator):
         
         return ks, vs, ssm_states, conv_states
     
-    def store_cache(self, cache: tuple[list[torch.Tensor]], path: str) -> None:
+    def store_cache(self, cache: tuple[list[torch.Tensor]], path: str, fname: str = "") -> None:
         """
         TODO: should take a cache object then save
         Store cache to path
         Args:
             cache (tuple[list[torch.Tensor]])
             path (str)
+            fname (str, optional): filename. Defaults to "".
         """
         logger = logging.getLogger(__name__)
         ks, vs, ssm_states, conv_states = cache
@@ -139,13 +142,13 @@ class HymbaOperator(Operator):
         if not os.path.exists(path):
             os.makedirs(os.path.dirname(path), exist_ok=True)
         for i, (k, v, ssm_state, conv_state) in enumerate(zip(ks, vs, ssm_states, conv_states)):
-            torch.save(k, f"{path}_k_{i}.pt")
-            torch.save(v, f"{path}_v_{i}.pt")
-            torch.save(ssm_state, f"{path}_ssm_state_{i}.pt")
-            torch.save(conv_state, f"{path}_conv_state_{i}.pt")
+            torch.save(k, f"{path}_cache_{fname}_k_{i}.pt")
+            torch.save(v, f"{path}_cache_{fname}_v_{i}.pt")
+            torch.save(ssm_state, f"{path}_cache_{fname}_ssm_state_{i}.pt")
+            torch.save(conv_state, f"{path}_cache_{fname}_conv_state_{i}.pt")
         logger.info(f"Stored cache to {path}")
         
-    def load_cache(self, dir: str, split: str, index: int) -> tuple[torch.Tensor]:
+    def load_cache(self, dir: str, split: str, index: int, fname: str = "") -> tuple[torch.Tensor]:
         """
         TODO: should load into a cache object
         Load cache from specified directory
@@ -153,14 +156,15 @@ class HymbaOperator(Operator):
             dir (str)
             split (str): one of demo, test and train
             index (int)
+            fname (str, optional): filename. Defaults to "".
 
         Returns:
             tuple[torch.Tensor]: k, v, ssm_state, conv_state
         """
-        k_path = os.path.join(dir, f"{split}_k_{index}.pt")
-        v_path = os.path.join(dir, f"{split}_v_{index}.pt")
-        ssm_state_path = os.path.join(dir, f"{split}_ssm_state_{index}.pt")
-        conv_state_path = os.path.join(dir, f"{split}_conv_state_{index}.pt")
+        k_path = os.path.join(dir, f"{split}_cache_{fname}_k_{index}.pt")
+        v_path = os.path.join(dir, f"{split}_cache_{fname}_v_{index}.pt")
+        ssm_state_path = os.path.join(dir, f"{split}_cache_{fname}_ssm_state_{index}.pt")
+        conv_state_path = os.path.join(dir, f"{split}_cache_{fname}_conv_state_{index}.pt")
         k = torch.load(k_path, map_location=self.device).to(self.dtype)
         v = torch.load(v_path, map_location=self.device).to(self.dtype)
         ssm_state = torch.load(ssm_state_path, map_location=self.device).to(self.dtype)

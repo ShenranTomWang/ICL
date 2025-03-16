@@ -44,7 +44,7 @@ class RWKVOperator(Operator):
         
         return xs, kvs, ffns
     
-    def store_cache(self, cache: tuple[list[torch.Tensor]], path: str) -> None:
+    def store_cache(self, cache: tuple[list[torch.Tensor]], path: str, fname: str = "") -> None:
         """
         TODO: should take a cache object and save
         Store cache to path
@@ -52,6 +52,7 @@ class RWKVOperator(Operator):
             cache (tuple[list[torch.Tensor]]): list of x (n_inputs, n_layers, hidden_size), 
                     list of kv (n_inputs, n_layers, n_heads, head_dim, head_dim), list of ffn (n_inputs, n_layers, hidden_size)
             path (str)
+            fname (str, optional): special filename, Defaults to "".
         """
         logger = logging.getLogger(__name__)
         xs, kvs, ffns = cache
@@ -60,13 +61,13 @@ class RWKVOperator(Operator):
         os.makedirs(os.path.dirname(path), exist_ok=True)
             
         for i, (x, kv, ffn) in enumerate(zip(xs, kvs, ffns)):
-            torch.save(x, f"{path}_x_{i}.pt")
-            torch.save(kv, f"{path}_kv_{i}.pt")
-            torch.save(ffn, f"{path}_ffn_{i}.pt")
+            torch.save(x, f"{path}_cache_{fname}_x_{i}.pt")
+            torch.save(kv, f"{path}_cache_{fname}_kv_{i}.pt")
+            torch.save(ffn, f"{path}_cache_{fname}_ffn_{i}.pt")
         
         logger.info(f"Saved activations to {path}")
         
-    def load_cache(self, dir: str, split: str, index: int) -> tuple:
+    def load_cache(self, dir: str, split: str, index: int, fname: str = "") -> tuple:
         """
         TODO: should load into a cache object
         Load cache from specified directory
@@ -74,13 +75,14 @@ class RWKVOperator(Operator):
             dir (str): directory to load cache from
             split (str): cache split
             index (int): index of cache
+            fname (str, optional): special filename. Defaults to "".
 
         Returns:
             tuple
         """
-        xs_path = os.path.join(dir, f"{split}_x_{index}.pt")
-        kvs_path = os.path.join(dir, f"{split}_kv_{index}.pt")
-        ffns_path = os.path.join(dir, f"{split}_ffn_{index}.pt")
+        xs_path = os.path.join(dir, f"{split}_cache_{fname}_x_{index}.pt")
+        kvs_path = os.path.join(dir, f"{split}_cache_{fname}_kv_{index}.pt")
+        ffns_path = os.path.join(dir, f"{split}_cache_ffn_{index}.pt")
         xs = torch.load(xs_path, map_location=self.device).to(self.dtype)
         kvs = torch.load(kvs_path, map_location=self.device).to(self.dtype)
         ffns = torch.load(ffns_path, map_location=self.device).to(self.dtype)

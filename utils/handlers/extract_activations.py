@@ -4,7 +4,7 @@ from utils.dataset import Dataset
 from interpretability import Operator
 
 def demo_handler(
-    train_counter: Counter, train_data: list, test_data: list, operator: Operator, args, seed: int, fname: str = None
+    train_counter: Counter, train_data: list, test_data: list, operator: Operator, args, seed: int, fname: str = ""
 ) -> None:
     """
     Activation extraction handler for demo split
@@ -16,7 +16,7 @@ def demo_handler(
         operator (Operator)
         args (NameSpace)
         seed (int)
-        fname (str): filename
+        fname (str, optional): special filename, defaults to "".
     """
     logger = logging.getLogger(__name__)
     for train_task in train_counter:
@@ -25,10 +25,10 @@ def demo_handler(
         
         dataset = Dataset(curr_train_data, [], add_newlines=args.add_newlines, verbose=args.verbose)
         dataset.prepare_demo()
-        run_operator(operator, args, seed, fname, train_task, [dataset.demo])
+        run_operator(operator, args, seed, train_task, [dataset.demo], fname)
         
 def dev_handler(
-    test_counter: Counter, train_data: list, test_data: list, operator: Operator, args, seed: int, fname: str = None
+    test_counter: Counter, train_data: list, test_data: list, operator: Operator, args, seed: int, fname: str = ""
 ) -> None:
     """
     Activation extraction handler for dev split on residual stream
@@ -44,7 +44,7 @@ def dev_handler(
     basic_handler(test_counter, train_data, test_data, operator, args, seed, fname)
     
 def test_handler(
-    test_counter: Counter, train_data: list, test_data: list, operator: Operator, args, seed: int, fname: str = None
+    test_counter: Counter, train_data: list, test_data: list, operator: Operator, args, seed: int, fname: str = ""
 ) -> None:
     """
     Activation extraction handler for test split on residual stream
@@ -83,33 +83,27 @@ def basic_handler(
         
         dataset = Dataset(curr_train_data, curr_test_data, add_newlines=args.add_newlines, verbose=args.verbose)
         dataset.preprocess()
-        run_operator(operator, args, seed, fname, test_task, dataset.inputs)
+        run_operator(operator, args, seed, test_task, dataset.inputs, fname)
 
-def run_operator(operator: Operator, args, seed: int, fname: str, test_task: str, inputs: list[str]) -> None:
+def run_operator(operator: Operator, args, seed: int, test_task: str, inputs: list[str], fname: str = "") -> None:
     """
     Run operator to extract activations from dataset
     Args:
         operator (Operator)
         args (NameSpace)
         seed (int)
-        fname (str)
+        fname (str, optional): special filename, Defaults to "".
         test_task (str)
         inputs (list[str])
     """
     if args.stream == "resid":
-        if fname is None:
-            fname = f"{args.split}_resid.pt"
         activation = operator.extract_resid(inputs, layers=args.layers)
-        operator.store_resid(activation, f"{args.out_dir}/{test_task}/{seed}/{fname}")
+        operator.store_resid(activation, f"{args.out_dir}/{test_task}/{seed}/{args.split}", fname)
     elif args.stream == "cache":
-        if fname is None:
-            fname = f"{args.split}_cache.pt"
         cache = operator.extract_cache(inputs)
-        operator.store_cache(cache, f"{args.out_dir}/{test_task}/{seed}/{fname}")
+        operator.store_cache(cache, f"{args.out_dir}/{test_task}/{seed}/{args.split}", fname)
     elif args.stream == "attn":
-        if fname is None:
-            fname = f"{args.split}_attn.pt"
         attn = operator.extract_attention_outputs(inputs)
-        operator.store_attention_outputs(attn, f"{args.out_dir}/{test_task}/{seed}/{fname}")
+        operator.store_attention_outputs(attn, f"{args.out_dir}/{test_task}/{seed}/{args.split}", fname)
     else:
         raise ValueError(f"Invalid stream: {args.stream}")
