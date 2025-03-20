@@ -8,6 +8,9 @@ import os, logging
 from typing import Callable
 
 class TransformerOperator(Operator):
+    """TODO: implement attention related methods
+    """
+    
     def __init__(self, path: str, device: torch.DeviceObjType, dtype: torch.dtype):
         tokenizer = AutoTokenizer.from_pretrained(path, trust_remote_code=True)
         model = Qwen2ForCausalLM.from_pretrained(path, trust_remote_code=True).to(device).to(dtype)

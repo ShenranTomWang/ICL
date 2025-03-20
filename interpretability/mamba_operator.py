@@ -7,6 +7,8 @@ from .operator import Operator
 import logging, os
 
 class MambaOperator(Operator):
+    """TODO: implement attention related methods
+    """
     def __init__(self, path: str, device: torch.DeviceObjType, dtype: torch.dtype):
         tokenizer = AutoTokenizer.from_pretrained(path, trust_remote_code=True)
         model = MambaForCausalLM.from_pretrained(path).to(device).to(dtype)
