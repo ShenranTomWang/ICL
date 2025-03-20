@@ -1,55 +1,102 @@
 import shutup; shutup.please()
-from transformers import AutoTokenizer
-from interpretability.models.hymba import HybridMambaAttentionDynamicCache, HymbaForCausalLM
+from transformers import AutoTokenizer, AutoModelForCausalLM
 import torch
 from typing import Callable
-from .hybrid_operator import HybridOperator
+from .operator import Operator
+from abc import ABC
 import logging, os
 
-class HymbaOperator(HybridOperator):
+class HybridOperator(Operator, ABC):
     
-    def __init__(self, path: str, device: torch.DeviceObjType, dtype: torch.dtype):
-        tokenizer = AutoTokenizer.from_pretrained(path, trust_remote_code=True)
-        model = HymbaForCausalLM.from_pretrained(path).to(device).to(dtype)
-        self.ALL_LAYERS = [i for i in range(model.config.num_hidden_layers)]
-        self.KV_LAYERS = [0, 1, 3, 5, 7, 9, 11, 13, 15, 16, 19, 21, 23, 25, 27, 29, 31]
+    def __init__(self, tokenizer: AutoTokenizer, model: AutoModelForCausalLM, device: torch.DeviceObjType, dtype: torch.dtype):\
         super().__init__(tokenizer, model, device, dtype)
     
-    def get_cache_instance(self):
-        cache = HybridMambaAttentionDynamicCache(self.model.config, 1, device=self.device, dtype=self.dtype, layer_type=self.model.config.layer_type)
-        return cache
-    
-    def get_attention_mean(self, attn: tuple[list[torch.Tensor]]) -> tuple[torch.Tensor]:
-        all_attn, attn_output, scan_output = attn
-        for i, (attn_i, scan_i) in enumerate(zip(attn_output, scan_output)):
-            attn_output[i] = attn_i.mean(dim=1).unsqueeze(1)   # (1, attn_channels)
-            scan_output[i] = scan_i.mean(dim=1).unsqueeze(1)   # (1, attn_channels)
-        return all_attn, attn_output, scan_output
-        
-    def load_attention_outputs(self, dir: str, split: str, index: int, fname: str = "") -> tuple[list[torch.Tensor]]:
+    @torch.inference_mode()
+    def extract_attention_outputs(self, inputs: list[str], activation_callback: Callable = lambda x: x) -> tuple[torch.Tensor]:
         """
-        Load attention outputs from specified directory
+        Extract attentions from the model
         Args:
-            dir (str): directory
-            split (str): one of demo, test and train
-            index (int): index
-            fname (str, optional): filename. Defaults to "".
-        
+            inputs (_type_): list of inputs (string)
+            activation_callback (Callable, optional): callback function to process attentions. Defaults to ....
+
         Returns:
-            tuple[list[torch.Tensor]]: all_attn, attn_output, scan_output
+            tuple[torch.Tensor]: attentions (self-attention and scan)
         """
+        all_attns, attn_outputs, scan_outputs = [], [], []
+        for input in inputs:
+            tokenized = self.tokenizer(input, return_tensors="pt", truncation=True)
+            tokenized = {k: v.to(self.device) for k, v in tokenized.items()}
+            output = self.model(**tokenized, output_attentions=True)
+            # n_layers * (batch_size, n_heads, pad_len + seqlen, pad_len + seqlen), (batch_size, pad_len + seqlen, attn_channels), (batch_size, pad_len + seqlen, attn_channels)
+            all_attn, attn_output, scan_output = output.attentions
+            all_attn = [attn_map for attn_map in all_attn if attn_map is not None]
+            attn_output = [attn for attn in attn_output if attn is not None]
+            scan_output = [attn for attn in scan_output if attn is not None]
+            all_attn, attn_output, scan_output = list(all_attn), list(attn_output), list(scan_output)
+            all_attn, attn_output, scan_output = activation_callback((all_attn, attn_output, scan_output))
+            all_attns.append(all_attn)
+            attn_outputs.append(attn_output)
+            scan_outputs.append(scan_output)
+        return all_attns, attn_outputs, scan_outputs
+    
+    def store_attention_outputs(self, attention_outputs: tuple[list[torch.Tensor]], path: str, fname: str = "") -> None:
+        """
+        Store attention outputs to path
+        Args:
+            attention_outputs (tuple[list[torch.Tensor]]): attentions (self-attention and scan)
+            path (str): path to store
+            fname (str, optional): filename. Defaults to "".
+        """
+        logger = logging.getLogger(__name__)
+        all_attns, attn_outputs, scan_outputs = attention_outputs
+        if path.endswith(".pt"):
+            path = path[:-3]
+        if not os.path.exists(path):
+            os.makedirs(os.path.dirname(path), exist_ok=True)
         if fname != "":
             fname = f"{fname}_"
-        all_attn_path = os.path.join(dir, f"{split}_attn_{fname}all_attn_{index}.pt")
-        attn_output_path = os.path.join(dir, f"{split}_attn_{fname}attn_output_{index}.pt")
-        scan_output_path = os.path.join(dir, f"{split}_attn_{fname}scan_output_{index}.pt")
-        all_attn = torch.load(all_attn_path, map_location=self.device).to(self.dtype)
-        attn_output = torch.load(attn_output_path, map_location=self.device).to(self.dtype)
-        scan_output = torch.load(scan_output_path, map_location=self.device).to(self.dtype)
-        all_attn = [all_attn[layer: layer + 1] for layer in range(all_attn.shape[0])]
-        attn_output = [attn_output[layer: layer + 1] for layer in range(attn_output.shape[0])]
-        scan_output = [scan_output[layer: layer + 1] for layer in range(scan_output.shape[0])]
-        return all_attn, attn_output, scan_output
+        for i, (all_attn, attn_output, scan_output) in enumerate(zip(all_attns, attn_outputs, scan_outputs)):
+            all_attn = torch.stack(all_attn, dim=0).squeeze(1)         # (n_layers, n_heads, pad_len + seqlen, pad_len + seqlen)
+            attn_output = torch.stack(attn_output, dim=0).squeeze(1)   # (n_layers, pad_len + seqlen, attn_channels)
+            scan_output = torch.stack(scan_output, dim=0).squeeze(1)   # (n_layers, pad_len + seqlen, attn_channels)
+            torch.save(all_attn, f"{path}_attn_{fname}all_attn_{i}.pt")
+            torch.save(attn_output, f"{path}_attn_{fname}attn_output_{i}.pt")
+            torch.save(scan_output, f"{path}_attn_{fname}scan_output_{i}.pt")
+        logger.info(f"Stored attention outputs to {path}")
+    
+    def attention2kwargs(
+        self,
+        attention: tuple[torch.Tensor],
+        attention_intervention: Callable,
+        scan_intervention: Callable,
+        layers: list[int] = None,
+        keep_scan: bool = True,
+        keep_attention: bool = True,
+        **kwargs
+    ) -> dict:
+        """
+        Convert attention outputs to kwargs for intervention
+        Args:
+            attention (tuple[torch.Tensor])
+            attention_intervention (Callable): intervention function for attention
+            scan_intervention (Callable): intervention function for scan
+            layers (list[int], optional): list of layers to use attention, if None, use all layers. Defaults to None.
+            keep_scan (bool, optional): whether to keep scan outputs. Defaults to True.
+            keep_attention (bool, optional): whether to keep attention outputs. Defaults to True.
+            **kwargs: additional kwargs, not used
+        Returns:
+            dict: kwargs
+        """
+        if layers is None:
+            layers = self.ALL_LAYERS
+        _, attn_outputs, scan_outputs = attention
+        params = []
+        for layer in layers:
+            attn = attn_outputs[layer] if keep_attention else None
+            scan = scan_outputs[layer] if keep_scan else None
+            params.append(attention_intervention, attn, scan_intervention, scan)
+        params = tuple(params)
+        return {"attention_overrides": params}
     
     @torch.inference_mode()
     def extract_cache(self, inputs: list[str], activation_callback: Callable = lambda x: x) -> tuple[list[torch.Tensor]]:

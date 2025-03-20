@@ -3,11 +3,10 @@ from transformers import AutoTokenizer
 from interpretability.models.zamba2 import ZambaHybridDynamicCache, Zamba2ForCausalLM
 import torch
 from typing import Callable
-from .hymba_operator import HymbaOperator
-from .operator import Operator
+from .hybrid_operator import HybridOperator
 import logging, os
 
-class ZambaOperator(HymbaOperator):
+class ZambaOperator(HybridOperator):
     """Subclassing HymbaOperator to avoid redundant code
     """
     
@@ -18,7 +17,7 @@ class ZambaOperator(HymbaOperator):
         model = Zamba2ForCausalLM.from_pretrained(path).to(device).to(dtype)
         self.ALL_LAYERS = [i for i in range(model.config.num_hidden_layers)]
         self.HYBRID_LAYERS = model.config.hybrid_layer_ids
-        Operator.__init__(self, tokenizer, model, device, dtype)
+        super().__init__(tokenizer, model, device, dtype)
     
     def get_cache_instance(self):
         cache = ZambaHybridDynamicCache(self.model.config, 1, dtype=self.dtype, device=self.device)
