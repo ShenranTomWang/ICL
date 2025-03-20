@@ -3,10 +3,13 @@ from transformers import AutoTokenizer
 from interpretability.models.zamba2 import ZambaHybridDynamicCache, Zamba2ForCausalLM
 import torch
 from typing import Callable
+from .hymba_operator import HymbaOperator
 from .operator import Operator
 import logging, os
 
-class ZambaOperator(Operator):
+class ZambaOperator(HymbaOperator):
+    """Subclassing HymbaOperator to avoid redundant code
+    """
     
     def __init__(self, path: str, device: torch.DeviceObjType, dtype: torch.dtype):
         self.device = device
@@ -15,7 +18,7 @@ class ZambaOperator(Operator):
         model = Zamba2ForCausalLM.from_pretrained(path).to(device).to(dtype)
         self.ALL_LAYERS = [i for i in range(model.config.num_hidden_layers)]
         self.HYBRID_LAYERS = model.config.hybrid_layer_ids
-        super().__init__(tokenizer, model, device, dtype)
+        Operator.__init__(self, tokenizer, model, device, dtype)
     
     def get_cache_instance(self):
         cache = ZambaHybridDynamicCache(self.model.config, 1, dtype=self.dtype, device=self.device)
@@ -23,61 +26,13 @@ class ZambaOperator(Operator):
     
     def get_attention_mean(self, attn: tuple[torch.Tensor]) -> tuple[torch.Tensor]:
         all_attn, attn_output, scan_output = attn
-        attn_output = attn_output.mean(dim=1).unsqueeze(1)   # (n_layers, n_heads, attn_channels)
-        scan_output = scan_output.mean(dim=1).unsqueeze(1)   # (n_layers, n_heads, attn_channels)
+        for i, attn_i in enumerate(attn_output):
+            attn_output[i] = attn_i.mean(dim=1).unsqueeze(1)   # (1, attn_channels)
+        for i, scan_i in enumerate(scan_output):
+            scan_output[i] = scan_i.mean(dim=1).unsqueeze(1)   # (1, attn_channels)
         return all_attn, attn_output, scan_output
-    
-    @torch.inference_mode()
-    def extract_attention_outputs(self, inputs: list[str], activation_callback: Callable = lambda x: x) -> tuple[torch.Tensor]:
-        """
-        Extract attentions from the model
-        Args:
-            inputs (string): list of inputs
-            activation_callback (Callable, optional): callback function to process attentions. Defaults to lambda x: x.
-
-        Returns:
-            tuple[torch.Tensor]: all_attn, attn_output, scan_output
-        """
-        all_attns, attn_outputs, scan_outputs = [], [], []
-        for input in inputs:
-            tokenized = self.tokenizer(input, return_tensors="pt", truncation=True)
-            tokenized = {k: v.to(self.device) for k, v in tokenized.items()}
-            output = self.model(**tokenized, output_attentions=True)
-            all_attn, attn_output, scan_output = output.attentions
-            all_attn = [attn_map for attn_map in all_attn if attn_map is not None]
-            attn_output = [attn for attn in attn_output if attn is not None]
-            all_attn = torch.stack(all_attn, dim=0).squeeze(1)          # (n_layers, n_heads, seqlen, seqlen)
-            attn_output = torch.stack(attn_output, dim=0).squeeze(1)    # (n_layers, seqlen, attn_channels)
-            scan_output = torch.stack(scan_output, dim=0).squeeze(1)    # (n_layers, seqlen, scan_channels)
-            all_attn, attn_output, scan_output = activation_callback((all_attn, attn_output, scan_output))
-            all_attns.append(all_attn)
-            attn_outputs.append(attn_output)
-            scan_outputs.append(scan_output)
-        return all_attns, attn_outputs, scan_outputs
-    
-    def store_attention_outputs(self, attention_outputs: tuple[list[torch.Tensor]], path: str, fname: str = "") -> None:
-        """
-        Store attention outputs to path
-        Args:
-            attention_outputs (tuple[list[torch.Tensor]]): attentions (attention map and self-attention)
-            path (str): path to store
-            fname (str, optional): special filename. Defaults to "".
-        """
-        logger = logging.getLogger(__name__)
-        all_attns, attn_outputs, scan_outputs = attention_outputs
-        if not os.path.exists(path):
-            os.makedirs(os.path.dirname(path), exist_ok=True)
-        if path.endswith(".pt"):
-            path = path[:-3]
-        if fname != "":
-            fname = f"{fname}_"
-        for i, (all_attn, attn_output, scan_output) in enumerate(zip(all_attns, attn_outputs, scan_outputs)):
-            torch.save(all_attn, f"{path}_attn_{fname}all_attn_{i}.pt")
-            torch.save(attn_output, f"{path}_attn_{fname}attn_output_{i}.pt")
-            torch.save(scan_output, f"{path}_attn_{fname}scan_output_{i}.pt")
-        logger.info(f"Stored attention outputs to {path}")
         
-    def load_attention_outputs(self, dir: str, split: str, index: int, fname: str = "") -> tuple[torch.Tensor]:
+    def load_attention_outputs(self, dir: str, split: str, index: int, fname: str = "") -> tuple[list[torch.Tensor]]:
         """
         Load attention outputs from specified directory
         Args:
@@ -87,7 +42,7 @@ class ZambaOperator(Operator):
             fname (str, optional): special filename. Defaults to "".
         
         Returns:
-            tuple[torch.Tensor]: all_attn, attn_output, scan_output
+            tuple[list[torch.Tensor]]: all_attn, attn_output, scan_output
         """
         if fname != "":
             fname = f"{fname}_"
@@ -100,7 +55,17 @@ class ZambaOperator(Operator):
         all_attn = [all_attn[layer: layer + 1] for layer in range(all_attn.shape[0])]
         attn_output = [attn_output[layer: layer + 1] for layer in range(attn_output.shape[0])]
         scan_output = [scan_output[layer: layer + 1] for layer in range(scan_output.shape[0])]
-        return all_attn, attn_output, scan_output
+        all_attns, attn_outputs = [], []
+        it = 0
+        for i in self.ALL_LAYERS:
+            if i in self.HYBRID_LAYERS:
+                all_attns.append(all_attn[it])
+                attn_outputs.append(attn_output[it])
+                it += 1
+            else:
+                all_attns.append(None)
+                attn_outputs.append(None)
+        return all_attns, attn_outputs, scan_output
     
     @torch.inference_mode()
     def extract_cache(self, inputs: list, layers: list, activation_callback: Callable = lambda x: x) -> tuple[list[torch.Tensor]]:

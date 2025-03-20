@@ -1081,7 +1081,7 @@ class Zamba2AttentionDecoderLayer(nn.Module):
             **kwargs,
         )
         if attention_override is not None:
-            attn_hook, attn_override = attention_override
+            attn_hook, attn_override, _, _ = attention_override
             attn_output = attn_hook(attn_output, attn_override)
 
         hidden_states = self.pre_ff_layernorm(attn_output)
@@ -1150,7 +1150,7 @@ class Zamba2MambaDecoderLayer(nn.Module):
             attention_mask=attention_mask,
         )
         if attention_override is not None:
-            scan_hook, scan_override = attention_override
+            _, _, scan_hook, scan_override = attention_override
             scan_output = scan_hook(scan_output, scan_override)
 
         self_attn_weights = None
@@ -1219,7 +1219,7 @@ class Zamba2HybridLayer(nn.Module):
             past_key_value=past_key_value,
             output_attentions=output_attentions,
             position_embeddings=position_embeddings,
-            attention_override=attention_override[:2] if attention_override is not None else None,
+            attention_override=attention_override if attention_override is not None else None,
         )
 
         transformer_hidden_states = layer_outputs[0]
@@ -1237,7 +1237,7 @@ class Zamba2HybridLayer(nn.Module):
             output_attentions=output_attentions,
             use_cache=use_cache,
             position_embeddings=position_embeddings,
-            attention_override=attention_override[2:] if attention_override is not None else None,
+            attention_override=attention_override if attention_override is not None else None,
         )
 
         if output_attentions:
