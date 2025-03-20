@@ -21,6 +21,12 @@ class ZambaOperator(Operator):
         cache = ZambaHybridDynamicCache(self.model.config, 1, dtype=self.dtype, device=self.device)
         return cache
     
+    def get_attention_mean(self, attn: tuple[torch.Tensor]) -> tuple[torch.Tensor]:
+        all_attn, attn_output, scan_output = attn
+        attn_output = attn_output.mean(dim=1).unsqueeze(1)   # (n_layers, n_heads, attn_channels)
+        scan_output = scan_output.mean(dim=1).unsqueeze(1)   # (n_layers, n_heads, attn_channels)
+        return all_attn, attn_output, scan_output
+    
     @torch.inference_mode()
     def extract_attention_outputs(self, inputs: list[str], activation_callback: Callable = lambda x: x) -> tuple[torch.Tensor]:
         """
@@ -41,8 +47,8 @@ class ZambaOperator(Operator):
             all_attn = [attn_map for attn_map in all_attn if attn_map is not None]
             attn_output = [attn for attn in attn_output if attn is not None]
             all_attn = torch.stack(all_attn, dim=0).squeeze(1)          # (n_layers, n_heads, seqlen, seqlen)
-            attn_output = torch.stack(attn_output, dim=0).squeeze(1)    # (n_layers, n_heads, seqlen, attn_channels)
-            scan_output = torch.stack(scan_output, dim=0).squeeze(1)    # (n_layers, n_heads, seqlen, scan_channels)
+            attn_output = torch.stack(attn_output, dim=0).squeeze(1)    # (n_layers, seqlen, attn_channels)
+            scan_output = torch.stack(scan_output, dim=0).squeeze(1)    # (n_layers, seqlen, scan_channels)
             all_attn, attn_output, scan_output = activation_callback((all_attn, attn_output, scan_output))
             all_attns.append(all_attn)
             attn_outputs.append(attn_output)
@@ -63,10 +69,12 @@ class ZambaOperator(Operator):
             os.makedirs(os.path.dirname(path), exist_ok=True)
         if path.endswith(".pt"):
             path = path[:-3]
+        if fname != "":
+            fname = f"{fname}_"
         for i, (all_attn, attn_output, scan_output) in enumerate(zip(all_attns, attn_outputs, scan_outputs)):
-            torch.save(all_attn, f"{path}_attn_{fname}_all_attn_{i}.pt")
-            torch.save(attn_output, f"{path}_attn_{fname}_attn_output_{i}.pt")
-            torch.save(scan_output, f"{path}_attn_{fname}_scan_output_{i}.pt")
+            torch.save(all_attn, f"{path}_attn_{fname}all_attn_{i}.pt")
+            torch.save(attn_output, f"{path}_attn_{fname}attn_output_{i}.pt")
+            torch.save(scan_output, f"{path}_attn_{fname}scan_output_{i}.pt")
         logger.info(f"Stored attention outputs to {path}")
         
     def load_attention_outputs(self, dir: str, split: str, index: int, fname: str = "") -> tuple[torch.Tensor]:
@@ -81,15 +89,17 @@ class ZambaOperator(Operator):
         Returns:
             tuple[torch.Tensor]: all_attn, attn_output, scan_output
         """
-        all_attn_path = os.path.join(dir, f"{split}_attn_{fname}_all_attn_{index}.pt")
-        attn_output_path = os.path.join(dir, f"{split}_attn_{fname}_attn_output_{index}.pt")
-        scan_output_path = os.path.join(dir, f"{split}_attn_{fname}_scan_output_{index}.pt")
+        if fname != "":
+            fname = f"{fname}_"
+        all_attn_path = os.path.join(dir, f"{split}_attn_{fname}all_attn_{index}.pt")
+        attn_output_path = os.path.join(dir, f"{split}_attn_{fname}attn_output_{index}.pt")
+        scan_output_path = os.path.join(dir, f"{split}_attn_{fname}scan_output_{index}.pt")
         all_attn = torch.load(all_attn_path, map_location=self.device).to(self.dtype)
         attn_output = torch.load(attn_output_path, map_location=self.device).to(self.dtype)
         scan_output = torch.load(scan_output_path, map_location=self.device).to(self.dtype)
-        all_attn = [all_attn[layer: layer + 1] for layer in all_attn.shape[0]]
-        attn_output = [attn_output[layer: layer + 1] for layer in attn_output.shape[0]]
-        scan_output = [scan_output[layer: layer + 1] for layer in scan_output.shape[0]]
+        all_attn = [all_attn[layer: layer + 1] for layer in range(all_attn.shape[0])]
+        attn_output = [attn_output[layer: layer + 1] for layer in range(attn_output.shape[0])]
+        scan_output = [scan_output[layer: layer + 1] for layer in range(scan_output.shape[0])]
         return all_attn, attn_output, scan_output
     
     @torch.inference_mode()

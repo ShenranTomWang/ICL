@@ -31,3 +31,6 @@ my*
 *.pkl
 *.jsonl
 *.csv
+
+.ipynb_checkpoints
+*/.ipynb_checkpoints

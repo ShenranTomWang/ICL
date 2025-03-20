@@ -98,6 +98,17 @@ class Operator(ABC):
         return activations
     
     @abstractmethod
+    def get_attention_mean(self, attn: tuple) -> tuple:
+        """
+        Get mean attention values along sequence dimension
+        Args:
+            attn (tuple): attention values
+        Returns:
+            tuple: mean attention values
+        """
+        pass
+    
+    @abstractmethod
     def extract_attention_outputs(self, inputs: list[str], activation_callback: Callable = lambda x: x) -> list[torch.Tensor]:
         """
         Extract attentions at specified layers of attention stream

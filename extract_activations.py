@@ -38,7 +38,7 @@ if __name__ == "__main__":
     parser.add_argument("--is_null", default=False, action="store_true")
     
     parser.add_argument("--layers", type=str, default="-1", help="comma separated list of layer indices, or -1 for all layers")
-    parser.add_argument("--stream", type=str, default="resid", choices=["resid", "cache", "attn"])
+    parser.add_argument("--stream", type=str, default="resid", choices=["resid", "cache", "attn", "attn_mean"])
     parser.add_argument("--operator", type=str, default="TransformerOperator", choices=["TransformerOperator", "HymbaOperator", "RWKVOperator", "MambaOperator", "ZambaOperator"])
     parser.add_argument("--verbose", default=False, action="store_true")
     
