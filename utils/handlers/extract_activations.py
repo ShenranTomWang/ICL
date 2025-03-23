@@ -29,7 +29,7 @@ def train_handler(
         inputs_1 = [dp["input"] for dp in dataset.train if dp["output"] == dataset.options_raw[0]]
         inputs_0 = [dp["input"] for dp in dataset.train if dp["output"] == dataset.options_raw[1]]
         if fname == "":
-            fname = f"train_steer_{dataset.options[1]}-{dataset.options[0]}_k={args.k}"
+            fname = f"train_steer_{dataset.options_raw[1]}-{dataset.options_raw[0]}_k={int(args.k)}"
         run_operator(operator, args, seed, train_task, (inputs_1, inputs_0), fname)
 
 def demo_handler(
