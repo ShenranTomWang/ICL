@@ -30,7 +30,7 @@ if __name__ == "__main__":
     parser.add_argument("--add_newlines", default=False, action="store_true")
     parser.add_argument("--task", type=str, default=None)
     parser.add_argument("--dataset", type=str, default=None)
-    parser.add_argument("--split", type=str, default="demo", choices=["demo", "test", "dev"])
+    parser.add_argument("--split", type=str, default="demo", choices=["demo", "test", "dev", "train"])
     parser.add_argument("--seed", type=str, default="100,13,21,42,87")
     parser.add_argument("--n", type=int, default=-1, help="number of test points to use")
     parser.add_argument("--k", type=int, default=4, help="number of examples")
@@ -38,7 +38,7 @@ if __name__ == "__main__":
     parser.add_argument("--is_null", default=False, action="store_true")
     
     parser.add_argument("--layers", type=str, default="-1", help="comma separated list of layer indices, or -1 for all layers")
-    parser.add_argument("--stream", type=str, default="resid", choices=["resid", "cache", "attn", "attn_mean"])
+    parser.add_argument("--stream", type=str, default="resid", choices=["resid", "cache", "attn", "attn_mean", "steer"])
     parser.add_argument("--operator", type=str, default="TransformerOperator", choices=["TransformerOperator", "HymbaOperator", "RWKVOperator", "MambaOperator", "ZambaOperator"])
     parser.add_argument("--verbose", default=False, action="store_true")
     
@@ -46,6 +46,8 @@ if __name__ == "__main__":
     parser.add_argument("--out_dir", type=str, default="out/activations")
     args = parser.parse_args()
     
+    if args.stream == "steer":
+        assert args.split == "train" or args.split == "demo", "Can only extract steer stream for train or demo split"
     args.device = torch.device(args.device)
     args.handler = getattr(handlers, f"{args.split}_handler")
     args.operator = getattr(interpretability, args.operator)

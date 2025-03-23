@@ -3,16 +3,20 @@ from transformers import AutoTokenizer, AutoModelForCausalLM
 import torch
 from typing import Callable
 from .operator import Operator
+from interpretability.attention_outputs import HybridAttentionOutput
 from abc import ABC
 import logging, os
 
 class HybridOperator(Operator, ABC):
     
-    def __init__(self, tokenizer: AutoTokenizer, model: AutoModelForCausalLM, device: torch.DeviceObjType, dtype: torch.dtype):\
+    def __init__(self, tokenizer: AutoTokenizer, model: AutoModelForCausalLM, device: torch.DeviceObjType, dtype: torch.dtype):
         super().__init__(tokenizer, model, device, dtype)
+        
+    def get_attention_mean(self, attn: HybridAttentionOutput) -> HybridAttentionOutput:
+        return attn.mean()
     
     @torch.inference_mode()
-    def extract_attention_outputs(self, inputs: list[str], activation_callback: Callable = lambda x: x) -> tuple[torch.Tensor]:
+    def extract_attention_outputs(self, inputs: list[str], activation_callback: Callable = lambda x: x) -> list[HybridAttentionOutput]:
         """
         Extract attentions from the model
         Args:
@@ -20,55 +24,63 @@ class HybridOperator(Operator, ABC):
             activation_callback (Callable, optional): callback function to process attentions. Defaults to ....
 
         Returns:
-            tuple[torch.Tensor]: attentions (self-attention and scan)
+            list[HybridAttentionOutput]: attentions (self-attention and scan)
         """
-        all_attns, attn_outputs, scan_outputs = [], [], []
+        outputs = []
         for input in inputs:
             tokenized = self.tokenizer(input, return_tensors="pt", truncation=True)
             tokenized = {k: v.to(self.device) for k, v in tokenized.items()}
             output = self.model(**tokenized, output_attentions=True)
             # n_layers * (batch_size, n_heads, pad_len + seqlen, pad_len + seqlen), (batch_size, pad_len + seqlen, attn_channels), (batch_size, pad_len + seqlen, attn_channels)
             all_attn, attn_output, scan_output = output.attentions
-            all_attn = [attn_map for attn_map in all_attn if attn_map is not None]
-            attn_output = [attn for attn in attn_output if attn is not None]
-            scan_output = [attn for attn in scan_output if attn is not None]
             all_attn, attn_output, scan_output = list(all_attn), list(attn_output), list(scan_output)
-            all_attn, attn_output, scan_output = activation_callback((all_attn, attn_output, scan_output))
-            all_attns.append(all_attn)
-            attn_outputs.append(attn_output)
-            scan_outputs.append(scan_output)
-        return all_attns, attn_outputs, scan_outputs
+            hybrid_output = HybridAttentionOutput(all_attn, attn_output, scan_output)
+            hybrid_output = activation_callback(hybrid_output)
+            outputs.append(hybrid_output)
+        return outputs
     
-    def store_attention_outputs(self, attention_outputs: tuple[list[torch.Tensor]], path: str, fname: str = "") -> None:
+    def store_attention_outputs(self, attention_outputs: list[HybridAttentionOutput], path: str, fname: str = "") -> None:
         """
         Store attention outputs to path
         Args:
-            attention_outputs (tuple[list[torch.Tensor]]): attentions (self-attention and scan)
+            attention_outputs (tuple[list[list[torch.Tensor]]]): attentions (self-attention and scan)
             path (str): path to store
             fname (str, optional): filename. Defaults to "".
         """
         logger = logging.getLogger(__name__)
-        all_attns, attn_outputs, scan_outputs = attention_outputs
-        if path.endswith(".pt"):
+        if path.endswith(".pth"):
             path = path[:-3]
         if not os.path.exists(path):
             os.makedirs(os.path.dirname(path), exist_ok=True)
         if fname != "":
             fname = f"{fname}_"
-        for i, (all_attn, attn_output, scan_output) in enumerate(zip(all_attns, attn_outputs, scan_outputs)):
-            all_attn = torch.stack(all_attn, dim=0).squeeze(1)         # (n_layers, n_heads, pad_len + seqlen, pad_len + seqlen)
-            attn_output = torch.stack(attn_output, dim=0).squeeze(1)   # (n_layers, pad_len + seqlen, attn_channels)
-            scan_output = torch.stack(scan_output, dim=0).squeeze(1)   # (n_layers, pad_len + seqlen, attn_channels)
-            torch.save(all_attn, f"{path}_attn_{fname}all_attn_{i}.pt")
-            torch.save(attn_output, f"{path}_attn_{fname}attn_output_{i}.pt")
-            torch.save(scan_output, f"{path}_attn_{fname}scan_output_{i}.pt")
+        for i, attention_output in enumerate(attention_outputs):
+            attention_output.save(f"{path}_attn_{fname}{i}.pth")
         logger.info(f"Stored attention outputs to {path}")
-    
+        
+    def load_attention_outputs(self, dir: str, split: str, index: int, fname: str = "") -> HybridAttentionOutput:
+        """
+        Load attention outputs from specified directory
+        Args:
+            dir (str): directory
+            split (str): one of demo, test and train
+            index (int): index
+            fname (str, optional): special filename. Defaults to "".
+        
+        Returns:
+            tuple[list[torch.Tensor]]: all_attn, attn_output, scan_output
+        """
+        if fname != "":
+            fname = f"{fname}_"
+        path = os.path.join(dir, f"{split}_attn_{fname}{index}.pth")
+        hybrid_output: HybridAttentionOutput = torch.load(path, map_location=self.device).to(self.dtype)
+        return hybrid_output
+
     def attention2kwargs(
         self,
-        attention: tuple[torch.Tensor],
-        attention_intervention: Callable,
-        scan_intervention: Callable,
+        attention: HybridAttentionOutput,
+        attention_intervention_fn: Callable,
+        scan_intervention_fn: Callable,
         layers: list[int] = None,
         keep_scan: bool = True,
         keep_attention: bool = True,
@@ -77,9 +89,9 @@ class HybridOperator(Operator, ABC):
         """
         Convert attention outputs to kwargs for intervention
         Args:
-            attention (tuple[torch.Tensor])
-            attention_intervention (Callable): intervention function for attention
-            scan_intervention (Callable): intervention function for scan
+            attention (HybridAttentionOutput)
+            attention_intervention_fn (Callable): intervention function for attention
+            scan_intervention_fn (Callable): intervention function for scan
             layers (list[int], optional): list of layers to use attention, if None, use all layers. Defaults to None.
             keep_scan (bool, optional): whether to keep scan outputs. Defaults to True.
             keep_attention (bool, optional): whether to keep attention outputs. Defaults to True.
@@ -90,12 +102,11 @@ class HybridOperator(Operator, ABC):
         if layers is None:
             layers = self.ALL_LAYERS
         _, attn_outputs, scan_outputs = attention
-        params = []
+        params = ()
         for layer in layers:
             attn = attn_outputs[layer] if keep_attention else None
             scan = scan_outputs[layer] if keep_scan else None
-            params.append(attention_intervention, attn, scan_intervention, scan)
-        params = tuple(params)
+            params += ((attention_intervention_fn, attn, scan_intervention_fn, scan),)
         return {"attention_overrides": params}
     
     @torch.inference_mode()

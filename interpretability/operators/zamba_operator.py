@@ -23,49 +23,6 @@ class ZambaOperator(HybridOperator):
         cache = ZambaHybridDynamicCache(self.model.config, 1, dtype=self.dtype, device=self.device)
         return cache
     
-    def get_attention_mean(self, attn: tuple[torch.Tensor]) -> tuple[torch.Tensor]:
-        all_attn, attn_output, scan_output = attn
-        for i, attn_i in enumerate(attn_output):
-            attn_output[i] = attn_i.mean(dim=1).unsqueeze(1)   # (1, attn_channels)
-        for i, scan_i in enumerate(scan_output):
-            scan_output[i] = scan_i.mean(dim=1).unsqueeze(1)   # (1, attn_channels)
-        return all_attn, attn_output, scan_output
-        
-    def load_attention_outputs(self, dir: str, split: str, index: int, fname: str = "") -> tuple[list[torch.Tensor]]:
-        """
-        Load attention outputs from specified directory
-        Args:
-            dir (str): directory
-            split (str): one of demo, test and train
-            index (int): index
-            fname (str, optional): special filename. Defaults to "".
-        
-        Returns:
-            tuple[list[torch.Tensor]]: all_attn, attn_output, scan_output
-        """
-        if fname != "":
-            fname = f"{fname}_"
-        all_attn_path = os.path.join(dir, f"{split}_attn_{fname}all_attn_{index}.pt")
-        attn_output_path = os.path.join(dir, f"{split}_attn_{fname}attn_output_{index}.pt")
-        scan_output_path = os.path.join(dir, f"{split}_attn_{fname}scan_output_{index}.pt")
-        all_attn = torch.load(all_attn_path, map_location=self.device).to(self.dtype)
-        attn_output = torch.load(attn_output_path, map_location=self.device).to(self.dtype)
-        scan_output = torch.load(scan_output_path, map_location=self.device).to(self.dtype)
-        all_attn = [all_attn[layer: layer + 1] for layer in range(all_attn.shape[0])]
-        attn_output = [attn_output[layer: layer + 1] for layer in range(attn_output.shape[0])]
-        scan_output = [scan_output[layer: layer + 1] for layer in range(scan_output.shape[0])]
-        all_attns, attn_outputs = [], []
-        it = 0
-        for i in self.ALL_LAYERS:
-            if i in self.HYBRID_LAYERS:
-                all_attns.append(all_attn[it])
-                attn_outputs.append(attn_output[it])
-                it += 1
-            else:
-                all_attns.append(None)
-                attn_outputs.append(None)
-        return all_attns, attn_outputs, scan_output
-    
     @torch.inference_mode()
     def extract_cache(self, inputs: list, layers: list, activation_callback: Callable = lambda x: x) -> tuple[list[torch.Tensor]]:
         """

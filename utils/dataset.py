@@ -10,6 +10,7 @@ class Dataset:
         self.verbose = verbose
         self.task = train[0]["task"]
         self.demo = None
+        self.options_raw = train[0]["options"]
         if add_newlines:
             self.options = ["\n" + option for option in train[0]["options"]]
         else:

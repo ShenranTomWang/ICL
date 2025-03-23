@@ -5,7 +5,8 @@ from transformer_lens import HookedTransformer
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from transformers.cache_utils import Cache, MambaCache
 import torch
-from typing import Callable, Any
+from typing import Callable
+from interpretability.attention_outputs import AttentionOutput
 from abc import ABC, abstractmethod
 import os, logging
 
@@ -98,41 +99,41 @@ class Operator(ABC):
         return activations
     
     @abstractmethod
-    def get_attention_mean(self, attn: tuple) -> tuple:
+    def get_attention_mean(self, attn: AttentionOutput) -> AttentionOutput:
         """
         Get mean attention values along sequence dimension
         Args:
-            attn (tuple): attention values
+            attn (AttentionOutput): attention values
         Returns:
-            tuple: mean attention values
+            AttentionOutput: mean attention values
         """
         pass
     
     @abstractmethod
-    def extract_attention_outputs(self, inputs: list[str], activation_callback: Callable = lambda x: x) -> list[torch.Tensor]:
+    def extract_attention_outputs(self, inputs: list[str], activation_callback: Callable = lambda x: x) -> list[AttentionOutput]:
         """
         Extract attentions at specified layers of attention stream
         Args:
             inputs (list): list of inputs
             activation_callback (function(torch.Tensor)): callback function to extracted activations, applied to activation values at each layer
         Returns:
-            list[torch.Tensor]: list of tensors originally (n_layers, n_heads, seqlen, seqlen), but processed by activation_callback
+            list[AttentionOutput]: attention outputs
         """
         pass
     
     @abstractmethod
-    def store_attention_outputs(self, attention_outputs: list[torch.Tensor], path: str, fname: str = "") -> None:
+    def store_attention_outputs(self, attention_outputs: list[AttentionOutput], path: str, fname: str = "") -> None:
         """
         Store attention outputs to specified path
         Args:
-            attention_outputs (list): list of attention outputs
+            attention_outputs (list[AttentionOutput]): list of attention outputs
             path (str): path to store attention outputs
             fname (str): special filename
         """
         pass
     
     @abstractmethod
-    def load_attention_outputs(self, dir: str, split: str, index: int, fname: str = "") -> tuple[torch.Tensor]:
+    def load_attention_outputs(self, dir: str, split: str, index: int, fname: str = "") -> AttentionOutput:
         """
         Load attention outputs from specified directory
         Args:
@@ -141,7 +142,19 @@ class Operator(ABC):
             index (int): index of attention outputs
             fname (str): special filename
         Returns:
-            tuple[torch.Tensor]: attention outputs
+            AttentionOutput: attention outputs
+        """
+        pass
+    
+    @abstractmethod
+    def attention2kwargs(self, attention: AttentionOutput, **kwargs: dict) -> dict:
+        """
+        Convert attention to kwargs for forward pass
+        Args:
+            attention (AttentionOutput): attention
+            kwargs (dict): kwargs
+        Returns:
+            dict: kwargs
         """
         pass
     
