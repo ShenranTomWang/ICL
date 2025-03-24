@@ -130,24 +130,19 @@ class Operator(ABC):
         """
         pass
     
-    def store_attention_outputs(self, attention_outputs: list[AttentionOutput], path: str, fname: str = "") -> None:
+    def store_attention_outputs(self, attention_outputs: list[AttentionOutput], dir: str) -> None:
         """
         Store attention outputs to specified path
         Args:
             attention_outputs (list[AttentionOutput]): list of attention outputs
-            path (str): path to store attention outputs
-            fname (str): special filename
+            dir (str): directory to save to
         """
         logger = logging.getLogger(__name__)
-        if path.endswith(".pth"):
-            path = path[:-3]
-        if not os.path.exists(path):
-            os.makedirs(os.path.dirname(path), exist_ok=True)
-        if fname != "":
-            fname = f"{fname}_"
+        if not os.path.exists(dir):
+            os.makedirs(os.path.dirname(dir), exist_ok=True)
         for i, attention_output in enumerate(attention_outputs):
-            attention_output.save(f"{path}_attn_{fname}{i}.pth")
-        logger.info(f"Stored attention outputs to {path}")
+            attention_output.save(f"{dir}/{i}.pth")
+        logger.info(f"Stored attention outputs to {dir}")
     
     def load_attention_outputs(self, dir: str, split: str, index: int, fname: str = "") -> AttentionOutput:
         """
