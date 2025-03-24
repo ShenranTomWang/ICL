@@ -99,6 +99,15 @@ class Operator(ABC):
         return activations
     
     @abstractmethod
+    def get_attention_add_mean_hook(self) -> Callable:
+        """
+        Get hook function to add mean attention values along sequence dimension
+
+        Returns:
+            Callable: hook function
+        """
+        pass
+    
     def get_attention_mean(self, attn: AttentionOutput) -> AttentionOutput:
         """
         Get mean attention values along sequence dimension
@@ -107,7 +116,7 @@ class Operator(ABC):
         Returns:
             AttentionOutput: mean attention values
         """
-        pass
+        return attn.mean()
     
     @abstractmethod
     def extract_attention_outputs(self, inputs: list[str], activation_callback: Callable = lambda x: x) -> list[AttentionOutput]:
@@ -121,7 +130,6 @@ class Operator(ABC):
         """
         pass
     
-    @abstractmethod
     def store_attention_outputs(self, attention_outputs: list[AttentionOutput], path: str, fname: str = "") -> None:
         """
         Store attention outputs to specified path
@@ -130,9 +138,17 @@ class Operator(ABC):
             path (str): path to store attention outputs
             fname (str): special filename
         """
-        pass
+        logger = logging.getLogger(__name__)
+        if path.endswith(".pth"):
+            path = path[:-3]
+        if not os.path.exists(path):
+            os.makedirs(os.path.dirname(path), exist_ok=True)
+        if fname != "":
+            fname = f"{fname}_"
+        for i, attention_output in enumerate(attention_outputs):
+            attention_output.save(f"{path}_attn_{fname}{i}.pth")
+        logger.info(f"Stored attention outputs to {path}")
     
-    @abstractmethod
     def load_attention_outputs(self, dir: str, split: str, index: int, fname: str = "") -> AttentionOutput:
         """
         Load attention outputs from specified directory
@@ -144,7 +160,11 @@ class Operator(ABC):
         Returns:
             AttentionOutput: attention outputs
         """
-        pass
+        if fname != "":
+            fname = f"{fname}_"
+        path = os.path.join(dir, f"{split}_attn_{fname}{index}.pth")
+        hybrid_output = torch.load(path, map_location=self.device).to(self.dtype)
+        return hybrid_output
     
     @abstractmethod
     def attention2kwargs(self, attention: AttentionOutput, **kwargs: dict) -> dict:

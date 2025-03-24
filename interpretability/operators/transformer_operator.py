@@ -1,20 +1,67 @@
 import shutup; shutup.please()
 from transformers import AutoTokenizer
 from interpretability.models.qwen2 import Qwen2ForCausalLM
+from interpretability.attention_outputs import SelfAttentionOutput
+from interpretability.hooks import add_mean_hybrid
 from transformers.cache_utils import DynamicCache
 import torch
 from .operator import Operator
 import os, logging
 from typing import Callable
 
-class TransformerOperator(Operator):
-    """TODO: implement attention related methods
-    """
-    
+class TransformerOperator(Operator):    
     def __init__(self, path: str, device: torch.DeviceObjType, dtype: torch.dtype):
         tokenizer = AutoTokenizer.from_pretrained(path, trust_remote_code=True)
-        model = Qwen2ForCausalLM.from_pretrained(path, trust_remote_code=True).to(device).to(dtype)
+        model = Qwen2ForCausalLM.from_pretrained(path).to(device).to(dtype)
+        self.ALL_LAYERS = [i for i in range(model.config.num_hidden_layers)]
         super().__init__(tokenizer, model, device, dtype)
+        
+    def get_attention_add_mean_hook(self):
+        return add_mean_hybrid
+        
+    def extract_attention_outputs(self, inputs: list[str], activation_callback = lambda x: x) -> SelfAttentionOutput:
+        """
+        Extract internal representations at of attention outputs
+        Args:
+            inputs (list): list of inputs
+            activation_callback (SelfAttentionOutput): callback function applied to all attention outputs from all layers
+        Returns:
+            SelfAttentionOutput: attention outputs
+        """
+        attn_outputs = []
+        for input in inputs:
+            tokenized = self.tokenizer(input, return_tensors="pt", truncation=True).to(self.device)
+            all_attn, attn_output = self.model(**tokenized, output_attentions=True).attentions
+            attn_output = SelfAttentionOutput(all_attn, attn_output)
+            attn_output = activation_callback(attn_output)
+            attn_outputs.append(attn_output)
+        return attn_outputs
+    
+    def attention2kwargs(
+        self,
+        attention: SelfAttentionOutput,
+        attention_intervention_fn: Callable,
+        layers: list[int] = None,
+        **kwargs
+    ) -> dict:
+        """
+        Convert attention outputs to kwargs for intervention
+        Args:
+            attention (SelfAttentionOutput)
+            attention_intervention_fn (Callable): intervention function for attention
+            layers (list[int], optional): list of layers to use attention, if None, use all layers. Defaults to None.
+            **kwargs: additional kwargs, not used
+        Returns:
+            dict: kwargs
+        """
+        if layers is None:
+            layers = self.ALL_LAYERS
+        _, attn_outputs = attention
+        params = ()
+        for layer in self.ALL_LAYERS:
+            attn = attn_outputs[layer] if layer in layers else None
+            params += ((attention_intervention_fn, attn),)
+        return {"attention_overrides": params}
         
     def get_cache_instance(self):
         cache = DynamicCache()

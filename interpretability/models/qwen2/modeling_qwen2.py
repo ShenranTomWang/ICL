@@ -154,6 +154,7 @@ class Qwen2Attention(nn.Module):
         attention_mask: Optional[torch.Tensor],
         past_key_value: Optional[Cache] = None,
         cache_position: Optional[torch.LongTensor] = None,
+        attention_override: Optional[tuple] = None,
         **kwargs: Unpack[FlashAttentionKwargs],
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor], Optional[Tuple[torch.Tensor]]]:
         input_shape = hidden_states.shape[:-1]
@@ -162,13 +163,6 @@ class Qwen2Attention(nn.Module):
         query_states = self.q_proj(hidden_states).view(hidden_shape).transpose(1, 2)
         key_states = self.k_proj(hidden_states).view(hidden_shape).transpose(1, 2)
         value_states = self.v_proj(hidden_states).view(hidden_shape).transpose(1, 2)
-        
-        if past_key_value is not None and len(past_key_value.key_cache) > self.layer_idx:
-            import pdb; pdb.set_trace()
-            past_k = past_key_value.key_cache[self.layer_idx]
-            past_v = past_key_value.value_cache[self.layer_idx]
-            key_states = torch.cat([past_k, key_states], dim=2)
-            value_states = torch.cat([past_v, value_states], dim=2)
 
         cos, sin = position_embeddings
         query_states, key_states = apply_rotary_pos_emb(query_states, key_states, cos, sin)
@@ -209,8 +203,12 @@ class Qwen2Attention(nn.Module):
         )
 
         attn_output = attn_output.reshape(*input_shape, -1).contiguous()
+        if attention_override is not None:
+            hook, intervention = attention_override
+            attn_output = hook(attn_output, intervention)
+            
         attn_output = self.o_proj(attn_output)
-        return attn_output, attn_weights
+        return attn_output, attn_weights, attn_output
 
 
 class Qwen2RMSNorm(nn.Module):
@@ -257,6 +255,7 @@ class Qwen2DecoderLayer(nn.Module):
         use_cache: Optional[bool] = False,
         cache_position: Optional[torch.LongTensor] = None,
         position_embeddings: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,  # necessary, but kept here for BC
+        attention_override: Optional[tuple] = None,
         **kwargs: Unpack[FlashAttentionKwargs],
     ) -> Tuple[torch.FloatTensor, Optional[Tuple[torch.FloatTensor, torch.FloatTensor]]]:
         residual = hidden_states
@@ -264,7 +263,7 @@ class Qwen2DecoderLayer(nn.Module):
         hidden_states = self.input_layernorm(hidden_states)
 
         # Self Attention
-        hidden_states, self_attn_weights = self.self_attn(
+        hidden_states, self_attn_weights, attn_output = self.self_attn(
             hidden_states=hidden_states,
             attention_mask=attention_mask,
             position_ids=position_ids,
@@ -273,6 +272,7 @@ class Qwen2DecoderLayer(nn.Module):
             use_cache=use_cache,
             cache_position=cache_position,
             position_embeddings=position_embeddings,
+            attention_override=attention_override,
             **kwargs,
         )
         hidden_states = residual + hidden_states
@@ -285,7 +285,7 @@ class Qwen2DecoderLayer(nn.Module):
 
         outputs = (hidden_states,)
         if output_attentions:
-            outputs += (self_attn_weights,)
+            outputs += (self_attn_weights, attn_output,)
 
         return outputs
 
@@ -520,6 +520,7 @@ class Qwen2Model(Qwen2PreTrainedModel):
         output_hidden_states: Optional[bool] = None,
         return_dict: Optional[bool] = None,
         cache_position: Optional[torch.LongTensor] = None,
+        attention_overrides: Optional[tuple[Callable, Optional[torch.Tensor]]] = None,
         **flash_attn_kwargs: Unpack[FlashAttentionKwargs],
     ) -> Union[Tuple, BaseModelOutputWithPast]:
         output_attentions = output_attentions if output_attentions is not None else self.config.output_attentions
@@ -565,8 +566,9 @@ class Qwen2Model(Qwen2PreTrainedModel):
         # decoder layers
         all_hidden_states = () if output_hidden_states else None
         all_self_attns = () if output_attentions else None
+        all_attn_outputs = () if output_attentions else None
 
-        for decoder_layer in self.layers[: self.config.num_hidden_layers]:
+        for i, decoder_layer in enumerate(self.layers[: self.config.num_hidden_layers]):
             if output_hidden_states:
                 all_hidden_states += (hidden_states,)
 
@@ -592,6 +594,7 @@ class Qwen2Model(Qwen2PreTrainedModel):
                     use_cache=use_cache,
                     cache_position=cache_position,
                     position_embeddings=position_embeddings,
+                    attention_override=attention_overrides[i] if attention_overrides else None,
                     **flash_attn_kwargs,
                 )
 
@@ -599,6 +602,7 @@ class Qwen2Model(Qwen2PreTrainedModel):
 
             if output_attentions:
                 all_self_attns += (layer_outputs[1],)
+                all_attn_outputs += (layer_outputs[2],)
 
         hidden_states = self.norm(hidden_states)
 
@@ -610,7 +614,7 @@ class Qwen2Model(Qwen2PreTrainedModel):
             last_hidden_state=hidden_states,
             past_key_values=past_key_values if use_cache else None,
             hidden_states=all_hidden_states,
-            attentions=all_self_attns,
+            attentions=(all_self_attns, all_attn_outputs) if output_attentions else None,
         )
         return output if return_dict else output.to_tuple()
 
@@ -819,6 +823,7 @@ class Qwen2ForCausalLM(Qwen2PreTrainedModel, GenerationMixin):
         return_dict: Optional[bool] = None,
         cache_position: Optional[torch.LongTensor] = None,
         logits_to_keep: Union[int, torch.Tensor] = 0,
+        attention_overrides: Optional[tuple] = None,
         **kwargs: Unpack[KwargsForCausalLM],
     ) -> Union[Tuple, CausalLMOutputWithPast]:
         r"""
@@ -870,6 +875,7 @@ class Qwen2ForCausalLM(Qwen2PreTrainedModel, GenerationMixin):
             output_hidden_states=output_hidden_states,
             return_dict=return_dict,
             cache_position=cache_position,
+            attention_overrides=attention_overrides,
             **kwargs,
         )
 

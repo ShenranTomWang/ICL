@@ -24,7 +24,7 @@ def main(args: object, logger: logging.Logger) -> None:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", type=str, required=True)
-    parser.add_argument("--dtype", type=str, default="float16", choices=["float16", "float32", "bfloat16"])
+    parser.add_argument("--dtype", type=str, default="bfloat16", choices=["float16", "float32", "bfloat16"])
     parser.add_argument("--device", type=str, default="cuda:0")
     
     parser.add_argument("--add_newlines", default=False, action="store_true")

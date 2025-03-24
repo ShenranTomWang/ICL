@@ -4,16 +4,63 @@ from interpretability.models.mamba import MambaCache, MambaForCausalLM
 import torch
 from typing import Callable
 from .operator import Operator
+from interpretability.attention_outputs import ScanOutput
+from interpretability.hooks import add_mean_scan
 import logging, os
 
 class MambaOperator(Operator):
-    """TODO: implement attention related methods
-    """
     def __init__(self, path: str, device: torch.DeviceObjType, dtype: torch.dtype):
         tokenizer = AutoTokenizer.from_pretrained(path, trust_remote_code=True)
         model = MambaForCausalLM.from_pretrained(path).to(device).to(dtype)
         self.ALL_LAYERS = [i for i in range(model.config.n_layer)]
         super().__init__(tokenizer, model, device, dtype)
+        
+    def get_attention_add_mean_hook(self) -> Callable:
+        return add_mean_scan
+        
+    def extract_attention_outputs(self, inputs, activation_callback = lambda x: x) -> list[ScanOutput]:
+        """
+        Extract internal representations at of attention outputs
+        Args:
+            inputs (list): list of inputs
+            activation_callback (function(torch.Tensor)): callback function applied to all attention outputs from all layers
+        Returns:
+            list[ScanOutput]: list of ScanOutputs
+        """
+        attention_outputs = []
+        for input in inputs:
+            tokenized = self.tokenizer(input, return_tensors="pt", truncation=True).to(self.device)
+            scan_outputs = self.model(**tokenized, output_attentions=True).attentions
+            scan_outputs = list(scan_outputs)
+            scan_outputs = ScanOutput(scan_outputs)
+            scan_outputs = activation_callback(scan_outputs)
+            attention_outputs.append(scan_outputs)
+        return attention_outputs
+    
+    def attention2kwargs(
+        self,
+        scan_outputs: ScanOutput,
+        scan_intervention_fn: Callable,
+        layers: list[int] = None,
+        **kwargs
+    ) -> dict:
+        """
+        Convert attention outputs to kwargs for intervention
+        Args:
+            scan_outputs (ScanOutput): intervention values
+            scan_intervention_fn (Callable): intervention function for scan
+            layers (list[int], optional): list of layers to use attention, if None, use all layers. Defaults to None.
+            **kwargs: additional kwargs, not used
+        Returns:
+            dict: kwargs
+        """
+        if layers is None:
+            layers = self.ALL_LAYERS
+        params = ()
+        for layer in self.ALL_LAYERS:
+            scan = scan_outputs[layer] if layer in layers else None
+            params += ((scan_intervention_fn, scan),)
+        return {"attention_overrides": params}
     
     @torch.inference_mode()
     def extract_cache(self, inputs: list, activation_callback: Callable = lambda x: x) -> tuple[list[torch.Tensor]]:
@@ -135,8 +182,7 @@ class MambaOperator(Operator):
         cache_instance = MambaCache(self.model.config, 1, dtype=self.dtype, device=self.device, ssm_states=ssm_states, conv_states=conv_states)
         cache_kwargs = {"use_cache": True, "cache_params": cache_instance, "cache_position": torch.tensor([demo_length], device=self.device)}
         return cache_kwargs
-        
-        
+       
     def prepare_cache_kwargs_for_inputs(self, cache_kwargs: dict, input_length: int) -> dict:
         """
         Prepare cache kwargs for inputs

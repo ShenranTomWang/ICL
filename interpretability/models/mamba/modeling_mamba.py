@@ -138,6 +138,8 @@ class MambaMixer(nn.Module):
         cache_params: Optional[MambaCache] = None,
         cache_position: Optional[torch.LongTensor] = None,
         attention_mask: Optional[torch.LongTensor] = None,
+        output_attentions: Optional[bool] = False,
+        attention_override: Optional[Tuple[torch.Tensor]] = None,
     ):
         # import pdb; pdb.set_trace()
         # 1. Gated MLP's linear projection
@@ -228,13 +230,25 @@ class MambaMixer(nn.Module):
                 )
                 if ssm_state is not None and cache_params is not None:
                     cache_params.update_ssm_state(self.layer_idx, ssm_state)
-
+            
+            attention = scan_outputs if output_attentions else None
+            if attention_override is not None:
+                hook, scan_intervention = attention_override
+                scan_outputs = hook(scan_outputs, scan_intervention)
             # 4. Final linear projection
             contextualized_states = self.out_proj(scan_outputs.transpose(1, 2))
-        return contextualized_states
+        return contextualized_states, attention
 
     # fmt: off
-    def slow_forward(self, input_states, cache_params: Optional[MambaCache]=None, cache_position:Optional[torch.LongTensor]=None, attention_mask: Optional[torch.LongTensor] = None):
+    def slow_forward(
+        self,
+        input_states,
+        cache_params: Optional[MambaCache]=None,
+        cache_position:Optional[torch.LongTensor]=None,
+        attention_mask: Optional[torch.LongTensor] = None,
+        attention_override: Optional[Tuple[torch.Tensor]] = None,
+        output_attentions: Optional[bool] = False,
+    ):
         batch_size, seq_len, _ = input_states.shape
         dtype = input_states.dtype
         # 1. Gated MLP's linear projection
@@ -308,12 +322,16 @@ class MambaMixer(nn.Module):
             scan_output = scan_output + (hidden_states * self.D[None, :, None])
             scan_output = (scan_output * self.act(gate))
 
+            attention = scan_output if output_attentions else None
             if cache_params is not None:
                 cache_params.ssm_states[self.layer_idx].copy_(ssm_state)
+            if attention_override is not None:
+                hook, scan_intervention = attention_override
+                scan_output = hook(scan_output, scan_intervention)
 
         # 4. Final linear projection
         contextualized_states = self.out_proj(scan_output.transpose(1, 2))  # [batch, seq_len, hidden_size]
-        return contextualized_states
+        return contextualized_states, attention
     # fmt: on
 
     def forward(
@@ -322,10 +340,26 @@ class MambaMixer(nn.Module):
         cache_params: Optional[MambaCache] = None,
         cache_position: Optional[torch.LongTensor] = None,
         attention_mask: Optional[torch.LongTensor] = None,
+        attention_override: Optional[Tuple[torch.Tensor]] = None,
+        output_attentions: Optional[bool] = False,
     ):
         if is_fast_path_available and "cuda" in self.x_proj.weight.device.type and not torch._dynamo.is_compiling():
-            return self.cuda_kernels_forward(hidden_states, cache_params, cache_position, attention_mask)
-        return self.slow_forward(hidden_states, cache_params, cache_position, attention_mask)
+            return self.cuda_kernels_forward(
+                hidden_states,
+                cache_params,
+                cache_position,
+                attention_mask,
+                output_attentions=output_attentions,
+                attention_override=attention_override
+            )
+        return self.slow_forward(
+            hidden_states,
+            cache_params,
+            cache_position,
+            attention_mask,
+            output_attentions=output_attentions,
+            attention_override=attention_override
+        )
 
 
 class MambaRMSNorm(nn.Module):
@@ -363,17 +397,25 @@ class MambaBlock(nn.Module):
         cache_params: Optional[MambaCache] = None,
         cache_position: Optional[torch.LongTensor] = None,
         attention_mask: Optional[torch.LongTensor] = None,
+        output_attentions: Optional[bool] = False,
+        attention_override: Optional[tuple] = None,
     ):
         residual = hidden_states
         hidden_states = self.norm(hidden_states.to(dtype=self.norm.weight.dtype))
         if self.residual_in_fp32:
             residual = residual.to(torch.float32)
 
-        hidden_states = self.mixer(
-            hidden_states, cache_params=cache_params, cache_position=cache_position, attention_mask=attention_mask
+        outputs = self.mixer(
+            hidden_states,
+            cache_params=cache_params,
+            cache_position=cache_position,
+            attention_mask=attention_mask,
+            attention_override=attention_override,
+            output_attentions=output_attentions,
         )
+        hidden_states, attention = outputs
         hidden_states = residual + hidden_states
-        return hidden_states
+        return hidden_states, attention
 
 
 class MambaPreTrainedModel(PreTrainedModel):
@@ -459,6 +501,7 @@ class MambaOutput(ModelOutput):
     last_hidden_state: Optional[torch.FloatTensor] = None
     cache_params: Optional[MambaCache] = None
     hidden_states: Optional[Tuple[torch.FloatTensor]] = None
+    attentions: Optional[Tuple[torch.FloatTensor]] = None
 
 
 @dataclass
@@ -487,6 +530,7 @@ class MambaCausalLMOutput(ModelOutput):
     logits: Optional[torch.FloatTensor] = None
     cache_params: Optional[MambaCache] = None
     hidden_states: Optional[Tuple[torch.FloatTensor]] = None
+    attentions: Optional[Tuple[torch.FloatTensor]] = None
 
 
 MAMBA_START_DOCSTRING = r"""
@@ -583,6 +627,8 @@ class MambaModel(MambaPreTrainedModel):
         return_dict: Optional[bool] = None,
         cache_position: Optional[torch.LongTensor] = None,
         attention_mask: Optional[torch.LongTensor] = None,
+        output_attentions: Optional[bool] = None,
+        attention_overrides: Optional[tuple] = None,
     ) -> Union[Tuple, MambaOutput]:
         output_hidden_states = (
             output_hidden_states if output_hidden_states is not None else self.config.output_hidden_states
@@ -619,19 +665,25 @@ class MambaModel(MambaPreTrainedModel):
 
         hidden_states = inputs_embeds
         all_hidden_states = () if output_hidden_states else None
-        for mixer_block in self.layers:
+        all_attentions = () if output_attentions else None
+        for i, mixer_block in enumerate(self.layers):
             if self.gradient_checkpointing and self.training:
                 hidden_states = self._gradient_checkpointing_func(
                     mixer_block.__call__, hidden_states, cache_params, cache_position, attention_mask
                 )
             else:
-                hidden_states = mixer_block(
+                outputs = mixer_block(
                     hidden_states,
                     cache_params=cache_params,
                     cache_position=cache_position,
                     attention_mask=attention_mask,
+                    output_attentions=output_attentions,
+                    attention_override=attention_overrides[i] if attention_overrides is not None else None,
                 )
-
+                hidden_states = outputs[0]
+                
+            if output_attentions:
+                all_attentions += (outputs[1],)
             if output_hidden_states:
                 all_hidden_states = all_hidden_states + (hidden_states,)
 
@@ -647,6 +699,7 @@ class MambaModel(MambaPreTrainedModel):
             last_hidden_state=hidden_states,
             cache_params=cache_params if use_cache else None,
             hidden_states=all_hidden_states,
+            attentions=all_attentions if output_attentions else None,
         )
 
 
@@ -760,6 +813,8 @@ class MambaForCausalLM(MambaPreTrainedModel, GenerationMixin):
         cache_params: Optional[MambaCache] = None,
         labels: Optional[torch.LongTensor] = None,
         output_hidden_states: Optional[bool] = None,
+        output_attentions: Optional[bool] = False,
+        attention_overrides: Optional[tuple] = None,
         return_dict: Optional[bool] = None,
         use_cache: Optional[bool] = None,
         cache_position: Optional[torch.Tensor] = None,
@@ -782,6 +837,8 @@ class MambaForCausalLM(MambaPreTrainedModel, GenerationMixin):
             use_cache=use_cache,
             cache_position=cache_position,
             attention_mask=attention_mask,
+            output_attentions=output_attentions,
+            attention_overrides=attention_overrides
         )
         hidden_states = mamba_outputs[0]
 
@@ -807,6 +864,7 @@ class MambaForCausalLM(MambaPreTrainedModel, GenerationMixin):
             logits=logits,
             cache_params=mamba_outputs.cache_params,
             hidden_states=mamba_outputs.hidden_states,
+            attentions=mamba_outputs.attentions
         )
 
 

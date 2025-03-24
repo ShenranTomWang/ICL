@@ -4,6 +4,7 @@ import torch
 from typing import Callable
 from .operator import Operator
 from interpretability.attention_outputs import HybridAttentionOutput
+from interpretability.hooks import add_mean_hybrid
 from abc import ABC
 import logging, os
 
@@ -12,8 +13,8 @@ class HybridOperator(Operator, ABC):
     def __init__(self, tokenizer: AutoTokenizer, model: AutoModelForCausalLM, device: torch.DeviceObjType, dtype: torch.dtype):
         super().__init__(tokenizer, model, device, dtype)
         
-    def get_attention_mean(self, attn: HybridAttentionOutput) -> HybridAttentionOutput:
-        return attn.mean()
+    def get_attention_add_mean_hook(self):
+        return add_mean_hybrid
     
     @torch.inference_mode()
     def extract_attention_outputs(self, inputs: list[str], activation_callback: Callable = lambda x: x) -> list[HybridAttentionOutput]:
@@ -38,43 +39,6 @@ class HybridOperator(Operator, ABC):
             hybrid_output = activation_callback(hybrid_output)
             outputs.append(hybrid_output)
         return outputs
-    
-    def store_attention_outputs(self, attention_outputs: list[HybridAttentionOutput], path: str, fname: str = "") -> None:
-        """
-        Store attention outputs to path
-        Args:
-            attention_outputs (tuple[list[list[torch.Tensor]]]): attentions (self-attention and scan)
-            path (str): path to store
-            fname (str, optional): filename. Defaults to "".
-        """
-        logger = logging.getLogger(__name__)
-        if path.endswith(".pth"):
-            path = path[:-3]
-        if not os.path.exists(path):
-            os.makedirs(os.path.dirname(path), exist_ok=True)
-        if fname != "":
-            fname = f"{fname}_"
-        for i, attention_output in enumerate(attention_outputs):
-            attention_output.save(f"{path}_attn_{fname}{i}.pth")
-        logger.info(f"Stored attention outputs to {path}")
-        
-    def load_attention_outputs(self, dir: str, split: str, index: int, fname: str = "") -> HybridAttentionOutput:
-        """
-        Load attention outputs from specified directory
-        Args:
-            dir (str): directory
-            split (str): one of demo, test and train
-            index (int): index
-            fname (str, optional): special filename. Defaults to "".
-        
-        Returns:
-            tuple[list[torch.Tensor]]: all_attn, attn_output, scan_output
-        """
-        if fname != "":
-            fname = f"{fname}_"
-        path = os.path.join(dir, f"{split}_attn_{fname}{index}.pth")
-        hybrid_output: HybridAttentionOutput = torch.load(path, map_location=self.device).to(self.dtype)
-        return hybrid_output
 
     def attention2kwargs(
         self,
