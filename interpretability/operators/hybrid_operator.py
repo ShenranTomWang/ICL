@@ -43,8 +43,8 @@ class HybridOperator(Operator, ABC):
     def attention2kwargs(
         self,
         attention: HybridAttentionOutput,
-        attention_intervention_fn: Callable,
-        scan_intervention_fn: Callable,
+        attention_intervention_fn: Callable = add_mean_hybrid,
+        scan_intervention_fn: Callable = add_mean_hybrid,
         layers: list[int] = None,
         keep_scan: bool = True,
         keep_attention: bool = True,
@@ -54,8 +54,8 @@ class HybridOperator(Operator, ABC):
         Convert attention outputs to kwargs for intervention
         Args:
             attention (HybridAttentionOutput)
-            attention_intervention_fn (Callable): intervention function for attention
-            scan_intervention_fn (Callable): intervention function for scan
+            attention_intervention_fn (Callable, optional): intervention function for attention, defaults to add_mean_hybrid
+            scan_intervention_fn (Callable, optional): intervention function for scan, defaults to add_mean_hybrid
             layers (list[int], optional): list of layers to use attention, if None, use all layers. Defaults to None.
             keep_scan (bool, optional): whether to keep scan outputs. Defaults to True.
             keep_attention (bool, optional): whether to keep attention outputs. Defaults to True.
@@ -64,12 +64,12 @@ class HybridOperator(Operator, ABC):
             dict: kwargs
         """
         if layers is None:
-            layers = self.ALL_LAYERS
+            layers = set(self.ALL_LAYERS)
         _, attn_outputs, scan_outputs = attention
         params = ()
-        for layer in layers:
-            attn = attn_outputs[layer] if keep_attention else None
-            scan = scan_outputs[layer] if keep_scan else None
+        for layer in self.ALL_LAYERS:
+            attn = attn_outputs[layer] if keep_attention and layer in layers else None
+            scan = scan_outputs[layer] if keep_scan and layer in layers else None
             params += ((attention_intervention_fn, attn, scan_intervention_fn, scan),)
         return {"attention_overrides": params}
     

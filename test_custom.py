@@ -56,7 +56,7 @@ def preprocess_batch(batch: list) -> tuple:
     return input_ids, attention_mask
 
 @torch.inference_mode()
-def do_inference_hf(operator: Operator, dataset: Dataset, batch_size: int, kwargs: dict, device: torch.DeviceObjType) -> list:
+def do_inference_hf(operator: Operator, dataset: Dataset, batch_size: int, kwargs: dict, device: torch.DeviceObjType, verbose: bool = False) -> list:
     """Perform inference on dataset in batch with batch_size
     Args:
         operator (Operator)
@@ -64,10 +64,12 @@ def do_inference_hf(operator: Operator, dataset: Dataset, batch_size: int, kwarg
         batch_size (int): batch size
         kwargs (dict): kwargs for model fwd pass
         device (torch.DeviceObjType): device
+        verbose (bool): whether to print exception
 
     Returns:
         list<str>: predictions
     """
+    logger = logging.getLogger(__name__)
     outputs = []
     inputs = dataset.inputs
     indices = dataset.indices
@@ -81,7 +83,6 @@ def do_inference_hf(operator: Operator, dataset: Dataset, batch_size: int, kwarg
         input_ids = input_ids.to(device)
         attention_mask = attention_mask.to(device)
         try:
-            # import pdb; pdb.set_trace()
             if kwargs is None:
                 output = operator.model(input_ids=input_ids, attention_mask=attention_mask)
             else:
@@ -94,8 +95,7 @@ def do_inference_hf(operator: Operator, dataset: Dataset, batch_size: int, kwarg
             output = torch.argmax(output_logits, dim=-1)            # (batch_size)
             outputs.append(output.cpu())
         except Exception as e:
-            import pdb; pdb.set_trace()
-            if args.verbose:
+            if verbose:
                 logger.exception(e)
             else:
                 logger.error(e)
@@ -163,7 +163,7 @@ def run(
     if not os.path.exists(prediction_path):
         os.makedirs(os.path.dirname(prediction_path), exist_ok=True)
 
-    predictions = do_inference_hf(operator, dataset, args.test_batch_size, kwargs, args.device)
+    predictions = do_inference_hf(operator, dataset, args.test_batch_size, kwargs, args.device, args.verbose)
 
     groundtruths = dataset.outputs
     perf = evaluate(predictions, groundtruths, is_classification)

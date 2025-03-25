@@ -40,7 +40,7 @@ class TransformerOperator(Operator):
     def attention2kwargs(
         self,
         attention: SelfAttentionOutput,
-        attention_intervention_fn: Callable,
+        attention_intervention_fn: Callable = add_mean_hybrid,
         layers: list[int] = None,
         **kwargs
     ) -> dict:
@@ -48,7 +48,7 @@ class TransformerOperator(Operator):
         Convert attention outputs to kwargs for intervention
         Args:
             attention (SelfAttentionOutput)
-            attention_intervention_fn (Callable): intervention function for attention
+            attention_intervention_fn (Callable): intervention function for attention, defaults to add_mean_hybrid
             layers (list[int], optional): list of layers to use attention, if None, use all layers. Defaults to None.
             **kwargs: additional kwargs, not used
         Returns:

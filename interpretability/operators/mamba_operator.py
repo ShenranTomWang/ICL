@@ -40,7 +40,7 @@ class MambaOperator(Operator):
     def attention2kwargs(
         self,
         scan_outputs: ScanOutput,
-        scan_intervention_fn: Callable,
+        scan_intervention_fn: Callable = add_mean_scan,
         layers: list[int] = None,
         **kwargs
     ) -> dict:
@@ -48,7 +48,7 @@ class MambaOperator(Operator):
         Convert attention outputs to kwargs for intervention
         Args:
             scan_outputs (ScanOutput): intervention values
-            scan_intervention_fn (Callable): intervention function for scan
+            scan_intervention_fn (Callable): intervention function for scan, defaults to add_mean_scan
             layers (list[int], optional): list of layers to use attention, if None, use all layers. Defaults to None.
             **kwargs: additional kwargs, not used
         Returns:
