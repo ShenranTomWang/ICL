@@ -136,6 +136,7 @@ class Operator(ABC):
         Args:
             attention_outputs (list[AttentionOutput]): list of attention outputs
             dir (str): directory to save to
+            fnames (list[str]): list of filenames to override default naming of indexing
         """
         logger = logging.getLogger(__name__)
         if not os.path.exists(dir):
