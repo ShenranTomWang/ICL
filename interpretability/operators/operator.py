@@ -130,7 +130,7 @@ class Operator(ABC):
         """
         pass
     
-    def store_attention_outputs(self, attention_outputs: list[AttentionOutput], dir: str) -> None:
+    def store_attention_outputs(self, attention_outputs: list[AttentionOutput], dir: str, fnames: list[str] = None) -> None:
         """
         Store attention outputs to specified path
         Args:
@@ -141,7 +141,10 @@ class Operator(ABC):
         if not os.path.exists(dir):
             os.makedirs(os.path.dirname(dir), exist_ok=True)
         for i, attention_output in enumerate(attention_outputs):
-            attention_output.save(f"{dir}/{i}.pth")
+            if fnames != None:
+                attention_output.save(f"{dir}/{fnames[i]}.pth")
+            else:
+                attention_output.save(f"{dir}/{i}.pth")
         logger.info(f"Stored attention outputs to {dir}")
     
     def load_attention_outputs(self, dir: str, split: str, index: int, fname: str = "") -> AttentionOutput:

@@ -1,4 +1,4 @@
-import logging
+import logging, os
 from collections import Counter
 from utils.dataset import Dataset
 from interpretability import Operator
@@ -141,6 +141,6 @@ def run_operator(operator: Operator, args, seed: int, test_task: str, inputs: li
             steer = steer1 - steer0
         else:
             steer = -1 * steer0
-        operator.store_attention_outputs([steer], dir)
+        operator.store_attention_outputs([steer0, steer1, steer], dir, fnames=["steer0", "steer1", "steer"])
     else:
         raise ValueError(f"Invalid stream: {args.stream}")
