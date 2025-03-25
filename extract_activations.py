@@ -19,7 +19,7 @@ def main(args: object, logger: logging.Logger) -> None:
         train_data, test_data = load_data(args, seed)
         train_counter, test_counter = utils.init_counters(train_data, test_data)
         utils.log_counters(train_counter, test_counter)
-        args.handler(train_counter, train_data, test_data, operator, args, seed)
+        args.handler(test_counter, train_data, test_data, operator, args, seed)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

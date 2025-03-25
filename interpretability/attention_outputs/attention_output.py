@@ -1,6 +1,10 @@
 from abc import ABC, abstractmethod
+import torch
 
-class AttentionOutput(ABC):    
+class AttentionOutput(ABC):
+    def __init__(self, device: str = "cpu"):
+        self.device = device
+    
     @staticmethod
     def mean_of(outputs: list["AttentionOutput"]) -> "AttentionOutput":
         if len(outputs) == 0:
@@ -40,6 +44,10 @@ class AttentionOutput(ABC):
     
     @abstractmethod
     def mean(self) -> "AttentionOutput":
+        pass
+    
+    @abstractmethod
+    def to(self, device: str) -> "AttentionOutput":
         pass
 
 class AttentionOutputItem(list):
@@ -85,4 +93,13 @@ class AttentionOutputItem(list):
                 mylist.append(None)
             else:
                 mylist.append(item / other)
+        return AttentionOutputItem(mylist)
+    
+    def to(self, device: str | torch.DeviceObjType) -> "AttentionOutputItem":
+        mylist = []
+        for item in self:
+            if item is None:
+                mylist.append(None)
+            else:
+                mylist.append(item.to(device))
         return AttentionOutputItem(mylist)

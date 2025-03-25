@@ -35,7 +35,7 @@ class HybridOperator(Operator, ABC):
             # n_layers * (batch_size, n_heads, pad_len + seqlen, pad_len + seqlen), (batch_size, pad_len + seqlen, attn_channels), (batch_size, pad_len + seqlen, attn_channels)
             all_attn, attn_output, scan_output = output.attentions
             all_attn, attn_output, scan_output = list(all_attn), list(attn_output), list(scan_output)
-            hybrid_output = HybridAttentionOutput(all_attn, attn_output, scan_output)
+            hybrid_output = HybridAttentionOutput(all_attn, attn_output, scan_output).to("cpu")
             hybrid_output = activation_callback(hybrid_output)
             outputs.append(hybrid_output)
         return outputs

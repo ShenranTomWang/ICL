@@ -56,13 +56,13 @@ def preprocess_batch(batch: list) -> tuple:
     return input_ids, attention_mask
 
 @torch.inference_mode()
-def do_inference_hf(operator: Operator, dataset: Dataset, batch_size: int, cache_kwargs: dict, device: torch.DeviceObjType) -> list:
+def do_inference_hf(operator: Operator, dataset: Dataset, batch_size: int, kwargs: dict, device: torch.DeviceObjType) -> list:
     """Perform inference on dataset in batch with batch_size
     Args:
         operator (Operator)
         dataset (Dataset): dataset
         batch_size (int): batch size
-        cache_kwargs (dict): cache kwargs for model fwd pass
+        kwargs (dict): kwargs for model fwd pass
         device (torch.DeviceObjType): device
 
     Returns:
@@ -82,12 +82,12 @@ def do_inference_hf(operator: Operator, dataset: Dataset, batch_size: int, cache
         attention_mask = attention_mask.to(device)
         try:
             # import pdb; pdb.set_trace()
-            if cache_kwargs is None:
+            if kwargs is None:
                 output = operator.model(input_ids=input_ids, attention_mask=attention_mask)
             else:
                 # input_length = input_ids.shape[1]
                 # cache_kwargs = operator.prepare_cache_kwargs_for_inputs(cache_kwargs, input_length)
-                output = operator.model(input_ids=input_ids, attention_mask=attention_mask, **cache_kwargs)
+                output = operator.model(input_ids=input_ids, attention_mask=attention_mask, **kwargs)
             logit = output.logits
             output_logits = logit[..., index, :].squeeze(-2)        # (batch_size, vocab_size)
             output_logits = output_logits[..., option_ids]          # (batch_size, num_options)
@@ -108,7 +108,7 @@ def do_inference_hf(operator: Operator, dataset: Dataset, batch_size: int, cache
     return outputs
             
 def run(
-    args, dataset, operator, seed, is_classification, cache_kwargs
+    args, dataset, operator, seed, is_classification, kwargs
 ) -> float:
     """Run testing with dataset, return performance
     
@@ -118,7 +118,7 @@ def run(
         operator (Operator): operator
         seed (str): seed
         is_classification (bool): whether the task is classification
-        cache_kwargs (dict): cache kwargs for model fwd pass
+        kwargs (dict): kwargs for model fwd pass
     
     Returns:
         (float): performance, macro-F1 for classification tasks, accuracy for non-classification tasks, none if args.is_null
@@ -163,7 +163,7 @@ def run(
     if not os.path.exists(prediction_path):
         os.makedirs(os.path.dirname(prediction_path), exist_ok=True)
 
-    predictions = do_inference_hf(operator, dataset, args.test_batch_size, cache_kwargs, args.device)
+    predictions = do_inference_hf(operator, dataset, args.test_batch_size, kwargs, args.device)
 
     groundtruths = dataset.outputs
     perf = evaluate(predictions, groundtruths, is_classification)

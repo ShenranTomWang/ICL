@@ -43,3 +43,7 @@ class ScanOutput(AttentionOutput):
             if scan_i is not None:
                 scan_output[i] = scan_i.mean(dim=2).unsqueeze(2)
         return ScanOutput(scan_output)
+    
+    def to(self, device: str) -> "ScanOutput":
+        scan_outputs = self.scan_outputs.to(device)
+        return ScanOutput(scan_outputs)

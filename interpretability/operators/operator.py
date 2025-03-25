@@ -148,21 +148,16 @@ class Operator(ABC):
                 attention_output.save(f"{dir}/{i}.pth")
         logger.info(f"Stored attention outputs to {dir}")
     
-    def load_attention_outputs(self, dir: str, split: str, index: int, fname: str = "") -> AttentionOutput:
+    def load_attention_output(self, fname: str = "") -> AttentionOutput:
         """
-        Load attention outputs from specified directory
+        Load attention outputs
         Args:
             dir (str): directory to load attention outputs
-            split (str): split of attention outputs
-            index (int): index of attention outputs
             fname (str): special filename
         Returns:
             AttentionOutput: attention outputs
         """
-        if fname != "":
-            fname = f"{fname}_"
-        path = os.path.join(dir, f"{split}_attn_{fname}{index}.pth")
-        hybrid_output = torch.load(path, map_location=self.device).to(self.dtype)
+        hybrid_output = torch.load(fname, map_location=self.device).to(self.dtype)
         return hybrid_output
     
     @abstractmethod

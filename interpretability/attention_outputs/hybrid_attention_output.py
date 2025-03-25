@@ -2,10 +2,11 @@ import torch
 from .attention_output import AttentionOutput, AttentionOutputItem
 
 class HybridAttentionOutput(AttentionOutput):
-    def __init__(self, all_attns: list[torch.Tensor] | None, attn_outputs: list[torch.Tensor] | None, scan_outputs: list[torch.Tensor] | None):
-        self.all_attns = AttentionOutputItem(all_attns) if all_attns is not None else None
-        self.attn_outputs = AttentionOutputItem(attn_outputs) if attn_outputs is not None else None
-        self.scan_outputs = AttentionOutputItem(scan_outputs) if scan_outputs is not None else None
+    def __init__(self, all_attns: list[torch.Tensor] | None, attn_outputs: list[torch.Tensor] | None, scan_outputs: list[torch.Tensor] | None, device: str = "cpu"):
+        self.all_attns = AttentionOutputItem(all_attns).to(device) if all_attns is not None else None
+        self.attn_outputs = AttentionOutputItem(attn_outputs).to(device) if attn_outputs is not None else None
+        self.scan_outputs = AttentionOutputItem(scan_outputs).to(device) if scan_outputs is not None else None
+        super().__init__(device)
         
     def __add__(self, other: "HybridAttentionOutput") -> "HybridAttentionOutput":
         if other is None:
@@ -58,3 +59,9 @@ class HybridAttentionOutput(AttentionOutput):
             if scan_i is not None:
                 scan_output[i] = scan_i.mean(dim=1).unsqueeze(1)   # (1, attn_channels)
         return HybridAttentionOutput(all_attn, attn_output, scan_output)
+    
+    def to(self, device: str | torch.DeviceObjType) -> "HybridAttentionOutput":
+        all_attns = self.all_attns.to(device) if self.all_attns is not None else None
+        attn_outputs = self.attn_outputs.to(device) if self.attn_outputs is not None else None
+        scan_outputs = self.scan_outputs.to(device) if self.scan_outputs is not None else None
+        return HybridAttentionOutput(all_attns, attn_outputs, scan_outputs)
