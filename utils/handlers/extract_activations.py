@@ -24,13 +24,19 @@ def train_handler(
         train = [dp for dp in train_data if dp["task"] == train_task]
         options = train[0]["options"]
         assert len(options) == 2, "Steer stream only works for binary classification"
-        inputs_1 = [dp["input"] for dp in train if dp["output"] == options[0]]
-        inputs_0 = [dp["input"] for dp in train if dp["output"] == options[1]]
+        inputs_0 = [dp["input"] for dp in train if dp["output"] == options[0]]
+        inputs_1 = [dp["input"] for dp in train if dp["output"] == options[1]]
         inputs = [dp["input"] for dp in train]
         dir = f"{args.out_dir}/{train_task}/{seed}/{args.split}_{args.stream}"
         if args.stream == "steer":
-            dir += f"_{options[1]}-{options[0]}_k={int(args.k)}/"
-            run_operator_steer(operator, args, (inputs_1, inputs_0), dir)
+            dir += f"_k={int(args.k)}/"
+            run_operator_steer(
+                operator,
+                args.stream,
+                (inputs_0, inputs_1),
+                dir,
+                [f"steer_{options[0]}", f"steer_{options[1]}", f"steer_{options[0]}->{options[1]}"]
+            )
         else:
             run_operator_generic(operator, args, seed, train_task, inputs, f"{dir}/")
 
@@ -138,18 +144,19 @@ def run_operator_generic(operator: Operator, args, seed: int, test_task: str, in
     else:
         raise ValueError(f"Invalid stream: {args.stream}")
     
-def run_operator_steer(operator: Operator, args, inputs: list, dir: str) -> None:
+def run_operator_steer(operator: Operator, stream: str, inputs: list, dir: str, fnames: list) -> None:
     """
     Run operator to extract activations
 
     Args:
         operator (Operator)
-        args (NameSpace)
+        stream (str)
         inputs (list)
         dir (str)
+        fnames (list): list of filenames to override default naming of indexing, should be length 3 for steer0, steer1 and steer1 - steer0
     """
-    if args.stream == "steer":
-        inputs1, inputs0 = inputs
+    if stream == "steer":
+        inputs0, inputs1 = inputs
         steer1 = [output.mean() for output in operator.extract_attention_outputs(inputs1, operator.get_attention_mean)]
         steer0 = [output.mean() for output in operator.extract_attention_outputs(inputs0, operator.get_attention_mean)]
         steer1 = AttentionOutput.mean_of(steer1)
@@ -158,6 +165,6 @@ def run_operator_steer(operator: Operator, args, inputs: list, dir: str) -> None
             steer = steer1 - steer0
         else:
             steer = -1 * steer0
-        operator.store_attention_outputs([steer0, steer1, steer], dir, fnames=["steer0", "steer1", "steer"])
+        operator.store_attention_outputs([steer0, steer1, steer], dir, fnames=fnames)
     else:
-        raise ValueError(f"Invalid stream: {args.stream}")
+        raise ValueError(f"Invalid stream: {stream}")

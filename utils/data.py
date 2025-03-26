@@ -34,28 +34,36 @@ def load_config(test_task: str) -> dict:
         config = json.load(f)
     return config
 
-def load_data(args, seed) -> tuple:
+def load_data(task: str | None, dataset: str | None, split: str, k: int, n: int, seed: int, is_null: bool = False) -> tuple:
     """Load train and test data from args using seed, handles both loading by task and dataset cases, empty test_data if split is "demo"
+    
+    Args:
+        task (str | None): task name, if None, dataset must be provided
+        dataset (str | None): dataset name, if None, task must be provided
+        split (str): split name
+        k (int): number of training samples
+        n (int): number of test samples to load, -1 to load all
+        seed (int): seed
+        is_null (bool): whether to set input to "N/A"
 
     Returns:
         tuple<list<{task: str, input: str, output: str, options: list<str>}>>: train_data, test_data
     """
     logger = logging.getLogger(__name__)
-    config_split = "unseen_domain_test" if args.unseen_domain_only else "test"
-    if args.split != "demo":
-        if args.task != None:
-            train_data = load_data_by_task(args.task, "train", args.k, seed=seed, config_split=config_split)
-            test_data = load_data_by_task(args.task, args.split, args.n, seed=seed, config_split=config_split, is_null=args.is_null)
+    if split != "demo":
+        if task != None:
+            train_data = load_data_by_task(task, "train", k, seed=seed, config_split="test")
+            test_data = load_data_by_task(task, split, n, seed=seed, config_split="test", is_null=is_null)
         else:
-            assert args.dataset is not None
-            train_data = load_data_by_datasets(args.dataset.split(","), args.k, "train", seed=seed)
-            test_data = load_data_by_datasets(args.dataset.split(","), args.n, args.split, seed=seed, is_null=args.is_null)
+            assert dataset is not None
+            train_data = load_data_by_datasets(dataset.split(","), k, "train", seed=seed)
+            test_data = load_data_by_datasets(dataset.split(","), n, split, seed=seed, is_null=is_null)
     else:
-        if args.task != None:
-            train_data = load_data_by_task(args.task, "train", args.k, seed=seed, config_split=config_split)
+        if task != None:
+            train_data = load_data_by_task(task, "train", k, seed=seed, config_split="test")
         else:
-            assert args.dataset is not None
-            train_data = load_data_by_datasets(args.dataset.split(","), args.k, "train", seed=seed)
+            assert dataset is not None
+            train_data = load_data_by_datasets(dataset.split(","), k, "train", seed=seed)
         test_data = []
     logger.info("Loaded data for seed %s" % seed)
     return train_data, test_data
@@ -73,7 +81,6 @@ def load_data_by_task(task, split, k, seed=0, config_split=None, is_null=False):
 
 def load_data_by_datasets(datasets, k, split, seed=0, is_null=False):
     logger = logging.getLogger(__name__)
-    assert k <= 16
     data = []
     for dataset in datasets:
         try:

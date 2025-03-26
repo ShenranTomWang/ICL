@@ -11,8 +11,8 @@ def add_mean_hybrid(stream: torch.Tensor, intervention_mean: torch.Tensor | None
     """
     if intervention_mean is None:
         return stream
-    for i in range(stream.size(1)):
-        stream[:, i, :] += intervention_mean[:, 0, :]
+    intervention_mean = intervention_mean.expand(stream.shape)
+    stream += intervention_mean
     return stream
 
 def add_mean_scan(stream: torch.Tensor, intervention_mean: torch.Tensor | None) -> torch.Tensor:
@@ -27,6 +27,6 @@ def add_mean_scan(stream: torch.Tensor, intervention_mean: torch.Tensor | None) 
     """
     if intervention_mean is None:
         return stream
-    for i in range(stream.size(2)):
-        stream[:, :, i] += intervention_mean[:, :, 0]
+    intervention_mean = intervention_mean.expand(stream.shape)
+    stream += intervention_mean
     return stream

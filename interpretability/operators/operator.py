@@ -142,10 +142,11 @@ class Operator(ABC):
         if not os.path.exists(dir):
             os.makedirs(os.path.dirname(dir), exist_ok=True)
         for i, attention_output in enumerate(attention_outputs):
-            if fnames != None:
-                attention_output.save(f"{dir}/{fnames[i]}.pth")
-            else:
-                attention_output.save(f"{dir}/{i}.pth")
+            if attention_output is not None:
+                if fnames != None:
+                    attention_output.save(f"{dir}/{fnames[i]}.pth")
+                else:
+                    attention_output.save(f"{dir}/{i}.pth")
         logger.info(f"Stored attention outputs to {dir}")
     
     def load_attention_output(self, fname: str = "") -> AttentionOutput:
@@ -161,11 +162,12 @@ class Operator(ABC):
         return hybrid_output
     
     @abstractmethod
-    def attention2kwargs(self, attention: AttentionOutput, **kwargs: dict) -> dict:
+    def attention2kwargs(self, attention: AttentionOutput, layers: list = None, **kwargs: dict) -> dict:
         """
         Convert attention to kwargs for forward pass
         Args:
             attention (AttentionOutput): attention
+            layers (list): list of layers to keep, default to None for keeping all layers
             kwargs (dict): kwargs
         Returns:
             dict: kwargs

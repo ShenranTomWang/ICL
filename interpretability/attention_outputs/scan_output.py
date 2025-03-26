@@ -7,13 +7,13 @@ class ScanOutput(AttentionOutput):
         
     def __add__(self, other: "ScanOutput") -> "ScanOutput":
         if other is None:
-            return ScanOutput(None, self.attn_outputs, self.scan_outputs)
+            return ScanOutput(self.scan_outputs)
         scan_outputs = self.scan_outputs + other.scan_outputs if self.scan_outputs is not None else other.scan_outputs
         return ScanOutput(scan_outputs)
         
     def __sub__(self, other: "ScanOutput") -> "ScanOutput":
         if other is None:
-            return ScanOutput(None, self.attn_outputs, self.scan_outputs)
+            return ScanOutput(self.scan_outputs)
         scan_outputs = self.scan_outputs - other.scan_outputs if self.scan_outputs is not None else [-1 * attn for attn in other.scan_outputs]
         return ScanOutput(scan_outputs)
     

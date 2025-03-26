@@ -95,6 +95,18 @@ class AttentionOutputItem(list):
                 mylist.append(item / other)
         return AttentionOutputItem(mylist)
     
+    def __mul__(self, other: int) -> "AttentionOutputItem":
+        mylist = []
+        for item in self:
+            if item is None:
+                mylist.append(None)
+            else:
+                mylist.append(item * other)
+        return AttentionOutputItem(mylist)
+    
+    def __rmul__(self, other: int) -> "AttentionOutputItem":
+        return self.__mul__(other)
+    
     def to(self, device: str | torch.DeviceObjType) -> "AttentionOutputItem":
         mylist = []
         for item in self:

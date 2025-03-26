@@ -1888,7 +1888,7 @@ class HymbaDecoderLayer(nn.Module):
         bs, seqlen, _ = hidden_states.shape
         past_seqlen = self._get_past_seqlen(past_key_value, seqlen)
         num_attention_heads = self.mamba.config.num_attention_heads
-        self_attn_weights = torch.empty(bs, num_attention_heads, seqlen, past_seqlen, device="meta")
+        self_attn_weights = torch.empty(bs, num_attention_heads, seqlen, past_seqlen)
 
         # residual connection after mamba
         hidden_states = residual + hidden_states
