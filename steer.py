@@ -14,7 +14,9 @@ def main(args):
 
     seeds = args.seed.split(",")
     results = {}
-    layers = ",".join(args.layers) if args.layers is not None else "all"
+    layers = "baseline"
+    if args.mode != "baseline":
+        layers = ",".join(args.layers) if args.layers is not None else "all"
     for seed in seeds:
         train_data, test_data = load_data(args.task, args.dataset, args.split, args.k, -1, seed)
         train_counter, test_counter = init_counters(train_data, test_data)
@@ -84,7 +86,7 @@ def main(args):
             else:
                 raise ValueError(f"Unknown mode {args.mode}")
             
-            with open(f"{args.out_dir}/{test_task}/results_{layers}.json", "w") as f:
+            with open("{}/{}/results{}.json".format(args.out_dir, test_task, f"_{layers}"), "w") as f:
                 json.dump(results_seed, f, indent=4)
         results[seed] = results_seed
     logger.info(results)
