@@ -158,7 +158,7 @@ class Operator(ABC):
         Returns:
             AttentionOutput: attention outputs
         """
-        hybrid_output = torch.load(fname, map_location=self.device).to(self.dtype)
+        hybrid_output = torch.load(fname).to(self.device)
         return hybrid_output
     
     @abstractmethod

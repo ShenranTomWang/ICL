@@ -10,35 +10,35 @@ class HybridAttentionOutput(AttentionOutput):
         
     def __add__(self, other: "HybridAttentionOutput") -> "HybridAttentionOutput":
         if other is None:
-            return HybridAttentionOutput(None, self.attn_outputs, self.scan_outputs)
+            return HybridAttentionOutput(None, self.attn_outputs, self.scan_outputs, self.device)
         attn_outputs = self.attn_outputs + other.attn_outputs if self.attn_outputs is not None else other.attn_outputs
         scan_outputs = self.scan_outputs + other.scan_outputs if self.scan_outputs is not None else other.scan_outputs
-        return HybridAttentionOutput(None, attn_outputs, scan_outputs)
+        return HybridAttentionOutput(None, attn_outputs, scan_outputs, self.device)
         
     def __sub__(self, other: "HybridAttentionOutput") -> "HybridAttentionOutput":
         if other is None:
-            return HybridAttentionOutput(None, self.attn_outputs, self.scan_outputs)
+            return HybridAttentionOutput(None, self.attn_outputs, self.scan_outputs, self.device)
         attn_outputs = self.attn_outputs - other.attn_outputs if self.attn_outputs is not None else [-1 * attn for attn in other.attn_outputs]
         scan_outputs = self.scan_outputs - other.scan_outputs if self.scan_outputs is not None else [-1 * attn for attn in other.scan_outputs]
-        return HybridAttentionOutput(None, attn_outputs, scan_outputs)
+        return HybridAttentionOutput(None, attn_outputs, scan_outputs, self.device)
     
     def __truediv__(self, other: int) -> "HybridAttentionOutput":
         all_attns = self.all_attns / other if self.all_attns is not None else None
         attn_outputs = self.attn_outputs / other if self.attn_outputs is not None else None
         scan_outputs = self.scan_outputs / other if self.scan_outputs is not None else None
-        return HybridAttentionOutput(all_attns, attn_outputs, scan_outputs)
+        return HybridAttentionOutput(all_attns, attn_outputs, scan_outputs, self.device)
     
     def __mul__(self, other: int) -> "HybridAttentionOutput":
         all_attns = self.all_attns * other if self.all_attns is not None else None
         attn_outputs = self.attn_outputs * other if self.attn_outputs is not None else None
         scan_outputs = self.scan_outputs * other if self.scan_outputs is not None else None
-        return HybridAttentionOutput(all_attns, attn_outputs, scan_outputs)
+        return HybridAttentionOutput(all_attns, attn_outputs, scan_outputs, self.device)
     
     def __rmul__(self, other: int) -> "HybridAttentionOutput":
         all_attns = self.all_attns * other if self.all_attns is not None else None
         attn_outputs = self.attn_outputs * other if self.attn_outputs is not None else None
         scan_outputs = self.scan_outputs * other if self.scan_outputs is not None else None
-        return HybridAttentionOutput(all_attns, attn_outputs, scan_outputs)
+        return HybridAttentionOutput(all_attns, attn_outputs, scan_outputs, self.device)
     
     def __iter__(self):
         yield self.all_attns
@@ -58,7 +58,7 @@ class HybridAttentionOutput(AttentionOutput):
         for i, scan_i in enumerate(scan_output):
             if scan_i is not None:
                 scan_output[i] = scan_i.mean(dim=1).unsqueeze(1)   # (1, attn_channels)
-        return HybridAttentionOutput(all_attn, attn_output, scan_output)
+        return HybridAttentionOutput(all_attn, attn_output, scan_output, self.device)
     
     def to(self, device: str | torch.DeviceObjType) -> "HybridAttentionOutput":
         all_attns = self.all_attns if self.all_attns is not None else None
