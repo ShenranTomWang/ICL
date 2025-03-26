@@ -46,6 +46,8 @@ def main(args):
             elif args.mode == "intervene_direct":
                 steer0 = operator.load_attention_output(f"{args.load_dir}/{test_task}/{seed}/train_steer_k={args.k}/steer_{dataset.options_raw[0]}.pth")
                 steer1 = operator.load_attention_output(f"{args.load_dir}/{test_task}/{seed}/train_steer_k={args.k}/steer_{dataset.options_raw[1]}.pth")
+                steer0 = args.strength * steer0
+                steer1 = args.strength * steer1
                 steer0 = operator.attention2kwargs(steer0, layers=args.layers)
                 steer1 = operator.attention2kwargs(steer1, layers=args.layers)
                 
@@ -65,6 +67,7 @@ def main(args):
                     json.dump(results_task_steer1, f, indent=4)
             elif args.mode == "intervene_diff":
                 steer_positive = operator.load_attention_output(f"{args.load_dir}/{test_task}/{seed}/train_steer_k={args.k}/steer_{dataset.options_raw[0]}->{dataset.options_raw[1]}.pth")
+                steer_positive = args.strength * steer_positive
                 steer_negative = -1 * steer_positive
                 steer_positive = operator.attention2kwargs(steer_positive, layers=args.layers)
                 steer_negative = operator.attention2kwargs(steer_negative, layers=args.layers)
@@ -91,6 +94,7 @@ def add_baseline_args(baseline_parser: argparse.ArgumentParser) -> None:
 
 def add_intervene_args(intervene_parser: argparse.ArgumentParser) -> None:
     intervene_parser.add_argument("--layers", default=None, type=str, help="comma separated list of layers, defaults to all layers")
+    intervene_parser.add_argument("--strength", default=1.0, type=float, help="strength of intervention")
         
 def parse_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     mode_subparser = parser.add_subparsers(dest="mode", required=True)
