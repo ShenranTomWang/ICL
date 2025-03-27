@@ -15,4 +15,4 @@ class HybridTokenizer(Tokenizer):
         Returns:
             dict
         """
-        return self(option, return_tensors="pt", padding=True, truncation=True).input_ids[1]
+        return self(option).input_ids[1]
