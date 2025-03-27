@@ -27,7 +27,6 @@ if __name__ == "__main__":
     parser.add_argument("--dtype", type=str, default="bfloat16", choices=["float16", "float32", "bfloat16"])
     parser.add_argument("--device", type=str, default="cuda:0")
     
-    parser.add_argument("--add_newlines", default=False, action="store_true")
     parser.add_argument("--task", type=str, default=None)
     parser.add_argument("--dataset", type=str, default=None)
     parser.add_argument("--split", type=str, default="demo", choices=["demo", "test", "dev", "train"])

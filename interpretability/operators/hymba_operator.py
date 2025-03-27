@@ -1,6 +1,7 @@
 import shutup; shutup.please()
-from transformers import AutoTokenizer
 from interpretability.models.hymba import HybridMambaAttentionDynamicCache, HymbaForCausalLM
+from interpretability.tokenizers import HybridTokenizer
+from transformers import AutoTokenizer
 import torch
 from typing import Callable
 from .hybrid_operator import HybridOperator
@@ -13,7 +14,7 @@ class HymbaOperator(HybridOperator):
         model = HymbaForCausalLM.from_pretrained(path).to(device).to(dtype)
         self.ALL_LAYERS = [i for i in range(model.config.num_hidden_layers)]
         self.KV_LAYERS = [0, 1, 3, 5, 7, 9, 11, 13, 15, 16, 19, 21, 23, 25, 27, 29, 31]
-        super().__init__(tokenizer, model, device, dtype)
+        super().__init__(HybridTokenizer(tokenizer), model, device, dtype)
     
     def get_cache_instance(self):
         cache = HybridMambaAttentionDynamicCache(self.model.config, 1, device=self.device, dtype=self.dtype, layer_type=self.model.config.layer_type)

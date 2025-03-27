@@ -4,7 +4,6 @@ from utils.data import load_data
 import numpy as np
 import torch
 from utils.dataset import Dataset
-from collections import defaultdict
 from interpretability import Operator
 import interpretability
 from utils.inference import do_inference, evaluate
@@ -109,8 +108,8 @@ def main(args):
                 config = json.load(f)
             is_classification = config["task_type"] == "classification"
             
-            dataset = Dataset(curr_train_data, curr_test_data, add_newlines=args.add_newlines, n_skips=args.n_skips, verbose=args.verbose)
-            dataset.tensorize(operator.tokenizer, use_demo = not args.use_demo_cache)
+            dataset = Dataset([] if args.use_demo_cache else curr_train_data, curr_test_data, verbose=args.verbose)
+            dataset.tensorize(operator.tokenizer)
             
             if args.use_demo_cache:
                 if args.demo_cache_dir is not None:

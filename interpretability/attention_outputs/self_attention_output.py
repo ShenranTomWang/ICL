@@ -53,4 +53,4 @@ class SelfAttentionOutput(AttentionOutput):
     def to(self, device: str) -> "SelfAttentionOutput":
         all_attns = self.all_attns.to(device) if self.all_attns is not None else None
         attn_outputs = self.attn_outputs.to(device) if self.attn_outputs is not None else None
-        return SelfAttentionOutput(all_attns, attn_outputs, self.device)
+        return SelfAttentionOutput(all_attns, attn_outputs, device)

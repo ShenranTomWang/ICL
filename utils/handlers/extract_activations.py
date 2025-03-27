@@ -59,7 +59,7 @@ def demo_handler(
         logger.info(f"Processing {train_task} (demo)")
         curr_train_data = [dp for dp in train_data if dp["task"] == train_task]
         
-        dataset = Dataset(curr_train_data, [], add_newlines=args.add_newlines, verbose=args.verbose)
+        dataset = Dataset(curr_train_data, [], verbose=args.verbose)
         dataset.prepare_demo()
         run_operator_generic(operator, args, seed, train_task, [dataset.demo], f"{args.out_dir}/{train_task}/{seed}/{args.split}_{args.stream}")
         
@@ -114,7 +114,7 @@ def basic_handler(
         curr_train_data = [dp for dp in train_data if dp["task"] == test_task]
         assert len(curr_test_data) > 0
         
-        dataset = Dataset(curr_train_data, curr_test_data, add_newlines=args.add_newlines, verbose=args.verbose)
+        dataset = Dataset(curr_train_data, curr_test_data, verbose=args.verbose)
         dataset.preprocess()
         run_operator_generic(operator, args, seed, test_task, dataset.inputs, f"{args.out_dir}/{test_task}/{seed}/{args.split}_{args.stream}/")
 

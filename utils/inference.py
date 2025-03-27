@@ -4,6 +4,42 @@ from interpretability import Operator
 import numpy as np
 from collections import defaultdict
 
+def count_option_changes(baseline: list[str], intervened: list[str], option1: str, option2: str) -> dict:
+    """
+    Count how many times option1 changed to option2 and vice versa.
+
+    Parameters:
+    - baseline (list[str]): Original outputs
+    - intervened (list[str]): Outputs after intervention
+    - option1 (str): First option to track
+    - option2 (str): Second option to track
+
+    Returns:
+        dict: Counts of option1->option2 and option2->option1
+    """
+
+    if len(baseline) != len(intervened):
+        raise ValueError("Baseline and intervened lists must be the same length.")
+
+    option1_to_option2 = 0
+    option2_to_option1 = 0
+
+    for i in range(len(baseline)):
+        base = baseline[i]
+        inter = intervened[i]
+
+        if base == option1 and inter == option2:
+            option1_to_option2 += 1
+        elif base == option2 and inter == option1:
+            option2_to_option1 += 1
+
+    result = {
+        f"{option1}->{option2}": option1_to_option2,
+        f"{option2}->{option1}": option2_to_option1
+    }
+
+    return result
+
 def evaluate(predictions: list, groundtruths: list, is_classification: bool) -> float:
     """Evaluate the predictions against the groundtruths. Return accuracy for non-classification tasks, and macro-F1 for classification tasks.
     """

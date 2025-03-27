@@ -1,6 +1,6 @@
 import torch
 from utils.inference import count_option_changes
-from utils.dataset import Dataset
+from utils.dataset import do_inference
 from utils.data import load_data
 from utils.utils import init_counters, log_counters
 from interpretability import Operator
@@ -31,9 +31,9 @@ def main(args):
             logger.info(f"Label distribution for {test_task} seed {seed}: {label_counter}")
             curr_test_data = [dp for dp in test_data if dp["task"] == test_task]
             assert len(curr_test_data) > 0
-            dataset = Dataset(curr_train_data, curr_test_data, verbose=args.verbose)
+            dataset = do_inference(curr_train_data, curr_test_data)
             dataset.tensorize(operator.tokenizer)
-            assert len(dataset.options) == 2, f"Expected 2 options, got {len(dataset.options)}"
+            assert len(dataset.options_raw) == 2, f"Expected 2 options, got {len(dataset.options_raw)}"
             
             resuls_task_baseline = baseline_handler(operator, dataset, args.device, args.verbose)
             results_seed[test_task] = {"baseline": resuls_task_baseline}
@@ -49,12 +49,12 @@ def main(args):
                 change1 = count_option_changes(resuls_task_baseline["outputs"], results_task_steer1["outputs"], dataset.options[1], dataset.options[0])
                 results_task_steer0.update({"change": change0})
                 results_task_steer1.update({"change": change1})
-                results_seed[test_task].update({dataset.options[0]: results_task_steer0, dataset.options[1]: results_task_steer1})
+                results_seed[test_task].update({dataset.options_raw[0]: results_task_steer0, dataset.options_raw[1]: results_task_steer1})
                 logger.info(results_seed[test_task])
                 
-                with open(f"{args.out_dir}/{test_task}/{seed}/steer_results_{dataset.options[0]}_{layers}.json", "w") as f:
+                with open(f"{args.out_dir}/{test_task}/{seed}/steer_results_{dataset.options_raw[0]}_{layers}.json", "w") as f:
                     json.dump(results_task_steer0, f, indent=4)
-                with open(f"{args.out_dir}/{test_task}/{seed}/steer_results_{dataset.options[1]}_{layers}.json", "w") as f:
+                with open(f"{args.out_dir}/{test_task}/{seed}/steer_results_{dataset.options_raw[1]}_{layers}.json", "w") as f:
                     json.dump(results_task_steer1, f, indent=4)
             elif args.mode == "intervene_diff":
                 results_task_positive, results_task_negative = intervene_diff_handler(
@@ -65,7 +65,7 @@ def main(args):
                 change_negative = count_option_changes(resuls_task_baseline["outputs"], results_task_negative["outputs"], dataset.options[1], dataset.options[0])
                 results_task_positive.update({"change": change_positive})
                 results_task_negative.update({"change": change_negative})
-                results_seed[test_task].update({f"{dataset.options[0]}->{dataset.options[1]}": results_task_positive, f"{dataset.options[1]}->{dataset.options[0]}": results_task_negative})
+                results_seed[test_task].update({f"{dataset.options_raw[0]}->{dataset.options_raw[1]}": results_task_positive, f"{dataset.options_raw[1]}->{dataset.options_raw[0]}": results_task_negative})
                 logger.info(results_seed[test_task])
                 with open(f"{args.out_dir}/{test_task}/{seed}/steer_results_diff_{layers}.json", "w") as f:
                     json.dump(results_seed[test_task], f, indent=4)
@@ -104,6 +104,7 @@ def parse_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     parser.add_argument("--operator", required=True, type=str, choices=["TransformerOperator", "HymbaOperator", "RWKVOperator", "MambaOperator", "ZambaOperator"])
     parser.add_argument("--device", default="cuda", type=str)
     parser.add_argument("--dtype", default="bfloat16", type=str, choices=["bfloat16", "float16", "float32"])
+    parser.add_argument("--n_skips", default=0, type=int, help="number of tokens to skip in the output, assumes having <bos> token, set to -1 if tokenizer has no <bos> token")
     parser.add_argument("--log_file", default=None, type=str)
     parser.add_argument("--verbose", default=False, action="store_true")
     parser.add_argument("--k", default=16, type=int)

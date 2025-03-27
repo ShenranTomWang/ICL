@@ -2,7 +2,8 @@ import shutup; shutup.please()
 from transformer_lens.hook_points import HookPoint
 from transformer_lens.utils import get_act_name
 from transformer_lens import HookedTransformer
-from transformers import AutoTokenizer, AutoModelForCausalLM
+from transformers import AutoModelForCausalLM
+from interpretability.tokenizers import Tokenizer
 from transformers.cache_utils import Cache, MambaCache
 import torch
 from typing import Callable
@@ -14,9 +15,9 @@ def layer_callback(resid: torch.Tensor) -> torch.Tensor:
     return resid[0, -1, :]
 
 class Operator(ABC):
-    def __init__(self, tokenizer: AutoTokenizer, model: AutoModelForCausalLM, device: torch.DeviceObjType, dtype: torch.dtype, tl_model: HookedTransformer = None):
+    def __init__(self, tokenizer: Tokenizer, model: AutoModelForCausalLM, device: torch.DeviceObjType, dtype: torch.dtype, tl_model: HookedTransformer = None):
         self.model = model if tl_model == None else tl_model
-        self.tokenizer: AutoTokenizer = tokenizer
+        self.tokenizer = tokenizer
         self.device = device
         self.dtype = dtype
         self.transformer_lens = tl_model != None

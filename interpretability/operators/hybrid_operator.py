@@ -1,16 +1,17 @@
 import shutup; shutup.please()
-from transformers import AutoTokenizer, AutoModelForCausalLM
+from transformers import AutoModelForCausalLM
 import torch
 from typing import Callable
 from .operator import Operator
 from interpretability.attention_outputs import HybridAttentionOutput
 from interpretability.hooks import add_mean_hybrid
+from interpretability.tokenizers import Tokenizer
 from abc import ABC
 import logging, os
 
 class HybridOperator(Operator, ABC):
     
-    def __init__(self, tokenizer: AutoTokenizer, model: AutoModelForCausalLM, device: torch.DeviceObjType, dtype: torch.dtype):
+    def __init__(self, tokenizer: Tokenizer, model: AutoModelForCausalLM, device: torch.DeviceObjType, dtype: torch.dtype):
         super().__init__(tokenizer, model, device, dtype)
         
     def get_attention_add_mean_hook(self):

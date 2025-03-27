@@ -1,11 +1,12 @@
 import shutup; shutup.please()
-from transformers import AutoTokenizer
 from interpretability.models.mamba import MambaCache, MambaForCausalLM
 import torch
 from typing import Callable
+from transformers import AutoTokenizer
 from .operator import Operator
 from interpretability.attention_outputs import ScanOutput
 from interpretability.hooks import add_mean_scan
+from interpretability.tokenizers import StandardTokenizer
 import logging, os
 
 class MambaOperator(Operator):
@@ -13,7 +14,7 @@ class MambaOperator(Operator):
         tokenizer = AutoTokenizer.from_pretrained(path, trust_remote_code=True)
         model = MambaForCausalLM.from_pretrained(path).to(device).to(dtype)
         self.ALL_LAYERS = [i for i in range(model.config.n_layer)]
-        super().__init__(tokenizer, model, device, dtype)
+        super().__init__(StandardTokenizer(tokenizer), model, device, dtype)
         
     def get_attention_add_mean_hook(self) -> Callable:
         return add_mean_scan
