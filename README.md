@@ -17,4 +17,4 @@ python create_data.py --variant {random|0_correct|25_correct|50_correct|75_corre
 For a `task` defined in [config](./config/), you must create datasets required by this task one by one. After creating data you will see datasets like `dataset_{variant}` in your data folder, and you need to manually add `{task}_{variant}` config in [config](./config/). I have added `analysis_classification_random` so you don't need to worry about this one.
 
 ## Running Experiments
-To run experiments, follow the script outlined in `test_custom_analysis_classification.sh`. This runs the experiment on `analysis_classification` task which contains 5 datasets of different purposes, all classification. to run other tasks, you can define your task in [config](./config/).
+To run experiments, follow the script outlined in `test_custom_analysis_classification.sh`. This runs the experiment on `analysis_classification` task which contains 5 datasets of different purposes, all classification. to run other tasks, you can define your task in [config](./config/). The script uses `k = 4` samples of demonstrations, but you can change them accordingly
