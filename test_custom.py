@@ -47,7 +47,6 @@ def run(
             )
         )
     else:
-        assert args.add_newlines
         cache_path = os.path.join(
             args.out_dir,
             dataset.task,
