@@ -1614,9 +1614,9 @@ class HymbaBlock(nn.Module):
         scan_outputs = scan_outputs.transpose(1, 2)
         
         if attention_override is not None:
-            attn_hook, attn_intervention, scan_hook, scan_intervention = attention_override
-            attn_outputs = attn_hook(attn_outputs, attn_intervention)
-            scan_outputs = scan_hook(scan_outputs, scan_intervention)
+            attn_hook, attn_intervention, scan_hook, scan_intervention, hook_kwargs = attention_override
+            attn_outputs = attn_hook(attn_outputs, attn_intervention, **hook_kwargs)
+            scan_outputs = scan_hook(scan_outputs, scan_intervention, **hook_kwargs)
 
         hidden_states = (self.pre_avg_layernorm1(attn_outputs) + self.pre_avg_layernorm2(scan_outputs)) / 2
         contextualized_states = self.out_proj(hidden_states)

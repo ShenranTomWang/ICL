@@ -51,7 +51,7 @@ class MambaOperator(Operator):
             scan_outputs (ScanOutput): intervention values
             scan_intervention_fn (Callable): intervention function for scan, defaults to add_mean_scan
             layers (list[int], optional): list of layers to use attention, if None, use all layers. Defaults to None.
-            **kwargs: additional kwargs, not used
+            **kwargs: additional kwargs for intervention function
         Returns:
             dict: kwargs
         """
@@ -60,7 +60,7 @@ class MambaOperator(Operator):
         params = ()
         for layer in self.ALL_LAYERS:
             scan = scan_outputs[layer] if layer in layers else None
-            params += ((scan_intervention_fn, scan),)
+            params += ((scan_intervention_fn, scan, kwargs),)
         return {"attention_overrides": params}
     
     @torch.inference_mode()

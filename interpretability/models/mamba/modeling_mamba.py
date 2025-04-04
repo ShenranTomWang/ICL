@@ -233,8 +233,8 @@ class MambaMixer(nn.Module):
             
             attention = scan_outputs if output_attentions else None
             if attention_override is not None:
-                hook, scan_intervention = attention_override
-                scan_outputs = hook(scan_outputs, scan_intervention)
+                hook, scan_intervention, hook_kwargs = attention_override
+                scan_outputs = hook(scan_outputs, scan_intervention, **hook_kwargs)
             # 4. Final linear projection
             contextualized_states = self.out_proj(scan_outputs.transpose(1, 2))
         return contextualized_states, attention

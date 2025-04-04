@@ -60,7 +60,7 @@ class HybridOperator(Operator, ABC):
             layers (list[int], optional): list of layers to use attention, if None, use all layers. Defaults to None.
             keep_scan (bool, optional): whether to keep scan outputs. Defaults to True.
             keep_attention (bool, optional): whether to keep attention outputs. Defaults to True.
-            **kwargs: additional kwargs, not used
+            **kwargs: additional kwargs for intervention function
         Returns:
             dict: kwargs
         """
@@ -71,7 +71,7 @@ class HybridOperator(Operator, ABC):
         for layer in self.ALL_LAYERS:
             attn = attn_outputs[layer] if keep_attention and layer in layers else None
             scan = scan_outputs[layer] if keep_scan and layer in layers else None
-            params += ((attention_intervention_fn, attn, scan_intervention_fn, scan),)
+            params += ((attention_intervention_fn, attn, scan_intervention_fn, scan, kwargs),)
         return {"attention_overrides": params}
     
     @torch.inference_mode()

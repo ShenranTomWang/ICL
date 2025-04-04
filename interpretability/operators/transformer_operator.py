@@ -51,7 +51,7 @@ class TransformerOperator(Operator):
             attention (SelfAttentionOutput)
             attention_intervention_fn (Callable): intervention function for attention, defaults to add_mean_hybrid
             layers (list[int], optional): list of layers to use attention, if None, use all layers. Defaults to None.
-            **kwargs: additional kwargs, not used
+            **kwargs: additional kwargs for intervention function
         Returns:
             dict: kwargs
         """
@@ -61,7 +61,7 @@ class TransformerOperator(Operator):
         params = ()
         for layer in self.ALL_LAYERS:
             attn = attn_outputs[layer] if layer in layers else None
-            params += ((attention_intervention_fn, attn),)
+            params += ((attention_intervention_fn, attn, kwargs),)
         return {"attention_overrides": params}
         
     def get_cache_instance(self):
