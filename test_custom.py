@@ -187,7 +187,7 @@ if __name__=='__main__':
     parser.add_argument("--is_null", default=False, action="store_true")
     parser.add_argument("--method", type=str, default="direct", choices=["direct", "channel"])
     parser.add_argument("--model", type=str, required=True)
-    parser.add_argument("--operator", type=str, required=True, choices=["TransformerOperator", "HymbaOperator", "RWKVOperator", "MambaOperator", "ZambaOperator"])
+    parser.add_argument("--operator", type=str, required=True, choices=["TransformerOperator", "HymbaOperator", "RWKVOperator", "MambaOperator", "Mamba2Operator", "ZambaOperator"])
 
     args = parser.parse_args()
     if args.out_dir is None:

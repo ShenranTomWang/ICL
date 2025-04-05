@@ -101,7 +101,7 @@ def parse_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     parser.add_argument("--split", default="test", type=str, choices=["test", "dev"])
     parser.add_argument("--out_dir", required=True, type=str)
     parser.add_argument("--load_dir", required=True, type=str)
-    parser.add_argument("--operator", required=True, type=str, choices=["TransformerOperator", "HymbaOperator", "RWKVOperator", "MambaOperator", "ZambaOperator"])
+    parser.add_argument("--operator", required=True, type=str, choices=["TransformerOperator", "HymbaOperator", "RWKVOperator", "MambaOperator", "Mamba2Operator" "ZambaOperator"])
     parser.add_argument("--device", default="cuda", type=str)
     parser.add_argument("--dtype", default="bfloat16", type=str, choices=["bfloat16", "float16", "float32"])
     parser.add_argument("--log_file", default=None, type=str)
