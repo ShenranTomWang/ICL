@@ -16,7 +16,7 @@ def main(args: object, logger: logging.Logger) -> None:
     
     args.seed = [int(seed) for seed in args.seed.split(",")]
     for seed in args.seed:
-        train_data, test_data = load_data(args, seed)
+        train_data, test_data = load_data(args.task, args.dataset, args.split, args.k, args.n, seed)
         train_counter, test_counter = utils.init_counters(train_data, test_data)
         utils.log_counters(train_counter, test_counter)
         args.handler(test_counter, train_data, test_data, operator, args, seed)
