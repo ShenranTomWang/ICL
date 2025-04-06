@@ -10,11 +10,15 @@ python _build_gym.py --build --n_proc=<number of processes to run> --do_test --t
 After scraping the data, you can convert the version of `datasets` back to your version.
 
 ## Generating Ablations
-To generate `random` or `#%_correct` data, run the following:
+To generate `random` or `#%_correct` data by dataset, run the following:
 ```shell
-python create_data.py --variant {random|0_correct|25_correct|50_correct|75_correct} --dataset {dataset}
+python create_data_custom.py --variant {random|0_correct|25_correct|50_correct|75_correct} --dataset {dataset}
 ```
-For a `task` defined in [config](./config/), you must create datasets required by this task one by one. After creating data you will see datasets like `dataset_{variant}` in your data folder, and you need to manually add `{task}_{variant}` config in [config](./config/). I have added `analysis_classification_random` so you don't need to worry about this one.
+Alternatively, if you want to generate a variant of all datasets in a `config.json` file under [config](./config/), run:
+```shell
+python create_data_custom.py --variant {random|0_correct|25_correct|50_correct|75_correct} --task {config_name}
+```
+This will create the corresponding datasets, and a new `config.json` file under [config](./config/).
 
 ## Running Experiments
 To run experiments, follow the script outlined in `test_custom_analysis_classification.sh`. This runs the experiment on `analysis_classification` task which contains 5 datasets of different purposes, all classification. to run other tasks, you can define your task in [config](./config/). The script uses `k = 4` samples of demonstrations, but you can change them accordingly
