@@ -1,0 +1,18 @@
+[
+    "tweet_eval-stance_feminist_25_correct",
+    "ethos-national_origin_25_correct",
+    "tweet_eval-hate_25_correct",
+    "hate_speech18_25_correct",
+    "poem_sentiment_25_correct",
+    "glue-mrpc_25_correct",
+    "glue-wnli_25_correct",
+    "glue-rte_25_correct",
+    "sick_25_correct",
+    "climate_fever_25_correct",
+    "medical_questions_pairs_25_correct",
+    "tweet_eval-stance_atheism_25_correct",
+    "superglue-cb_25_correct",
+    "ethos-religion_25_correct",
+    "financial_phrasebank_25_correct",
+    "ethos-race_25_correct"
+]

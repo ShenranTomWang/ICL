@@ -1,0 +1,18 @@
+[
+    "tweet_eval-stance_feminist_random",
+    "ethos-national_origin_random",
+    "tweet_eval-hate_random",
+    "hate_speech18_random",
+    "poem_sentiment_random",
+    "glue-mrpc_random",
+    "glue-wnli_random",
+    "glue-rte_random",
+    "sick_random",
+    "climate_fever_random",
+    "medical_questions_pairs_random",
+    "tweet_eval-stance_atheism_random",
+    "superglue-cb_random",
+    "ethos-religion_random",
+    "financial_phrasebank_random",
+    "ethos-race_random"
+]

@@ -1,0 +1,18 @@
+[
+    "tweet_eval-stance_feminist",
+    "ethos-national_origin",
+    "tweet_eval-hate",
+    "hate_speech18",
+    "poem_sentiment",
+    "glue-mrpc",
+    "glue-wnli",
+    "glue-rte",
+    "sick",
+    "climate_fever",
+    "medical_questions_pairs",
+    "tweet_eval-stance_atheism",
+    "superglue-cb",
+    "ethos-religion",
+    "financial_phrasebank",
+    "ethos-race"
+]
