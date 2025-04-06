@@ -105,7 +105,6 @@ def main(args):
             config_file = "config/tasks/{}.json".format(test_task)
             with open(config_file, "r") as f:
                 config = json.load(f)
-            is_classification = config["task_type"] == "classification"
             
             dataset = Dataset([] if args.use_demo_cache else curr_train_data, curr_test_data, verbose=args.verbose)
             dataset.tensorize(operator.tokenizer)
@@ -138,7 +137,7 @@ def main(args):
             #         assert dp["output"] in options, (dp, options)
             #         curr_test_data[dp_idx]["output"] = mapping[dp["output"]]
             #         curr_test_data[dp_idx]["options"] = new_options
-            result = run(args, dataset, operator, seed, is_classification, cache_kwargs)
+            result = run(args, dataset, operator, seed, True, cache_kwargs)
 
             if result is None:
                 errors.append("%s/%s" % (test_task, seed))

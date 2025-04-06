@@ -1,11 +1,7 @@
-{
-    "train": [],
-    "test": [
-        "tweet_eval-hate",
-        "poem_sentiment",
-        "glue-rte",
-        "sick",
-        "glue-mrpc"
-    ],
-    "unseen_domain_test": []
-}
+[
+    "tweet_eval-hate",
+    "poem_sentiment",
+    "glue-rte",
+    "sick",
+    "glue-mrpc"
+]

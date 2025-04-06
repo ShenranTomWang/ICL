@@ -3,7 +3,10 @@ import utils.handlers as handlers
 import os, json
 
 def main(args: dict) -> None:
-    handler = getattr(handlers, args.variant + "_handler")
+    if args.variant == "random":
+        handler = getattr(handlers, "random_handler")
+    else:
+        handler = getattr(handlers, "percent_" + args.variant + "_handler")
     handler(args)
 
 if __name__=='__main__':
@@ -14,7 +17,7 @@ if __name__=='__main__':
     parser.add_argument("--task", type=str, default=None)
     parser.add_argument("--k", type=int, default=16)
     parser.add_argument("--seed", type=str, default="100,13,21,42,87")
-    parser.add_argument("--variant", type=str, required=True)
+    parser.add_argument("--variant", type=str, required=True, choices=["random", "0_correct", "25_correct", "50_correct", "75_correct"])
     parser.add_argument("--method", type=str, default=None)
 
     parser.add_argument("--data_dir", type=str, default="data")
@@ -26,7 +29,6 @@ if __name__=='__main__':
     assert args.datasets is not None or args.task is not None, "Either datasets or task should be provided"
     if args.datasets is None:
         with open(os.path.join("config", args.task + ".json"), "r") as f:
-            config = json.load(f)
-        args.datasets = config["train"] + config["test"] + config["unseen_domain_test"]
+            args.datasets = json.load(f)
 
     main(args)

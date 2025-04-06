@@ -23,7 +23,7 @@ def save_jsonl(data: list, path: os.PathLike) -> None:
         for dp in data:
             f.write(json.dumps(dp) + "\n")
 
-def save_config(config: dict, path: os.PathLike) -> None:
+def save_json(config: dict, path: os.PathLike) -> None:
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w") as f:
         json.dump(config, f, indent=4)
@@ -52,15 +52,15 @@ def load_data(task: str | None, dataset: str | None, split: str, k: int, n: int,
     logger = logging.getLogger(__name__)
     if split != "demo":
         if task != None:
-            train_data = load_data_by_task(task, "train", k, seed=seed, config_split="test")
-            test_data = load_data_by_task(task, split, n, seed=seed, config_split="test", is_null=is_null)
+            train_data = load_data_by_task(task, "train", k, seed=seed)
+            test_data = load_data_by_task(task, split, n, seed=seed, is_null=is_null)
         else:
             assert dataset is not None
             train_data = load_data_by_datasets(dataset.split(","), k, "train", seed=seed)
             test_data = load_data_by_datasets(dataset.split(","), n, split, seed=seed, is_null=is_null)
     else:
         if task != None:
-            train_data = load_data_by_task(task, "train", k, seed=seed, config_split="test")
+            train_data = load_data_by_task(task, "train", k, seed=seed)
         else:
             assert dataset is not None
             train_data = load_data_by_datasets(dataset.split(","), k, "train", seed=seed)
@@ -68,13 +68,9 @@ def load_data(task: str | None, dataset: str | None, split: str, k: int, n: int,
     logger.info("Loaded data for seed %s" % seed)
     return train_data, test_data
 
-def load_data_by_task(task, split, k, seed=0, config_split=None, is_null=False):
-    if config_split is None:
-        config_split = split
-
+def load_data_by_task(task, split, k, seed=0, is_null=False):
     with open(os.path.join("config", task + ".json"), "r") as f:
-        config = json.load(f)
-    datasets = config[config_split]
+        datasets = json.load(f)
 
     data = load_data_by_datasets(datasets=datasets, k=k, seed=seed, split=split, is_null=is_null)
     return data

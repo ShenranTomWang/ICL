@@ -1,0 +1,8 @@
+{
+    "task_type": "classification",
+    "options": [
+        "contradiction",
+        "entailment",
+        "neutral"
+    ]
+}
