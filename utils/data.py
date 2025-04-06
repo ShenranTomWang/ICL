@@ -13,7 +13,6 @@ def load_jsonl(path: os.PathLike) -> list:
     with open(path, "r") as f:
         for line in f:
             dp = json.loads(line)
-            dp["task"] = "{}_random".format(dp["task"])
             data.append(dp)
     return data
 
