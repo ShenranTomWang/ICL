@@ -1,0 +1,7 @@
+[
+    "tweet_eval-hate_75_correct",
+    "poem_sentiment_75_correct",
+    "glue-rte_75_correct",
+    "sick_75_correct",
+    "glue-mrpc_75_correct"
+]
