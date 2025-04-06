@@ -31,9 +31,10 @@ def percent_option(data: list, seed: int, percent: float) -> list:
         list: randomized
     """
     np.random.seed(seed)
-    incorrect_indeces = np.random.choice(len(data), int(len(data) * percent), replace=False)
+    correct_indeces = np.random.choice(len(data), int(len(data) * percent), replace=False)
+    
     for i, dp in enumerate(data):
-        if i in incorrect_indeces:
+        if i not in correct_indeces:
             options = dp["options"]
             correct_option = options.index(dp["output"])
             incorrect_options = options[:correct_option] + options[correct_option + 1:]
