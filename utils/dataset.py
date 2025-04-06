@@ -67,7 +67,7 @@ class Dataset:
             
         self.demo_tokenized = tokenizer([self.demo], return_tensors="pt")
         
-        inputs = [tokenizer(input, return_tensors="pt", padding=True, truncation=True) for input in inputs]
+        inputs = [tokenizer(input, return_tensors="pt") for input in inputs]
         inputs = [
             {
                 "input_ids": input["input_ids"],
