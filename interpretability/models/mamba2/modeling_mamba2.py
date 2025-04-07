@@ -604,15 +604,31 @@ class Mamba2Mixer(nn.Module):
         cache_params: Optional[Mamba2Cache] = None,
         cache_position: Optional[torch.LongTensor] = None,
         attention_mask: Optional[torch.Tensor] = None,
+        output_attentions: Optional[bool] = False,
+        attention_override: Optional[Tuple[torch.Tensor]] = None,
     ):
         if is_fast_path_available and "cuda" in self.in_proj.weight.device.type:
-            return self.cuda_kernels_forward(hidden_states, cache_params, cache_position, attention_mask)
+            return self.cuda_kernels_forward(
+                hidden_states,
+                cache_params,
+                cache_position,
+                attention_mask,
+                output_attentions=output_attentions,
+                attention_override=attention_override,
+            )
         dtype = hidden_states.dtype
         if attention_mask is not None and attention_mask.shape[1] > 1 and attention_mask.shape[0] > 1:
             # tune out hidden states for pad tokens, see https://github.com/state-spaces/mamba/issues/66
             hidden_states = (hidden_states * attention_mask[:, :, None]).to(dtype)
 
-        return self.torch_forward(hidden_states, cache_params, cache_position, attention_mask)
+        return self.torch_forward(
+            hidden_states,
+            cache_params,
+            cache_position,
+            attention_mask,
+            output_attentions=output_attentions,
+            attention_override=attention_override,
+        )
 
 
 class Mamba2RMSNorm(nn.Module):
