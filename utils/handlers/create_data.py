@@ -1,15 +1,14 @@
 import os, json
 import numpy as np
-from utils.data import load_jsonl, save_jsonl, save_json
+from utils.data import load_jsonl, save_jsonl, save_json, update_task
 from typing import Callable
 
-def random_option(data: list, seed: int, variant: str, **kwargs) -> list:
+def random_option(data: list, seed: int, **kwargs) -> list:
     """assign random option to each data point
 
     Args:
         data (list)
         seed (int)
-        variant (str): variant of the handler
         **kwargs: not used
 
     Returns:
@@ -19,16 +18,14 @@ def random_option(data: list, seed: int, variant: str, **kwargs) -> list:
     for dp in data:
         random_output = np.random.randint(0, len(dp["options"]))
         dp["output"] = dp["options"][random_output]
-        dp["task"] = f"{dp["task"]}_{variant}"
     return data
 
-def percent_option(data: list, seed: int, variant: str, percent: float, **kwargs) -> list:
+def percent_option(data: list, seed: int, percent: float, **kwargs) -> list:
     """assign option to each data point such that we have <percent> of correct answers
 
     Args:
         data (list)
         seed (int)
-        variant (str): variant of the handler
         percent (float): percentage of correct answers
         **kwargs: not used
 
@@ -45,7 +42,6 @@ def percent_option(data: list, seed: int, variant: str, percent: float, **kwargs
             incorrect_options = options[:correct_option] + options[correct_option + 1:]
             option = np.random.choice(incorrect_options)
             dp["output"] = option
-            dp["task"] = f"{dp["task"]}_{variant}"
     return data
 
 def percent_0_correct_handler(args) -> None:
@@ -213,13 +209,16 @@ def generic_handler(
                 try:
                     train_data_path = os.path.join(curr_data_dir, f"{dataset}_{k}_{seed}_train.jsonl")
                     train_data = load_jsonl(train_data_path)
-                    train_data = option_fn(train_data, seed, variant, **kwargs)
+                    train_data = update_task(train_data, variant)
+                    train_data = option_fn(train_data, seed, **kwargs)
                     
                     dev_data_path = os.path.join(curr_data_dir, f"{dataset}_{k}_{seed}_dev.jsonl")
                     dev_data = load_jsonl(dev_data_path)
+                    dev_data = update_task(dev_data, variant)
                     
                     test_data_path = os.path.join(curr_data_dir, f"{dataset}_{k}_{seed}_test.jsonl")
                     test_data = load_jsonl(test_data_path)
+                    test_data = update_task(test_data, variant)
                     
                     new_train_path = os.path.join(data_dir, f"{dataset}_{variant}", f"{dataset}_{variant}_{k}_{seed}_train.jsonl")
                     new_dev_path = os.path.join(data_dir, f"{dataset}_{variant}", f"{dataset}_{variant}_{k}_{seed}_dev.jsonl")

@@ -16,6 +16,20 @@ def load_jsonl(path: os.PathLike) -> list:
             data.append(dp)
     return data
 
+def update_task(data: list, variant: str) -> list:
+    """Update task in data with variant
+
+    Args:
+        data (list): data to update
+        variant (str): variant to update to
+
+    Returns:
+        list: updated data
+    """
+    for dp in data:
+        dp["task"] = f"{dp['task']}_{variant}"
+    return data
+
 def save_jsonl(data: list, path: os.PathLike) -> None:
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w") as f:
