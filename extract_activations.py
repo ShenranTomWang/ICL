@@ -4,6 +4,7 @@ from utils.data import load_data
 import utils.utils as utils
 import utils.handlers.extract_activations as handlers
 import interpretability
+from constants import ALL_DTYPES, ALL_OPERATORS
 
 def main(args: object, logger: logging.Logger) -> None:
     operator: interpretability.Operator = args.operator(args.model, args.device, args.dtype)
@@ -24,7 +25,7 @@ def main(args: object, logger: logging.Logger) -> None:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", type=str, required=True)
-    parser.add_argument("--dtype", type=str, default="bfloat16", choices=["float16", "float32", "bfloat16"])
+    parser.add_argument("--dtype", type=str, default="bfloat16", choices=ALL_DTYPES)
     parser.add_argument("--device", type=str, default="cuda:0")
     
     parser.add_argument("--task", type=str, default=None)
@@ -33,12 +34,10 @@ if __name__ == "__main__":
     parser.add_argument("--seed", type=str, default="100,13,21,42,87")
     parser.add_argument("--n", type=int, default=-1, help="number of test points to use")
     parser.add_argument("--k", type=int, default=4, help="number of examples")
-    parser.add_argument("--unseen_domain_only", default=False, action="store_true")
-    parser.add_argument("--is_null", default=False, action="store_true")
     
     parser.add_argument("--layers", type=str, default="-1", help="comma separated list of layer indices, or -1 for all layers")
-    parser.add_argument("--stream", type=str, default="resid", choices=["resid", "cache", "attn", "attn_mean", "steer"])
-    parser.add_argument("--operator", type=str, default="TransformerOperator", choices=["TransformerOperator", "HymbaOperator", "RWKVOperator", "MambaOperator", "ZambaOperator", "Mamba2Operator"])
+    parser.add_argument("--stream", type=str, default="resid", choices=["attn", "attn_mean", "steer"])
+    parser.add_argument("--operator", type=str, default="TransformerOperator", choices=ALL_OPERATORS)
     parser.add_argument("--verbose", default=False, action="store_true")
     
     parser.add_argument("--log_file", type=str, default=None)

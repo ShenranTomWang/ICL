@@ -94,10 +94,7 @@ def do_inference(operator: Operator, dataset: Dataset, kwargs: dict, device: tor
         input = inputs[i]
         index = torch.tensor(indices[i]).to(device)
         try:
-            if kwargs is None:
-                output = operator(input)
-            else:
-                output = operator(input, **kwargs)
+            output = operator(input, **kwargs)
             logit = output.logits
             output_logits = logit[..., index, :].squeeze(-2)        # (batch_size, vocab_size)
             output_logits = output_logits[..., option_ids]          # (batch_size, num_options)

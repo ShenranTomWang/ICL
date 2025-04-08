@@ -47,7 +47,7 @@ def load_config(test_task: str) -> dict:
         config = json.load(f)
     return config
 
-def load_data(task: str | None, dataset: str | None, split: str, k: int, n: int, seed: int, is_null: bool = False) -> tuple:
+def load_data(task: str | None, dataset: str | None, split: str, k: int, n: int, seed: int) -> tuple:
     """Load train and test data from args using seed, handles both loading by task and dataset cases, empty test_data if split is "demo"
     
     Args:
@@ -57,7 +57,6 @@ def load_data(task: str | None, dataset: str | None, split: str, k: int, n: int,
         k (int): number of training samples
         n (int): number of test samples to load, -1 to load all
         seed (int): seed
-        is_null (bool): whether to set input to "N/A"
 
     Returns:
         tuple<list<{task: str, input: str, output: str, options: list<str>}>>: train_data, test_data
@@ -66,11 +65,11 @@ def load_data(task: str | None, dataset: str | None, split: str, k: int, n: int,
     if split != "demo":
         if task != None:
             train_data = load_data_by_task(task, "train", k, seed=seed)
-            test_data = load_data_by_task(task, split, n, seed=seed, is_null=is_null)
+            test_data = load_data_by_task(task, split, n, seed=seed)
         else:
             assert dataset is not None
             train_data = load_data_by_datasets(dataset.split(","), k, "train", seed=seed)
-            test_data = load_data_by_datasets(dataset.split(","), n, split, seed=seed, is_null=is_null)
+            test_data = load_data_by_datasets(dataset.split(","), n, split, seed=seed)
     else:
         if task != None:
             train_data = load_data_by_task(task, "train", k, seed=seed)
@@ -81,14 +80,14 @@ def load_data(task: str | None, dataset: str | None, split: str, k: int, n: int,
     logger.info("Loaded data for seed %s" % seed)
     return train_data, test_data
 
-def load_data_by_task(task, split, k, seed=0, is_null=False):
+def load_data_by_task(task, split, k, seed=0):
     with open(os.path.join("config", task + ".json"), "r") as f:
         datasets = json.load(f)
 
-    data = load_data_by_datasets(datasets=datasets, k=k, seed=seed, split=split, is_null=is_null)
+    data = load_data_by_datasets(datasets=datasets, k=k, seed=seed, split=split)
     return data
 
-def load_data_by_datasets(datasets, k, split, seed=0, is_null=False):
+def load_data_by_datasets(datasets, k, split, seed=0):
     logger = logging.getLogger(__name__)
     data = []
     for dataset in datasets:
@@ -99,8 +98,6 @@ def load_data_by_datasets(datasets, k, split, seed=0, is_null=False):
                     if k != -1 and i >= k:
                         break
                     dp = json.loads(line)
-                    if is_null:
-                        dp["input"] = "N/A"
                     data.append(dp)
         except Exception as e:
             logger.error(f"Error loading data for {dataset}")
