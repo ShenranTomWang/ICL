@@ -18,7 +18,7 @@ def run(
     
     Args:
         args (dict): arguments
-        dataset (Dataset): tensorized dataset
+        dataset (Dataset): dataset
         operator (Operator): operator
         seed (str): seed
         is_classification (bool): whether the task is classification
@@ -66,7 +66,7 @@ def run(
     if not os.path.exists(prediction_path):
         os.makedirs(os.path.dirname(prediction_path), exist_ok=True)
 
-    predictions = do_inference(operator, dataset, args.test_batch_size, kwargs, args.device, args.verbose)
+    predictions = do_inference(operator, dataset, kwargs, args.device, args.verbose)
 
     groundtruths = dataset.outputs
     perf = evaluate(predictions, groundtruths, is_classification)
@@ -101,10 +101,6 @@ def main(args):
             curr_train_data = [dp for dp in train_data if dp["task"] == test_task]
             assert len(curr_test_data) > 0
             assert not use_demonstrations or len(curr_train_data) == args.k, (use_demonstrations, len(curr_train_data), args.k)
-
-            config_file = "config/tasks/{}.json".format(test_task)
-            with open(config_file, "r") as f:
-                config = json.load(f)
             
             dataset = Dataset([] if args.use_demo_cache else curr_train_data, curr_test_data, verbose=args.verbose)
             dataset.tensorize(operator.tokenizer)
@@ -171,7 +167,6 @@ if __name__=='__main__':
     parser.add_argument("--n_skips", type=int, default=0, help="number of tokens to skip in the output, assumes having <bos> token, set to -1 if tokenizer has no <bos> token")
     parser.add_argument("--dtype", type=str, default="bfloat16", choices=["bfloat16", "float16", "float32"])
     parser.add_argument("--device", type=str, default="cuda")
-    parser.add_argument("--test_batch_size", type=int, default=1)
     parser.add_argument("--use_random_english_words", default=False, action="store_true")
     
     parser.add_argument("--demo_cache_dir", default=None, help="out dir of demo cache previously extracted, should contain all children dirs of tasks. If not provided, will extract cache from scratch")

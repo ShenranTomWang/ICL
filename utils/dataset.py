@@ -83,7 +83,7 @@ class Dataset:
             self.logger.info(f"inputs example: {inputs[0]}")
             self.logger.info(f"output id example: {output_ids[0]}")
             self.logger.info(f"option ids: {option_ids}")
-        self.inputs = inputs
+        self.inputs_tokenized = inputs
         self.output_ids = output_ids
         self.indices = indices
         self.option_ids = option_ids

@@ -23,10 +23,10 @@ class Operator(ABC):
         self.transformer_lens = tl_model != None
         
     def __call__(self, text: str, **kwargs) -> torch.Tensor:
-        self.forward(text, **kwargs)
+        return self.forward(text, **kwargs)
     
     def forward(self, text: str, **kwargs) -> torch.Tensor:
-        tokenized = self.tokenizer(text, return_tensors="pt")
+        tokenized = self.tokenizer(text, return_tensors="pt").to(self.device)
         output = self.model(**tokenized, **kwargs)
         return output
 
