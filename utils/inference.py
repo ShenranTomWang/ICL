@@ -111,7 +111,7 @@ def do_inference(operator: Operator, dataset: Dataset, kwargs: dict, device: tor
             output = torch.full((1,), -1, device="cpu", dtype=torch.long)
             outputs.append(output)
     
-    outputs = torch.cat(outputs, dim=0).flatten()
+    outputs = torch.stack(outputs)
     outputs = outputs.cpu().tolist()
     outputs = [options[i] if i != -1 else None for i in outputs]
     return outputs

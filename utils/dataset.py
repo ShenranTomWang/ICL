@@ -64,7 +64,6 @@ class Dataset:
             self.preprocess()
             
         inputs = self.inputs
-            
         self.demo_tokenized = tokenizer([self.demo], return_tensors="pt")
         
         inputs = [tokenizer(input, return_tensors="pt") for input in inputs]

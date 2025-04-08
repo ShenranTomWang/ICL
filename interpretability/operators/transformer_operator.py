@@ -11,7 +11,7 @@ from typing import Callable
 
 class TransformerOperator(Operator):    
     def __init__(self, model: AutoModelForCausalLM, tokenizer: Tokenizer, device: torch.DeviceObjType, dtype: torch.dtype):
-        super().__init__(tokenizer, model, device, dtype)
+        super().__init__(tokenizer=tokenizer, model=model, device=device, dtype=dtype)
         
     def get_attention_add_mean_hook(self):
         return add_mean_hybrid
