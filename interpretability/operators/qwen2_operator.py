@@ -9,4 +9,4 @@ class Qwen2Operator(TransformerOperator):
         tokenizer = AutoTokenizer.from_pretrained(path, trust_remote_code=True)
         model = Qwen2ForCausalLM.from_pretrained(path).to(device).to(dtype)
         self.ALL_LAYERS = [i for i in range(model.config.num_hidden_layers)]
-        super().__init__(StandardTokenizer(tokenizer), model, device, dtype)
+        super().__init__(model, StandardTokenizer(tokenizer), device, dtype)
