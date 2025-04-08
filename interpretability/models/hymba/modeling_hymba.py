@@ -509,6 +509,7 @@ class HymbaFlashAttention2(HymbaAttention):
             query_states = None,
             key_states=None,
             value_states=None,
+            attention_override=None,
             **kwargs,
     ):
 
@@ -667,17 +668,21 @@ class HymbaFlashAttention2(HymbaAttention):
         )
 
         v_dim = value_states.shape[-2] * value_states.shape[-1]
+        attention = attn_output if output_attentions else None
+        if attention_override is not None:
+            attn_hook, attn_intervention, _, _, hook_kwargs = attention_override
+            attn_output = attn_hook(attention, attn_intervention, **hook_kwargs)
         attn_output = attn_output.reshape(bsz, q_len, v_dim).contiguous()
 
         if self.attn_only_wo_proj:
-            return attn_output, (key_states_no_repeat, value_states_no_repeat)
+            return attn_output, (key_states_no_repeat, value_states_no_repeat), attention
         
         attn_output = self.o_proj(attn_output)
             
         if not output_attentions:
             attn_weights = None
 
-        return attn_output, attn_weights, past_key_value, (key_states_no_repeat, value_states_no_repeat)
+        return attn_output, attn_weights, past_key_value, (key_states_no_repeat, value_states_no_repeat), attention
 
     def _flash_attention_forward(
             self,
@@ -975,6 +980,8 @@ class HymbaSdpaAttention(HymbaAttention):
             query_states = None,
             key_states=None,
             value_states=None,
+            attention_override=None,
+            **kwargs,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor], Optional[Tuple[torch.Tensor]]]:
 
         if output_attentions:
@@ -1061,14 +1068,18 @@ class HymbaSdpaAttention(HymbaAttention):
         )
 
         attn_output = attn_output.transpose(1, 2).contiguous()
+        attention = attn_output if output_attentions else None
+        if attention_override is not None:
+            attn_hook, attn_intervention, _, _, hook_kwargs = attention_override
+            attn_output = attn_hook(attn_output, attn_intervention, **hook_kwargs)
         attn_output = attn_output.reshape(bsz, q_len, self.v_head_dim * self.num_heads)
 
         if self.attn_only_wo_proj:
-            return attn_output, (key_states_no_repeat, value_states_no_repeat)
+            return attn_output, (key_states_no_repeat, value_states_no_repeat), attention
         
         attn_output = self.o_proj(attn_output)
 
-        return attn_output, None, past_key_value, (key_states_no_repeat, value_states_no_repeat)
+        return attn_output, None, past_key_value, (key_states_no_repeat, value_states_no_repeat), attention
 
 
 
@@ -1155,6 +1166,7 @@ class HymbaFlexAttention(HymbaFlashAttention2):
             query_states = None,
             key_states=None,
             value_states=None,
+            attention_override=None,
             **kwargs,
     ):  
         if "padding_mask" in kwargs:
@@ -1318,6 +1330,10 @@ class HymbaFlexAttention(HymbaFlashAttention2):
             )
 
             v_dim = value_states.shape[-2] * value_states.shape[-1]
+            attention = attn_output if output_attentions else None
+            if attention_override is not None:
+                attn_hook, attn_intervention, _, _, hook_kwargs = attention_override
+                attn_output = attn_hook(attn_output, attn_intervention, **hook_kwargs)
             attn_output = attn_output.reshape(bsz, q_len, v_dim).contiguous()
         
         else:
@@ -1341,17 +1357,21 @@ class HymbaFlexAttention(HymbaFlashAttention2):
                 head_mask = head_mask.view(1, 1, -1, 1)
                 attn_output = attn_output * head_mask
             
+            attention = attn_output if output_attentions else None
+            if attention_override is not None:
+                attn_hook, attn_intervention, _, _, hook_kwargs = attention_override
+                attn_output = attn_hook(attn_output, attn_intervention, **hook_kwargs)
             attn_output = attn_output.reshape(bsz, q_len, self.v_head_dim * self.num_heads)
-  
+            
         if self.attn_only_wo_proj:
-            return attn_output, (key_states_no_repeat, value_states_no_repeat)
+            return attn_output, (key_states_no_repeat, value_states_no_repeat), attention
         
         attn_output = self.o_proj(attn_output)
 
         if not output_attentions:
             attn_weights = None
 
-        return attn_output, attn_weights, past_key_value, (key_states_no_repeat, value_states_no_repeat)
+        return attn_output, attn_weights, past_key_value, (key_states_no_repeat, value_states_no_repeat), attention
 
     def set_head_mask(self, mask):
         self.head_mask = mask
@@ -1548,9 +1568,30 @@ class HymbaBlock(nn.Module):
             
         if self.reuse_kv:
             assert kv_last_layer is not None
-            attn_outputs, attn_key_value = self.self_attn(attention_mask=attention_mask, position_ids=position_ids, query_states=query_states, kv_last_layer=kv_last_layer, use_swa=use_swa, use_cache=use_cache, past_key_value=cache_params)
+            attn_outputs, attn_key_value, attention = self.self_attn(
+                attention_mask=attention_mask,
+                position_ids=position_ids,
+                query_states=query_states,
+                kv_last_layer=kv_last_layer,
+                use_swa=use_swa,
+                use_cache=use_cache,
+                past_key_value=cache_params,
+                attention_override=attention_override,
+                output_attentions=output_attentions
+            )
         else:
-            attn_outputs, attn_key_value = self.self_attn(attention_mask=attention_mask, position_ids=position_ids, query_states=query_states, key_states=key_states, value_states=value_states, use_swa=use_swa, use_cache=use_cache, past_key_value=cache_params)
+            attn_outputs, attn_key_value, attention = self.self_attn(
+                attention_mask=attention_mask,
+                position_ids=position_ids,
+                query_states=query_states,
+                key_states=key_states,
+                value_states=value_states,
+                use_swa=use_swa,
+                use_cache=use_cache,
+                past_key_value=cache_params,
+                attention_override=attention_override,
+                output_attentions=output_attentions
+            )
 
         ## Mamba head
         index = 0
@@ -1612,10 +1653,10 @@ class HymbaBlock(nn.Module):
                 cache_params.ssm_states[self.layer_idx].copy_(ssm_state)
                 
         scan_outputs = scan_outputs.transpose(1, 2)
+        scan = scan_outputs if output_attentions else None
         
         if attention_override is not None:
-            attn_hook, attn_intervention, scan_hook, scan_intervention, hook_kwargs = attention_override
-            attn_outputs = attn_hook(attn_outputs, attn_intervention, **hook_kwargs)
+            _, _, scan_hook, scan_intervention, hook_kwargs = attention_override
             scan_outputs = scan_hook(scan_outputs, scan_intervention, **hook_kwargs)
 
         hidden_states = (self.pre_avg_layernorm1(attn_outputs) + self.pre_avg_layernorm2(scan_outputs)) / 2
@@ -1623,8 +1664,8 @@ class HymbaBlock(nn.Module):
         
         outputs = (contextualized_states, attn_key_value)
         if output_attentions:
-            outputs += (attn_outputs,)
-            outputs += (scan_outputs,)
+            outputs += (attention,)
+            outputs += (scan,)
 
         return outputs
 

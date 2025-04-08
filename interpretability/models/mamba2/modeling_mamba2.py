@@ -503,7 +503,10 @@ class Mamba2Mixer(nn.Module):
             # [num_heads] -> [num_heads, head_dim]
             D = self.D[..., None].expand(self.D.shape[0], self.head_dim)
             y = (y + hidden_states * D).to(y.dtype)
-
+            attention = y if output_attentions else None
+            if attention_override is not None:
+                hook, scan_intervention, hook_kwargs = attention_override
+                y = hook(y, scan_intervention, **hook_kwargs)
             # [bsz, num_heads, head_dim] -> [bsz, 1, intermediate_size]
             y = y.reshape(batch_size, -1)[:, None, ...]
         else:
@@ -579,6 +582,10 @@ class Mamba2Mixer(nn.Module):
             # Cutting off padded chunks
             if pad_size > 0:
                 y = y[:, :seq_len, :, :]
+            attention = y if output_attentions else None
+            if attention_override is not None:
+                hook, scan_intervention, hook_kwargs = attention_override
+                y = hook(y, scan_intervention, **hook_kwargs)
             y = y.reshape(batch_size, seq_len, -1)
 
             # Init cache
@@ -586,11 +593,6 @@ class Mamba2Mixer(nn.Module):
                 cache_params.update_ssm_state(layer_idx=self.layer_idx, new_ssm_state=ssm_state)
 
         scan_output = self.norm(y, gate)
-        attention = scan_outputs if output_attentions else None
-        if attention_override is not None:
-            hook, scan_intervention, hook_kwargs = attention_override
-            scan_outputs = hook(scan_outputs, scan_intervention, **hook_kwargs)
-
         # end ssd naive
 
         # 4. Final linear projection

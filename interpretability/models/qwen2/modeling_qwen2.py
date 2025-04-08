@@ -155,6 +155,7 @@ class Qwen2Attention(nn.Module):
         past_key_value: Optional[Cache] = None,
         cache_position: Optional[torch.LongTensor] = None,
         attention_override: Optional[tuple] = None,
+        output_attentions: Optional[bool] = False,
         **kwargs: Unpack[FlashAttentionKwargs],
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor], Optional[Tuple[torch.Tensor]]]:
         input_shape = hidden_states.shape[:-1]
@@ -202,13 +203,14 @@ class Qwen2Attention(nn.Module):
             **kwargs,
         )
 
-        attn_output = attn_output.reshape(*input_shape, -1).contiguous()
+        attention = attn_output if output_attentions else None
         if attention_override is not None:
             hook, intervention, hook_kwargs = attention_override
             attn_output = hook(attn_output, intervention, **hook_kwargs)
+        attn_output = attn_output.reshape(*input_shape, -1).contiguous()
             
         attn_output = self.o_proj(attn_output)
-        return attn_output, attn_weights, attn_output
+        return attn_output, attn_weights, attention
 
 
 class Qwen2RMSNorm(nn.Module):

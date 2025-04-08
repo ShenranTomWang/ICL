@@ -445,6 +445,8 @@ class Zamba2Attention(nn.Module):
         attention_mask: Optional[torch.Tensor] = None,
         past_key_value: Optional[Zamba2HybridDynamicCache] = None,
         position_embeddings: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
+        attention_override: Optional[tuple] = None,
+        output_attentions: Optional[bool] = False,
         **kwargs: Unpack[FlashAttentionKwargs],
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor], Optional[Tuple[torch.Tensor]]]:
         input_shape = hidden_states.shape[:-1]
@@ -490,10 +492,14 @@ class Zamba2Attention(nn.Module):
             scaling=self.scaling,
             **kwargs,
         )
-
+        
+        attention = attn_output if output_attentions else None
+        if attention_override is not None:
+            attn_hook, attn_intervention, _, _, hook_kwargs = attention_override
+            attn_output = attn_hook(attn_output, attn_intervention, **hook_kwargs)
         attn_output = attn_output.reshape(*input_shape, -1).contiguous()
         attn_output = self.o_proj(attn_output)
-        return attn_output, attn_weights
+        return attn_output, attn_weights, attention
 
 
 # Helper methods for segment sum computation
@@ -631,6 +637,8 @@ class Zamba2MambaMixer(nn.Module):
         hidden_states: torch.Tensor,
         cache_params: Optional[Zamba2HybridDynamicCache] = None,
         attention_mask: Optional[torch.Tensor] = None,
+        attention_override: Optional[tuple] = None,
+        output_attentions: Optional[bool] = False,
     ):
         # set up dimensions for reshapes later
 
@@ -679,6 +687,10 @@ class Zamba2MambaMixer(nn.Module):
                 dt_bias=dt_bias,
                 dt_softplus=True,
             )
+            scan = hidden_states
+            if attention_override is not None:
+                _, _, scan_hook, scan_override, hook_kwargs = attention_override
+                scan_output = scan_hook(hidden_states, scan_override, **hook_kwargs)
             hidden_states = hidden_states.view(batch_size, self.num_heads * self.head_dim)
             hidden_states = self.norm(hidden_states, gate)
             out = self.out_proj(hidden_states)[:, None, ...]
@@ -770,11 +782,16 @@ class Zamba2MambaMixer(nn.Module):
                 )
                 if ssm_state is not None and cache_params is not None:
                     cache_params.ssm_states[self.layer_idx].copy_(ssm_state)
+                
+                scan = scan_output
+                if attention_override is not None:
+                    _, _, scan_hook, scan_override, hook_kwargs = attention_override
+                    scan_output = scan_hook(scan_output, scan_override, **hook_kwargs)
                 scan_output = scan_output.view(batch_size, seq_len, -1)
                 # Multiply "gate" branch and apply extra normalization layer
                 scan_output = self.norm(scan_output, gate)
                 out = self.out_proj(scan_output)
-        return out
+        return out, scan
 
     # fmt: off
     def torch_forward(self, input_states, cache_params: Optional[Zamba2HybridDynamicCache]=None, attention_mask: Optional[torch.Tensor]=None):
@@ -976,11 +993,25 @@ class Zamba2MambaMixer(nn.Module):
         hidden_states,
         cache_params: Optional[Zamba2HybridDynamicCache] = None,
         attention_mask: Optional[torch.Tensor] = None,
+        attention_override: Optional[tuple] = None,
+        output_attentions: Optional[bool] = False,
     ):
         if is_fast_path_available and "cuda" in self.in_proj.weight.device.type:
-            return self.cuda_kernels_forward(hidden_states, cache_params, attention_mask)
+            return self.cuda_kernels_forward(
+                hidden_states,
+                cache_params,
+                attention_mask,
+                attention_override=attention_override,
+                output_attentions=output_attentions
+            )
 
-        return self.torch_forward(hidden_states, cache_params, attention_mask)
+        return self.torch_forward(
+            hidden_states,
+            cache_params,
+            attention_mask,
+            attention_override=attention_override,
+            output_attentions=output_attentions,
+        )
 
 
 class Zamba2MLP(nn.Module):
@@ -1071,18 +1102,16 @@ class Zamba2AttentionDecoderLayer(nn.Module):
         """
         hidden_states = torch.concatenate([hidden_states, original_hidden_states], dim=-1)
         hidden_states = self.input_layernorm(hidden_states)
-        attn_output, self_attn_weights = self.self_attn(
+        attn_output, self_attn_weights, attention = self.self_attn(
             hidden_states=hidden_states,
             layer_idx=layer_idx,
             attention_mask=attention_mask,
             past_key_value=past_key_value,
             output_attentions=output_attentions,
             position_embeddings=position_embeddings,
+            attention_override=attention_override,
             **kwargs,
         )
-        if attention_override is not None:
-            attn_hook, attn_override, _, _, hook_kwargs = attention_override
-            attn_output = attn_hook(attn_output, attn_override, **hook_kwargs)
 
         hidden_states = self.pre_ff_layernorm(attn_output)
         hidden_states = self.feed_forward(hidden_states, layer_idx)
@@ -1090,7 +1119,7 @@ class Zamba2AttentionDecoderLayer(nn.Module):
         outputs = (hidden_states,)
 
         if output_attentions:
-            outputs += (self_attn_weights, attn_output, None, None)
+            outputs += (self_attn_weights, attention, None, None)
 
         return outputs
 
@@ -1144,14 +1173,13 @@ class Zamba2MambaDecoderLayer(nn.Module):
         )
         hidden_states = self.input_layernorm(hidden_states)
 
-        scan_output = self.mamba(
+        scan_output, scan = self.mamba(
             hidden_states=hidden_states,
             cache_params=past_key_value,
             attention_mask=attention_mask,
+            attention_override=attention_override,
+            output_attentions=output_attentions,
         )
-        if attention_override is not None:
-            _, _, scan_hook, scan_override, hook_kwargs = attention_override
-            scan_output = scan_hook(scan_output, scan_override, **hook_kwargs)
 
         self_attn_weights = None
 
@@ -1161,7 +1189,7 @@ class Zamba2MambaDecoderLayer(nn.Module):
         outputs = (hidden_states,)
 
         if output_attentions:
-            outputs += (None, None, self_attn_weights, scan_output,)
+            outputs += (None, None, self_attn_weights, scan,)
 
         if use_cache:
             outputs += (past_key_value,)
@@ -1242,7 +1270,7 @@ class Zamba2HybridLayer(nn.Module):
 
         if output_attentions:
             mamba_weights, scan_output = layer_outputs[3], layer_outputs[4]
-            layer_outputs = (layer_outputs[0], self_attn_weights, attn_output, mamba_weights, scan_output) + layer_outputs[3:]
+            layer_outputs = (layer_outputs[0], self_attn_weights, attn_output, mamba_weights, scan_output) + layer_outputs[4:]
 
         return layer_outputs
 
