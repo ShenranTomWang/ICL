@@ -26,7 +26,7 @@ class Operator(ABC):
         self.forward(text, **kwargs)
     
     def forward(self, text: str, **kwargs) -> torch.Tensor:
-        tokenized = self.tokenizer(text, return_tensors="pt", padding=True, truncation=True)
+        tokenized = self.tokenizer(text, return_tensors="pt")
         output = self.model(**tokenized, **kwargs)
         return output
 
