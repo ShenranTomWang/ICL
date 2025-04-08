@@ -1,9 +1,8 @@
 import shutup; shutup.please()
-from interpretability.models.qwen2 import Qwen2ForCausalLM
 from interpretability.attention_outputs import SelfAttentionOutput
 from interpretability.hooks import add_mean_hybrid
-from interpretability.tokenizers import StandardTokenizer
-from transformers import AutoTokenizer
+from transformers import AutoModelForCausalLM
+from interpretability.tokenizers import Tokenizer
 from transformers.cache_utils import DynamicCache
 import torch
 from .operator import Operator
@@ -11,11 +10,8 @@ import os, logging
 from typing import Callable
 
 class TransformerOperator(Operator):    
-    def __init__(self, path: str, device: torch.DeviceObjType, dtype: torch.dtype):
-        tokenizer = AutoTokenizer.from_pretrained(path, trust_remote_code=True)
-        model = Qwen2ForCausalLM.from_pretrained(path).to(device).to(dtype)
-        self.ALL_LAYERS = [i for i in range(model.config.num_hidden_layers)]
-        super().__init__(StandardTokenizer(tokenizer), model, device, dtype)
+    def __init__(self, model: AutoModelForCausalLM, tokenizer: Tokenizer, device: torch.DeviceObjType, dtype: torch.dtype):
+        super().__init__(tokenizer, model, device, dtype)
         
     def get_attention_add_mean_hook(self):
         return add_mean_hybrid

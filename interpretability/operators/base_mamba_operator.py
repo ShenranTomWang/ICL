@@ -1,17 +1,17 @@
 import shutup; shutup.please()
-from interpretability.models.mamba import MambaCache, MambaForCausalLM
+from interpretability.models.mamba import MambaCache
 import torch
 from typing import Callable
-from transformers import AutoTokenizer, AutoModelForCausalLM
+from transformers import AutoModelForCausalLM
 from .operator import Operator
+from interpretability.tokenizers import Tokenizer
 from interpretability.attention_outputs import ScanOutput
 from interpretability.hooks import add_mean_scan
-from interpretability.tokenizers import StandardTokenizer
 import logging, os
 
 class BaseMambaOperator(Operator):
-    def __init__(self, model: AutoModelForCausalLM, tokenizer: AutoTokenizer, device: torch.DeviceObjType, dtype: torch.dtype):
-        super().__init__(StandardTokenizer(tokenizer), model, device, dtype)
+    def __init__(self, model: AutoModelForCausalLM, tokenizer: Tokenizer, device: torch.DeviceObjType, dtype: torch.dtype):
+        super().__init__(tokenizer, model, device, dtype)
         
     def get_attention_add_mean_hook(self) -> Callable:
         return add_mean_scan
