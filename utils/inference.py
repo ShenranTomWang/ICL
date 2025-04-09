@@ -87,16 +87,14 @@ def do_inference(operator: Operator, dataset: Dataset, kwargs: dict, device: tor
     logger = logging.getLogger(__name__)
     outputs = []
     inputs = dataset.inputs
-    indices = dataset.indices
     option_ids = torch.tensor(dataset.option_ids, device=device, dtype=torch.long)
     options = dataset.options
     for i in range(0, len(inputs)):
         input = inputs[i]
-        index = torch.tensor(indices[i]).to(device)
         try:
             output = operator(input, **kwargs)
             logit = output.logits
-            output_logits = logit[..., index, :].squeeze(-2)        # (batch_size, vocab_size)
+            output_logits = logit[..., -1, :].squeeze(-2)        # (batch_size, vocab_size)
             output_logits = output_logits[..., option_ids]          # (batch_size, num_options)
             output = torch.argmax(output_logits, dim=-1)            # (batch_size)
             outputs.append(output.cpu())

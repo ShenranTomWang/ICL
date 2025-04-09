@@ -22,7 +22,7 @@ class HybridOperator(Operator, ABC):
         Extract attentions from the model
         Args:
             inputs (_type_): list of inputs (string)
-            activation_callback (Callable, optional): callback function to process attentions. Defaults to ....
+            activation_callback (Callable, optional): callback function to process attentions. Defaults to lambda x: x
 
         Returns:
             list[HybridAttentionOutput]: attentions (self-attention and scan)

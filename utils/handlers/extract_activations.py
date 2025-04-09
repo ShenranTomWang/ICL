@@ -5,7 +5,7 @@ from interpretability import Operator
 from interpretability import AttentionOutput
 
 def train_handler(
-    train_counter: Counter, train_data: list, test_data: list, operator: Operator, args, seed: int
+    train_counter: Counter, test_counter: Counter, train_data: list, test_data: list, operator: Operator, args, seed: int
 ) -> None:
     """
     Activation extraction handler for train split
@@ -38,10 +38,10 @@ def train_handler(
                 [f"steer_{options[0]}", f"steer_{options[1]}", f"steer_{options[0]}->{options[1]}"]
             )
         else:
-            run_operator_generic(operator, args, seed, train_task, inputs, f"{dir}/")
+            run_operator_generic(operator, args, inputs, f"{dir}/")
 
 def demo_handler(
-    train_counter: Counter, train_data: list, test_data: list, operator: Operator, args, seed: int
+    train_counter: Counter, test_counter: Counter, train_data: list, test_data: list, operator: Operator, args, seed: int
 ) -> None:
     """
     Activation extraction handler for demo split
@@ -61,10 +61,10 @@ def demo_handler(
         
         dataset = Dataset(curr_train_data, [], verbose=args.verbose)
         dataset.prepare_demo()
-        run_operator_generic(operator, args, seed, train_task, [dataset.demo], f"{args.out_dir}/{train_task}/{seed}/{args.split}_{args.stream}")
+        run_operator_generic(operator, args, [dataset.demo], f"{args.out_dir}/{train_task}/{seed}/{args.split}_{args.stream}")
         
 def dev_handler(
-    test_counter: Counter, train_data: list, test_data: list, operator: Operator, args, seed: int
+    train_counter: Counter, test_counter: Counter, train_data: list, test_data: list, operator: Operator, args, seed: int
 ) -> None:
     """
     Activation extraction handler for dev split on residual stream
@@ -79,7 +79,7 @@ def dev_handler(
     basic_handler(test_counter, train_data, test_data, operator, args, seed)
     
 def test_handler(
-    test_counter: Counter, train_data: list, test_data: list, operator: Operator, args, seed: int
+    train_counter: Counter, test_counter: Counter, train_data: list, test_data: list, operator: Operator, args, seed: int
 ) -> None:
     """
     Activation extraction handler for test split on residual stream
@@ -94,7 +94,7 @@ def test_handler(
     basic_handler(test_counter, train_data, test_data, operator, args, seed)
 
 def basic_handler(
-    test_counter: Counter, train_data: list, test_data: list, operator: Operator, args, seed: int
+    counter: Counter, train_data: list, test_data: list, operator: Operator, args, seed: int
 ) -> None:
     """
     Activation extraction handler for generic split on residual stream
@@ -108,17 +108,17 @@ def basic_handler(
         seed (int)
     """
     logger = logging.getLogger(__name__)
-    for test_task in test_counter:
-        logger.info(f"Processing {test_task}")
-        curr_test_data = [dp for dp in test_data if dp["task"] == test_task]
-        curr_train_data = [dp for dp in train_data if dp["task"] == test_task]
+    for task in counter:
+        logger.info(f"Processing {task}")
+        curr_test_data = [dp for dp in test_data if dp["task"] == task]
+        curr_train_data = [dp for dp in train_data if dp["task"] == task]
         assert len(curr_test_data) > 0
         
         dataset = Dataset(curr_train_data, curr_test_data, verbose=args.verbose)
         dataset.preprocess()
-        run_operator_generic(operator, args, seed, test_task, dataset.inputs, f"{args.out_dir}/{test_task}/{seed}/{args.split}_{args.stream}/")
+        run_operator_generic(operator, args, dataset.inputs, f"{args.out_dir}/{task}/{seed}/{args.split}_{args.stream}/")
 
-def run_operator_generic(operator: Operator, args, seed: int, test_task: str, inputs: list | tuple, dir: str = "") -> None:
+def run_operator_generic(operator: Operator, args, inputs: list | tuple, dir: str = "") -> None:
     """
     Run operator to extract activations from dataset
     Args:
@@ -129,13 +129,7 @@ def run_operator_generic(operator: Operator, args, seed: int, test_task: str, in
         test_task (str)
         inputs (list)
     """
-    if args.stream == "resid":
-        activation = operator.extract_resid(inputs, layers=args.layers)
-        operator.store_resid(activation, f"{args.out_dir}/{test_task}/{seed}/{args.split}", dir)
-    elif args.stream == "cache":
-        cache = operator.extract_cache(inputs)
-        operator.store_cache(cache, f"{args.out_dir}/{test_task}/{seed}/{args.split}", dir)
-    elif args.stream == "attn":
+    if args.stream == "attn":
         attn = operator.extract_attention_outputs(inputs)
         operator.store_attention_outputs(attn, dir)
     elif args.stream == "attn_mean":

@@ -51,7 +51,7 @@ class Operator(ABC):
         Extract attentions at specified layers of attention stream
         Args:
             inputs (list): list of inputs
-            activation_callback (function(torch.Tensor)): callback function to extracted activations, applied to activation values at each layer
+            activation_callback (function(AttentionOutput)): callback function to extracted activations, applied to activation values at each layer
         Returns:
             list[AttentionOutput]: attention outputs
         """
@@ -87,3 +87,28 @@ class Operator(ABC):
         """
         hybrid_output = torch.load(fname).to(self.device)
         return hybrid_output
+    
+    def compute_cie(self, intervened_logits: torch.Tensor, original_logits: torch.Tensor, label_ids: torch.Tensor) -> float:
+        """
+        Compute CIE (conditional indirect effect) for batch
+
+        Args:
+            intervened_logits (torch.Tensor): logits after intervention, (batch_size, seqen, vocab_size)
+            original_logits (torch.Tensor): logits without intervention, (batch_size, seqen, vocab_size)
+            label_ids (torch.Tensor): ids of labels, (batch_size,)
+
+        Returns:
+            float: CIE value
+        """
+        intervened_logits = intervened_logits[..., -1, :]
+        original_logits = original_logits[..., -1, :]
+        intervened_logits = torch.softmax(intervened_logits, dim=-1)
+        original_logits = torch.softmax(original_logits, dim=-1)
+        label_ids = label_ids.unsqueeze(-1)
+        intervened_logits = intervened_logits.gather(1, label_ids)
+        original_logits = original_logits.gather(1, label_ids)
+        intervened_logits = intervened_logits.squeeze(-1)
+        original_logits = original_logits.squeeze(-1)
+        cie = intervened_logits - original_logits
+        return cie.mean().item()
+    
