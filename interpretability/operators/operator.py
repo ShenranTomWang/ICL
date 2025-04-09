@@ -76,14 +76,16 @@ class Operator(ABC):
             fnames (list[str]): list of filenames to override default naming of indexing
         """
         logger = logging.getLogger(__name__)
+        if not dir.endswith("/"):
+            dir += "/"
         if not os.path.exists(dir):
             os.makedirs(os.path.dirname(dir), exist_ok=True)
         for i, attention_output in enumerate(attention_outputs):
             if attention_output is not None:
                 if fnames != None:
-                    attention_output.save(f"{dir}/{fnames[i]}.pth")
+                    attention_output.save(f"{dir}{fnames[i]}.pth")
                 else:
-                    attention_output.save(f"{dir}/{i}.pth")
+                    attention_output.save(f"{dir}{i}.pth")
         logger.info(f"Stored attention outputs to {dir}")
     
     def load_attention_output(self, fname: str = "") -> AttentionOutput:
