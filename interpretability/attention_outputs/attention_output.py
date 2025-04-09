@@ -39,6 +39,10 @@ class AttentionOutput(ABC):
         pass
     
     @abstractmethod
+    def get_last_token(self) -> "AttentionOutput":
+        pass
+    
+    @abstractmethod
     def save(self, path: str) -> None:
         pass
     
@@ -106,6 +110,15 @@ class AttentionOutputItem(list):
     
     def __rmul__(self, other: int) -> "AttentionOutputItem":
         return self.__mul__(other)
+    
+    def get_last_token(self) -> "AttentionOutputItem":
+        mylist = []
+        for item in self:
+            if item is None:
+                mylist.append(None)
+            else:
+                mylist.append(item[..., -1, :])
+        return AttentionOutputItem(mylist)
     
     def to(self, device: str | torch.DeviceObjType) -> "AttentionOutputItem":
         mylist = []

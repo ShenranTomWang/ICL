@@ -110,3 +110,48 @@ def do_inference(operator: Operator, dataset: Dataset, kwargs: dict, device: tor
     outputs = outputs.cpu().tolist()
     outputs = [options[i] if i != -1 else None for i in outputs]
     return outputs
+
+def compute_cie(intervened_logits: torch.Tensor, original_logits: torch.Tensor, label_ids: torch.Tensor) -> float:
+    """
+    Compute CIE (conditional indirect effect) for batch
+
+    Args:
+        intervened_logits (torch.Tensor): last logit after intervention, (batch_size, vocab_size)
+        original_logits (torch.Tensor): last logit without intervention, (batch_size, vocab_size)
+        label_ids (torch.Tensor): ids of labels, (batch_size,)
+
+    Returns:
+        float: CIE value
+    """
+    intervened_logits = torch.softmax(intervened_logits, dim=-1)
+    original_logits = torch.softmax(original_logits, dim=-1)
+    label_ids = label_ids.unsqueeze(-1)
+    intervened_logits = intervened_logits.gather(1, label_ids)
+    original_logits = original_logits.gather(1, label_ids)
+    intervened_logits = intervened_logits.squeeze(-1)
+    original_logits = original_logits.squeeze(-1)
+    cie = intervened_logits - original_logits
+    return cie.mean().item()
+
+def compute_aie(intervened_tasks: list[torch.Tensor], original_tasks: list[torch.Tensor], label_ids: list[torch.Tensor]) -> float:
+    """
+    Compute AIE (average indirect effect) for batch
+
+    Args:
+        intervened_tasks (list[torch.Tensor]): last logits [(batch_size, vocab_size)] * n_tasks
+        original_tasks (list[torch.Tensor]): last logits [(n_tasks, batch_size, vocab_size)] * n_tasks
+        label_ids (list[torch.Tensor]): [(n_tasks, batch_size)] * n_tasks
+
+    Returns:
+        float: AIE value
+    """
+    assert len(intervened_tasks) == len(original_tasks) == len(label_ids), "intervened_tasks, original_tasks, and label_ids must have the same length"
+    aie = 0
+    for i in range(len(intervened_tasks)):
+        intervened_batch = intervened_tasks[i]
+        original_batch = original_tasks[i]
+        label_batch = label_ids[i]
+        cie = compute_cie(intervened_batch, original_batch, label_batch)
+        aie += cie
+    aie /= len(intervened_tasks)
+    return aie

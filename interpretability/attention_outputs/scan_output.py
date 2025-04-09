@@ -33,6 +33,10 @@ class ScanOutput(AttentionOutput):
     def __iter__(self):
         yield self.scan_outputs
         
+    def get_last_token(self) -> "ScanOutput":
+        scan_outputs = self.scan_outputs.get_last_token() if self.scan_outputs is not None else None
+        return ScanOutput(scan_outputs, self.device)
+        
     def save(self, path: str) -> None:
         if not path.endswith(".pth"):
             path += ".pth"

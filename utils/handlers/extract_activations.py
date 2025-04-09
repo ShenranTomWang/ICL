@@ -132,9 +132,13 @@ def run_operator_generic(operator: Operator, args, inputs: list | tuple, dir: st
     if args.stream == "attn":
         attn = operator.extract_attention_outputs(inputs)
         operator.store_attention_outputs(attn, dir)
+    elif args.stream == "attn_last":
+        attn = operator.extract_attention_outputs(inputs, operator.get_attention_last_token)
+        attn = attn[0].mean()
+        operator.store_attention_outputs([attn], dir, fnames=["attn_last_mean"])
     elif args.stream == "attn_mean":
         attn = operator.extract_attention_outputs(inputs, operator.get_attention_mean)
-        operator.store_attention_outputs(attn, dir)
+        operator.store_attention_outputs(attn, dir, fnames=["attn_mean"])
     else:
         raise ValueError(f"Invalid stream: {args.stream}")
     

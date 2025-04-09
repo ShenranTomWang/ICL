@@ -36,7 +36,7 @@ if __name__ == "__main__":
     parser.add_argument("--k", type=int, default=4, help="number of examples")
     
     parser.add_argument("--layers", type=str, default="-1", help="comma separated list of layer indices, or -1 for all layers")
-    parser.add_argument("--stream", type=str, default="resid", choices=["attn", "attn_mean", "steer"])
+    parser.add_argument("--stream", type=str, default="resid", choices=["attn", "attn_mean", "attn_last", "steer"])
     parser.add_argument("--operator", type=str, default="TransformerOperator", choices=ALL_OPERATORS)
     parser.add_argument("--verbose", default=False, action="store_true")
     

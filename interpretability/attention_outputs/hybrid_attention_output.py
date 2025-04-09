@@ -45,6 +45,12 @@ class HybridAttentionOutput(AttentionOutput):
         yield self.attn_outputs
         yield self.scan_outputs
         
+    def get_last_token(self) -> "HybridAttentionOutput":
+        all_attns = self.all_attns.get_last_token() if self.all_attns is not None else None
+        attn_outputs = self.attn_outputs.get_last_token() if self.attn_outputs is not None else None
+        scan_outputs = self.scan_outputs.get_last_token() if self.scan_outputs is not None else None
+        return HybridAttentionOutput(all_attns, attn_outputs, scan_outputs, self.device)
+        
     def save(self, path: str) -> None:
         if not path.endswith(".pth"):
             path += ".pth"
@@ -54,10 +60,10 @@ class HybridAttentionOutput(AttentionOutput):
         all_attn, attn_output, scan_output = self.all_attns, self.attn_outputs, self.scan_outputs
         for i, attn_i in enumerate(attn_output):
             if attn_i is not None:
-                attn_output[i] = attn_i.mean(dim=1).unsqueeze(1)   # (1, attn_channels)
+                attn_output[i] = attn_i.mean(dim=1)
         for i, scan_i in enumerate(scan_output):
             if scan_i is not None:
-                scan_output[i] = scan_i.mean(dim=1).unsqueeze(1)   # (1, attn_channels)
+                scan_output[i] = scan_i.mean(dim=1)
         return HybridAttentionOutput(all_attn, attn_output, scan_output, self.device)
     
     def to(self, device: str | torch.DeviceObjType) -> "HybridAttentionOutput":

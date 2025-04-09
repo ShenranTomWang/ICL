@@ -38,6 +38,11 @@ class SelfAttentionOutput(AttentionOutput):
         yield self.all_attns
         yield self.attn_outputs
         
+    def get_last_token(self) -> "SelfAttentionOutput":
+        all_attns = self.all_attns.get_last_token() if self.all_attns is not None else None
+        attn_outputs = self.attn_outputs.get_last_token() if self.attn_outputs is not None else None
+        return SelfAttentionOutput(all_attns, attn_outputs, self.device)
+        
     def save(self, path: str) -> None:
         if not path.endswith(".pth"):
             path += ".pth"
