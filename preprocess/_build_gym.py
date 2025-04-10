@@ -6,7 +6,7 @@
 
 import argparse
 import hashlib
-import os
+import os, json
 import subprocess
 
 import multiprocessing as mp
@@ -14,6 +14,7 @@ from multiprocessing import Process, Manager
 
 from _md5sum import MD5SUM
 from _all_tasks import ALL_TASKS
+from _function_vectors import FV_TASKS
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -26,6 +27,7 @@ def parse_args():
                         help="Verify the datafiles with pre-computed MD5")
     parser.add_argument('--debug', action='store_true',
                         help="Run 2 tasks per process to test the code")
+    parser.add_argument('--task_list', default="ALL", type=str)
 
     parser.add_argument('--inst', action='store_true',
                         help="Construct data from hg datasets.")
@@ -34,8 +36,8 @@ def parse_args():
     parser.add_argument('--do_test', action='store_true',
                         help="Run 2 tasks per process to test the code")
 
-    parser.add_argument('--train_k', type=int, default=16384, help="k for meta-training tasks")
-    parser.add_argument('--test_k', type=int, default=16, help="k for target tasks")
+    parser.add_argument('--train_k', type=int, default=16, help="k for ICL demo tasks")
+    parser.add_argument('--valid_k', type=int, default=16, help="k for validation size")
 
     args = parser.parse_args()
 
@@ -57,13 +59,14 @@ def process_tasks(idx, task_list, args, fail_dict):
     failed_tasks = []
     for task in task_list:
         print("Process {}: Processing {} ...".format(idx, task))
-        command = "python %s%s%s%s --train_k %d --test_k %d" % (
+        command = "python %s%s%s%s%s --train_k %d --valid_k %d" % (
             task,
             " --inst" if args.inst else "",
             " --do_train" if args.do_train else "",
             " --do_test" if args.do_test else "",
+            " --output_dir %s" % args.output_dir,
             args.train_k,
-            args.test_k)
+            args.valid_k)
         ret_code = subprocess.run([command], shell=True) # stdout=open(os.devnull, 'wb'), stderr=open(os.devnull, 'wb'))
         if ret_code.returncode != 0:
             print("Process {}: Processing {} ... [Failed]".format(idx, task))
@@ -76,12 +79,14 @@ def build_gym(args):
     successful = []
     failed = []
     all_tasks = []
-    for filename in sorted(os.listdir(args.task_dir)):
-        if filename.endswith(".py") and not filename.startswith("0") and not filename.startswith("_") and \
-                filename!="utils.py" and "unifiedqa" not in filename:
-            all_tasks.append(filename)
+    if args.task_list == "ALL":
+        for filename in sorted(os.listdir(args.task_dir)):
+            if filename.endswith(".py") and not filename.startswith("0") and not filename.startswith("_") and \
+                    filename!="utils.py" and "unifiedqa" not in filename:
+                all_tasks.append(filename)
+    else:
+        all_tasks = FV_TASKS
 
-    assert all_tasks == ALL_TASKS
     print("Passing file checks ...")
 
     manager = Manager()

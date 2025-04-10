@@ -1,0 +1,10 @@
+[
+    "tweet_eval-hate",
+    "hate_speech18",
+    "glue-mrpc",
+    "glue-rte",
+    "sick",
+    "climate_fever",
+    "medical_questions_pairs",
+    "financial_phrasebank"
+]

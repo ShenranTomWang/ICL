@@ -21,8 +21,10 @@ parser.add_argument('--do_train', action='store_true',
                     help="Verify the datafiles with pre-computed MD5")
 parser.add_argument('--do_test', action='store_true',
                     help="Run 2 tasks per process to test the code")
-parser.add_argument('--train_k', type=int, default=16384, help="k for meta-training tasks")
-parser.add_argument('--test_k', type=int, default=16, help="k for target tasks")
+parser.add_argument('--train_k', type=int, default=16, help="k for ICL demos")
+parser.add_argument('--valid_k', type=int, default=16, help="k for validation size")
+
+parser.add_argument('--output_dir', default="../data", type=str)
 
 args = parser.parse_args()
 
@@ -119,11 +121,12 @@ class FewshotGymDataset():
 
 class FewshotGymClassificationDataset(FewshotGymDataset):
 
-    def generate_k_shot_data(self, k, seed, path=None):
+    def generate_k_shot_data(self, k, seed):
         """
         generate a k-shot (k) dataset using random seed (seed)
         return train, dev, test
         """
+        path = args.output_dir
 
         if self.hf_identifier not in config_dict:
             return None, None, None
@@ -134,9 +137,11 @@ class FewshotGymClassificationDataset(FewshotGymDataset):
         if do_train:
             if seed<100:
                 return None, None, None
-            k = args.train_k
+            train_k = args.train_k
+            valid_k = train_k
         elif do_test:
-            k = args.test_k
+            train_k = args.train_k
+            valid_k = args.valid_k
 
         # load dataset
         dataset = self.load_dataset()
@@ -160,12 +165,12 @@ class FewshotGymClassificationDataset(FewshotGymDataset):
         # make train, dev, test data
         k_shot_train = []
         for label in label_list:
-            for line in label_list[label][:k]:
+            for line in label_list[label][:train_k]:
                 k_shot_train.append(line)
 
         k_shot_dev = []
         for label in label_list:
-            for line in label_list[label][k:2*k]:
+            for line in label_list[label][train_k: train_k + valid_k]:
                 k_shot_dev.append(line)
 
         k_shot_test = test_lines
@@ -176,11 +181,12 @@ class FewshotGymClassificationDataset(FewshotGymDataset):
 
 class FewshotGymTextToTextDataset(FewshotGymDataset):
 
-    def generate_k_shot_data(self, k, seed, path=None):
+    def generate_k_shot_data(self, k, seed):
         """
         generate a k-shot (k) dataset using random seed (seed)
         return train, dev, test
         """
+        path = args.output_dir
 
         if self.hf_identifier not in config_dict:
             return None, None, None
@@ -191,9 +197,11 @@ class FewshotGymTextToTextDataset(FewshotGymDataset):
         if do_train:
             if seed<100:
                 return None, None, None
-            k = args.train_k
+            train_k = args.train_k
+            valid_k = train_k
         elif do_test:
-            k = args.test_k
+            train_k = args.train_k
+            valid_k = args.valid_k
 
         # load dataset
         dataset = self.load_dataset()
@@ -207,11 +215,11 @@ class FewshotGymTextToTextDataset(FewshotGymDataset):
 
         # make train, dev, test data
         k_shot_train = []
-        for line in train_lines[:k]:
+        for line in train_lines[:train_k]:
             k_shot_train.append(line)
 
         k_shot_dev = []
-        for line in train_lines[k:2*k]:
+        for line in train_lines[train_k: train_k + valid_k]:
             k_shot_dev.append(line)
 
         k_shot_test = test_lines

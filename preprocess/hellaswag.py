@@ -42,7 +42,7 @@ def main():
     dataset = HellaSwag()
 
     for seed in [100, 13, 21, 42, 87]:
-        train, dev, test = dataset.generate_k_shot_data(k=32, seed=seed, path="../data/")
+        train, dev, test = dataset.generate_k_shot_data(k=32, seed=seed)
 
 if __name__ == "__main__":
     main()
