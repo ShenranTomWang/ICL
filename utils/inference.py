@@ -40,8 +40,13 @@ def count_option_changes(baseline: list[str], intervened: list[str], option1: st
 
     return result
 
-def evaluate(predictions: list, groundtruths: list, is_classification: bool) -> float:
-    """Evaluate the predictions against the groundtruths. Return accuracy for non-classification tasks, and macro-F1 for classification tasks.
+def evaluate(predictions: list, groundtruths: list) -> tuple[float]:
+    """Evaluate the predictions against the groundtruths.
+    Args:
+        predictions (list): list of predictions
+        groundtruths (list): list of groundtruths
+    Returns:
+        (float, float): F1, accuracy
     """
     accs = []
     precisions = defaultdict(list)
@@ -53,12 +58,8 @@ def evaluate(predictions: list, groundtruths: list, is_classification: bool) -> 
         groundtruth = [gt.strip() for gt in groundtruth] if type(groundtruth) == list else groundtruth.strip()
         is_correct = prediction in groundtruth if type(groundtruth) == list else prediction == groundtruth
         accs.append(is_correct)
-        if is_classification:
-            recalls[groundtruth].append(is_correct)
-            precisions[prediction].append(is_correct)
-
-    if not is_classification:
-        return np.mean(accs)
+        recalls[groundtruth].append(is_correct)
+        precisions[prediction].append(is_correct)
 
     f1s = []
     for key in recalls:
@@ -69,7 +70,7 @@ def evaluate(predictions: list, groundtruths: list, is_classification: bool) -> 
         else:
             f1s.append(2 * precision * recall / (precision + recall))
 
-    return np.mean(f1s)
+    return np.mean(f1s), np.mean(accs)
 
 @torch.inference_mode()
 def do_inference(operator: Operator, dataset: Dataset, kwargs: dict, device: torch.DeviceObjType, verbose: bool = False) -> list:

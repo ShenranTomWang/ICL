@@ -43,9 +43,8 @@ def run(
     predictions = do_inference(operator, dataset, kwargs, args.device, args.verbose)
 
     groundtruths = dataset.outputs
-    f1 = evaluate(predictions, groundtruths, True)
+    f1, acc = evaluate(predictions, groundtruths)
     logger.info(f"F1 = {f1}")
-    acc = evaluate(predictions, groundtruths, False)
     logger.info(f"Acc = {acc}")
 
     with open(prediction_path, "w") as f:
