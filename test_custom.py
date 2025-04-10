@@ -10,7 +10,7 @@ from utils.inference import do_inference, evaluate
 from constants import ALL_OPERATORS, ALL_DTYPES
             
 def run(
-    args, dataset, operator, seed, is_classification, kwargs: dict = {}
+    args, dataset, operator, seed, kwargs: dict = {}
 ) -> float:
     """Run testing with dataset, return performance
     
@@ -43,8 +43,10 @@ def run(
     predictions = do_inference(operator, dataset, kwargs, args.device, args.verbose)
 
     groundtruths = dataset.outputs
-    perf = evaluate(predictions, groundtruths, is_classification)
-    logger.info(f"{'F1' if is_classification else 'Accuracy'} = {perf}")
+    f1 = evaluate(predictions, groundtruths, True)
+    logger.info(f"F1 = {f1}")
+    acc = evaluate(predictions, groundtruths, False)
+    logger.info(f"Acc = {acc}")
 
     with open(prediction_path, "w") as f:
         for prediction in predictions:
@@ -54,7 +56,7 @@ def run(
                 f.write(prediction)
                 f.write("\n")
 
-    return perf
+    return f1, acc
 
 def main(args):
     operator: Operator = args.operator(args.model, args.device, args.dtype)
@@ -63,7 +65,7 @@ def main(args):
     use_demonstrations = args.k != 0
 
     seeds = args.seed.split(",")
-    errors, results = [], []
+    errors, f1s, accs = [], [], []
     for seed in seeds:
         train_data, test_data = load_data(args.task, args.dataset, args.split, args.k, args.n, seed)
 
@@ -78,14 +80,16 @@ def main(args):
             
             dataset = Dataset(curr_train_data, curr_test_data, verbose=args.verbose)
             dataset.tensorize(operator.tokenizer)
-            result = run(args, dataset, operator, seed, True)
+            f1, acc = run(args, dataset, operator, seed)
 
-            if result is None:
+            if f1 is None or acc is None:
                 errors.append("%s/%s" % (test_task, seed))
             else:
-                results.append(result)
+                f1s.append(f1)
+                accs.append(acc)
 
-    logger.info("Macro-F1 of %s over %d target tasks: %.1f" % (args.task, len(results) // len(seeds), 100 * np.mean(results)))
+    logger.info("Macro-F1 of %s over %d target tasks: %.1f" % (args.task, len(f1s) // len(seeds), 100 * np.mean(f1s)))
+    logger.info("Accuracy of %s over %d target tasks: %.1f" % (args.task, len(accs) // len(seeds), 100 * np.mean(accs)))
 
     if len(errors) > 0:
         logger.info("You had errors with datasets:", ",".join(errors))
