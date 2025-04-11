@@ -176,7 +176,7 @@ class FewshotGymClassificationDataset(FewshotGymDataset):
         k_shot_test = test_lines
 
         # save to path
-        self.save(path, k, seed, k_shot_train, k_shot_dev, k_shot_test)
+        self.save(path, train_k, seed, k_shot_train, k_shot_dev, k_shot_test)
         return k_shot_train, k_shot_dev, k_shot_test
 
 class FewshotGymTextToTextDataset(FewshotGymDataset):
@@ -224,5 +224,5 @@ class FewshotGymTextToTextDataset(FewshotGymDataset):
 
         k_shot_test = test_lines
 
-        self.save(path, k, seed, k_shot_train, k_shot_dev, k_shot_test)
+        self.save(path, train_k, seed, k_shot_train, k_shot_dev, k_shot_test)
         return k_shot_train, k_shot_dev, k_shot_test

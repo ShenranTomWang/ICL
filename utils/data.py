@@ -92,7 +92,7 @@ def load_data_by_datasets(datasets, k, split, seed=0):
     data = []
     for dataset in datasets:
         try:
-            data_path = os.path.join("data", dataset, "{}_{}_{}_{}.jsonl".format(dataset, "16", seed, split))
+            data_path = os.path.join("data", dataset, "{}_{}_{}_{}.jsonl".format(dataset, "32", seed, split))
             with open(data_path, "r") as f:
                 for i, line in enumerate(f):
                     if k != -1 and i >= k:
