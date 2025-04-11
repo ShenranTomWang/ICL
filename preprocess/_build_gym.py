@@ -26,7 +26,7 @@ def parse_args():
                         help="Verify the datafiles with pre-computed MD5")
     parser.add_argument('--debug', action='store_true',
                         help="Run 2 tasks per process to test the code")
-    parser.add_argument('--task', default="ALL", type=str, options=["ALL", "FV"])
+    parser.add_argument('--task', default="ALL", type=str, choices=["ALL", "FV"])
 
     parser.add_argument('--inst', action='store_true',
                         help="Construct data from hg datasets.")
