@@ -42,7 +42,7 @@ class AGNews(FewshotGymClassificationDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset('ag_news')
+        return datasets.load_dataset('ag_news', trust_remote_code=True)
 
 def main():
     dataset = AGNews()

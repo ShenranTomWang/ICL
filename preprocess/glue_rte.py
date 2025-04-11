@@ -30,7 +30,7 @@ class Glue_RTE(FewshotGymClassificationDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset('glue', 'rte')
+        return datasets.load_dataset('glue', 'rte', trust_remote_code=True)
 
 def main():
     dataset = Glue_RTE()

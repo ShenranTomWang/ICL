@@ -24,7 +24,7 @@ class Kilt_WoW(FewshotGymTextToTextDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset('kilt_tasks','wow')
+        return datasets.load_dataset('kilt_tasks','wow', trust_remote_code=True)
 
 def main():
     dataset = Kilt_WoW()

@@ -36,7 +36,7 @@ class FreebaseQA(FewshotGymTextToTextDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset('freebase_qa')
+        return datasets.load_dataset('freebase_qa', trust_remote_code=True)
 
 def main():
     dataset = FreebaseQA()

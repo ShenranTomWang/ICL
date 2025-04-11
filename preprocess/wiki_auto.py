@@ -37,7 +37,7 @@ class WikiAuto(FewshotGymClassificationDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset('wiki_auto', 'manual')
+        return datasets.load_dataset('wiki_auto', 'manual', trust_remote_code=True)
 
 def main():
     dataset = WikiAuto()

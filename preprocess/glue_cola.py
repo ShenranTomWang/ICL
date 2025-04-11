@@ -30,7 +30,7 @@ class Glue_Cola(FewshotGymClassificationDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset('glue', 'cola')
+        return datasets.load_dataset('glue', 'cola', trust_remote_code=True)
 
 def main():
     dataset = Glue_Cola()

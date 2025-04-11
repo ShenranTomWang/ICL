@@ -33,7 +33,7 @@ class HealthFact(FewshotGymClassificationDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset('health_fact')
+        return datasets.load_dataset('health_fact', trust_remote_code=True)
 
 def main():
     dataset = HealthFact()

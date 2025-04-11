@@ -34,7 +34,7 @@ class CommonsenseQA(FewshotGymTextToTextDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset("commonsense_qa")
+        return datasets.load_dataset("commonsense_qa", trust_remote_code=True)
 
 def main():
     dataset = CommonsenseQA()

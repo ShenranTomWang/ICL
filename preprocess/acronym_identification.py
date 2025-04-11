@@ -58,7 +58,7 @@ class AcronymIdentification(FewshotGymTextToTextDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset('acronym_identification')
+        return datasets.load_dataset('acronym_identification', trust_remote_code=True)
 
 def main():
     dataset = AcronymIdentification()

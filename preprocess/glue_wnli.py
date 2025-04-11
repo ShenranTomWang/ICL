@@ -30,7 +30,7 @@ class Glue_WNLI(FewshotGymClassificationDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset('glue', 'wnli')
+        return datasets.load_dataset('glue', 'wnli', trust_remote_code=True)
 
 def main():
     dataset = Glue_WNLI()

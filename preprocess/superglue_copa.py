@@ -47,7 +47,7 @@ class Superglue_COPA(FewshotGymTextToTextDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset("super_glue", "copa")
+        return datasets.load_dataset("super_glue", "copa", trust_remote_code=True)
 
 def main():
     dataset = Superglue_COPA()

@@ -34,7 +34,7 @@ class QASC(FewshotGymTextToTextDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset("qasc")
+        return datasets.load_dataset("qasc", trust_remote_code=True)
 
 def main():
     dataset = QASC()

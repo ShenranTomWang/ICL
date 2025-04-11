@@ -36,7 +36,7 @@ class CoS_E(FewshotGymTextToTextDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset("cos_e", "v1.11")
+        return datasets.load_dataset("cos_e", "v1.11", trust_remote_code=True)
 
 def main():
     dataset = CoS_E()

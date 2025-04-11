@@ -90,7 +90,7 @@ class TREC_Finegrained(FewshotGymClassificationDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset('trec')
+        return datasets.load_dataset('trec', trust_remote_code=True)
 
 def main():
     dataset = TREC_Finegrained()

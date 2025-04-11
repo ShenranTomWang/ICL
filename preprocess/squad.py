@@ -28,7 +28,7 @@ class SQuAD(FewshotGymTextToTextDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset("squad")
+        return datasets.load_dataset("squad", trust_remote_code=True)
 
 def main():
     for mode in ["with_context", "no_context"]:

@@ -26,7 +26,7 @@ class ROPES(FewshotGymTextToTextDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset("ropes")
+        return datasets.load_dataset("ropes", trust_remote_code=True)
 
 def main():
     dataset = ROPES()

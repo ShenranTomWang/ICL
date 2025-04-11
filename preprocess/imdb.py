@@ -40,7 +40,7 @@ class IMDB(FewshotGymClassificationDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset('imdb')
+        return datasets.load_dataset('imdb', trust_remote_code=True)
 
 def main():
     dataset = IMDB()

@@ -38,7 +38,7 @@ class ELI5(FewshotGymTextToTextDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset('eli5')
+        return datasets.load_dataset('eli5', trust_remote_code=True)
 
 def main():
     for subreddit in ["eli5", "asks", "askh"]:

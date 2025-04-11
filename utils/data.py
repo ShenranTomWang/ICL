@@ -64,38 +64,38 @@ def load_data(task: str | None, dataset: str | None, split: str, k: int, n: int,
     logger = logging.getLogger(__name__)
     if split != "demo":
         if task != None:
-            train_data = load_data_by_task(task, "train", k, seed=seed)
-            test_data = load_data_by_task(task, split, n, seed=seed)
+            train_data = load_data_by_task(task, "train", k=k, n=k, seed=seed)
+            test_data = load_data_by_task(task, split, k=k, n=n, seed=seed)
         else:
             assert dataset is not None
-            train_data = load_data_by_datasets(dataset.split(","), k, "train", seed=seed)
-            test_data = load_data_by_datasets(dataset.split(","), n, split, seed=seed)
+            train_data = load_data_by_datasets(dataset.split(","), k=k, n=k, split="train", seed=seed)
+            test_data = load_data_by_datasets(dataset.split(","), k=k, n=n, split=split, seed=seed)
     else:
         if task != None:
-            train_data = load_data_by_task(task, "train", k, seed=seed)
+            train_data = load_data_by_task(task, "train", k=k, n=n, seed=seed)
         else:
             assert dataset is not None
-            train_data = load_data_by_datasets(dataset.split(","), k, "train", seed=seed)
+            train_data = load_data_by_datasets(dataset.split(","), k=k, n=n, split="train", seed=seed)
         test_data = []
     logger.info("Loaded data for seed %s" % seed)
     return train_data, test_data
 
-def load_data_by_task(task, split, k, seed=0):
+def load_data_by_task(task, split, k, n, seed=0):
     with open(os.path.join("config", task + ".json"), "r") as f:
         datasets = json.load(f)
 
-    data = load_data_by_datasets(datasets=datasets, k=k, seed=seed, split=split)
+    data = load_data_by_datasets(datasets=datasets, k=k, n=n, seed=seed, split=split)
     return data
 
-def load_data_by_datasets(datasets, k, split, seed=0):
+def load_data_by_datasets(datasets, k, n, split, seed=0):
     logger = logging.getLogger(__name__)
     data = []
     for dataset in datasets:
         try:
-            data_path = os.path.join("data", dataset, "{}_{}_{}_{}.jsonl".format(dataset, "32", seed, split))
+            data_path = os.path.join("data", dataset, "{}_{}_{}_{}.jsonl".format(dataset, k, seed, split))
             with open(data_path, "r") as f:
                 for i, line in enumerate(f):
-                    if k != -1 and i >= k:
+                    if n != -1 and i >= n:
                         break
                     dp = json.loads(line)
                     data.append(dp)

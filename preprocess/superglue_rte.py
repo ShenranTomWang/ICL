@@ -30,7 +30,7 @@ class Superglue_RTE(FewshotGymClassificationDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset('super_glue', "rte")
+        return datasets.load_dataset('super_glue', "rte", trust_remote_code=True)
 
 def main():
     dataset = Superglue_RTE()

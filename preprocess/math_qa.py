@@ -48,7 +48,7 @@ class MathQA(FewshotGymTextToTextDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset('math_qa')
+        return datasets.load_dataset('math_qa', trust_remote_code=True)
 
 def main():
     dataset = MathQA()

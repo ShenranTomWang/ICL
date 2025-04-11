@@ -27,7 +27,7 @@ class XSum(FewshotGymTextToTextDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset("xsum")
+        return datasets.load_dataset("xsum", trust_remote_code=True)
 
 def main():
     dataset = XSum()

@@ -50,7 +50,7 @@ class YahooAnswersTopics(FewshotGymClassificationDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset('yahoo_answers_topics')
+        return datasets.load_dataset('yahoo_answers_topics', trust_remote_code=True)
 
 def main():
     dataset = YahooAnswersTopics()

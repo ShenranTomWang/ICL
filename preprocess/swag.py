@@ -37,7 +37,7 @@ class Swag(FewshotGymTextToTextDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset("swag", "regular")
+        return datasets.load_dataset("swag", "regular", trust_remote_code=True)
 
 def main():
     dataset = Swag()

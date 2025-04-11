@@ -31,7 +31,7 @@ class SciCite(FewshotGymClassificationDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset("scicite")
+        return datasets.load_dataset("scicite", trust_remote_code=True)
 
 def main():
     dataset = SciCite()

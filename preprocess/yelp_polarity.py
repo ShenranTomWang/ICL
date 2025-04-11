@@ -51,7 +51,7 @@ class YelpPolarity(FewshotGymClassificationDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset('yelp_polarity')
+        return datasets.load_dataset('yelp_polarity', trust_remote_code=True)
 
 def main():
     dataset = YelpPolarity()

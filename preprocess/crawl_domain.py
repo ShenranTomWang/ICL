@@ -24,7 +24,7 @@ class CrawlDomain(FewshotGymTextToTextDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset('crawl_domain')
+        return datasets.load_dataset('crawl_domain', trust_remote_code=True)
 
 def main():
     dataset = CrawlDomain()

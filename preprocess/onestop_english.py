@@ -50,7 +50,7 @@ class OneStopEnglish(FewshotGymClassificationDataset):
         return lines
 
     def load_dataset(self):
-        return datasets.load_dataset('onestop_english')
+        return datasets.load_dataset('onestop_english', trust_remote_code=True)
 
 def main():
     dataset = OneStopEnglish()
