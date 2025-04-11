@@ -18,7 +18,6 @@ from _function_vectors import FV_TASKS
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--output_dir", default="../data", type=str)
     parser.add_argument("--task_dir", default="./", type=str)
     parser.add_argument("--n_proc", default=1, type=int)
     parser.add_argument('--build', action='store_true',
@@ -27,7 +26,7 @@ def parse_args():
                         help="Verify the datafiles with pre-computed MD5")
     parser.add_argument('--debug', action='store_true',
                         help="Run 2 tasks per process to test the code")
-    parser.add_argument('--task_list', default="ALL", type=str)
+    parser.add_argument('--task', default="ALL", type=str, options=["ALL", "FV"])
 
     parser.add_argument('--inst', action='store_true',
                         help="Construct data from hg datasets.")
@@ -59,12 +58,18 @@ def process_tasks(idx, task_list, args, fail_dict):
     failed_tasks = []
     for task in task_list:
         print("Process {}: Processing {} ...".format(idx, task))
+        if args.task == "ALL":
+            output_dir = "../data"
+        elif args.task == "FV":
+            output_dir = "../function_vectors_data"
+        else:
+            raise NotImplementedError("Unknown task: {}".format(args.task))
         command = "python %s%s%s%s%s --train_k %d --valid_k %d" % (
             task,
             " --inst" if args.inst else "",
             " --do_train" if args.do_train else "",
             " --do_test" if args.do_test else "",
-            " --output_dir %s" % args.output_dir,
+            " --output_dir %s" % output_dir,
             args.train_k,
             args.valid_k)
         ret_code = subprocess.run([command], shell=True) # stdout=open(os.devnull, 'wb'), stderr=open(os.devnull, 'wb'))
@@ -79,13 +84,15 @@ def build_gym(args):
     successful = []
     failed = []
     all_tasks = []
-    if args.task_list == "ALL":
+    if args.task == "ALL":
         for filename in sorted(os.listdir(args.task_dir)):
             if filename.endswith(".py") and not filename.startswith("0") and not filename.startswith("_") and \
                     filename!="utils.py" and "unifiedqa" not in filename:
                 all_tasks.append(filename)
-    else:
+    elif args.task == "FV":
         all_tasks = FV_TASKS
+    else:
+        raise NotImplementedError("Unknown task: {}".format(args.task))
 
     print("Passing file checks ...")
 
