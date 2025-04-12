@@ -45,7 +45,7 @@ class AttentionManager(ABC):
     def save(self, path: str) -> None:
         if not path.endswith(".pth"):
             path += ".pth"
-        torch.save(self, f"{path}")
+        torch.save(self, path)
     
     @abstractmethod
     def mean(self) -> "AttentionManager":
