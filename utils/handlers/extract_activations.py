@@ -2,7 +2,7 @@ import logging
 from collections import Counter
 from utils.dataset import Dataset
 from interpretability import Operator
-from interpretability import AttentionOutput
+from interpretability import AttentionManager
 
 def train_handler(
     train_counter: Counter, test_counter: Counter, train_data: list, test_data: list, operator: Operator, args, seed: int
@@ -157,8 +157,8 @@ def run_operator_steer(operator: Operator, stream: str, inputs: list, dir: str, 
         inputs0, inputs1 = inputs
         steer1 = [output.mean() for output in operator.extract_attention_outputs(inputs1, operator.get_attention_mean)]
         steer0 = [output.mean() for output in operator.extract_attention_outputs(inputs0, operator.get_attention_mean)]
-        steer1 = AttentionOutput.mean_of(steer1)
-        steer0 = AttentionOutput.mean_of(steer0)
+        steer1 = AttentionManager.mean_of(steer1)
+        steer0 = AttentionManager.mean_of(steer0)
         if steer1 != None:
             steer = steer1 - steer0
         else:

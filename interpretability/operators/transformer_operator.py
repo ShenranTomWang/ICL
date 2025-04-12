@@ -1,5 +1,5 @@
 import shutup; shutup.please()
-from interpretability.attention_outputs import SelfAttentionOutput
+from interpretability.attention_managers import SelfAttentionManager
 from interpretability.hooks import add_mean_hybrid
 from transformers import AutoModelForCausalLM
 from interpretability.tokenizers import Tokenizer
@@ -14,27 +14,27 @@ class TransformerOperator(Operator):
     def get_attention_add_mean_hook(self):
         return add_mean_hybrid
         
-    def extract_attention_outputs(self, inputs: list[str], activation_callback = lambda x: x) -> SelfAttentionOutput:
+    def extract_attention_outputs(self, inputs: list[str], activation_callback = lambda x: x) -> SelfAttentionManager:
         """
         Extract internal representations at of attention outputs
         Args:
             inputs (list): list of inputs
-            activation_callback (SelfAttentionOutput): callback function applied to all attention outputs from all layers
+            activation_callback (SelfAttentionManager): callback function applied to all attention outputs from all layers
         Returns:
-            SelfAttentionOutput: attention outputs
+            SelfAttentionManager: attention outputs
         """
         attn_outputs = []
         for input in inputs:
             tokenized = self.tokenizer(input, return_tensors="pt", truncation=True).to(self.device)
             all_attn, attn_output = self.model(**tokenized, output_attentions=True).attentions
-            attn_output = SelfAttentionOutput(all_attn, attn_output)
+            attn_output = SelfAttentionManager(all_attn, attn_output)
             attn_output = activation_callback(attn_output)
             attn_outputs.append(attn_output)
         return attn_outputs
     
     def attention2kwargs(
         self,
-        attention: SelfAttentionOutput,
+        attention: SelfAttentionManager,
         attention_intervention_fn: Callable = add_mean_hybrid,
         layers: list[int] = None,
         **kwargs
@@ -42,7 +42,7 @@ class TransformerOperator(Operator):
         """
         Convert attention outputs to kwargs for intervention
         Args:
-            attention (SelfAttentionOutput)
+            attention (SelfAttentionManager)
             attention_intervention_fn (Callable): intervention function for attention, defaults to add_mean_hybrid
             layers (list[int], optional): list of layers to use attention, if None, use all layers. Defaults to None.
             **kwargs: additional kwargs for intervention function

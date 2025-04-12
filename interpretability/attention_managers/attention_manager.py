@@ -1,12 +1,12 @@
 from abc import ABC, abstractmethod
 import torch
 
-class AttentionOutput(ABC):
+class AttentionManager(ABC):
     def __init__(self, device: str = "cpu"):
         self.device = device
     
     @staticmethod
-    def mean_of(outputs: list["AttentionOutput"]) -> "AttentionOutput":
+    def mean_of(outputs: list["AttentionManager"]) -> "AttentionManager":
         if len(outputs) == 0:
             return None
         sum = outputs[0]
@@ -15,51 +15,52 @@ class AttentionOutput(ABC):
         return sum / len(outputs)
     
     @abstractmethod
-    def __add__(self, other: "AttentionOutput") -> "AttentionOutput":
+    def __add__(self, other: "AttentionManager") -> "AttentionManager":
         pass
     
     @abstractmethod
-    def __truediv__(self, other: int) -> "AttentionOutput":
+    def __truediv__(self, other: int) -> "AttentionManager":
         pass
     
     @abstractmethod
-    def __sub__(self, other: "AttentionOutput") -> "AttentionOutput":
+    def __sub__(self, other: "AttentionManager") -> "AttentionManager":
         pass
     
     @abstractmethod
-    def __mul__(self, other: int) -> "AttentionOutput":
+    def __mul__(self, other: int) -> "AttentionManager":
         pass
     
     @abstractmethod
-    def __rmul__(self, other: int) -> "AttentionOutput":
+    def __rmul__(self, other: int) -> "AttentionManager":
         pass
     
     @abstractmethod
-    def __iter__(self):
+    def __iter__(self) -> tuple:
         pass
     
     @abstractmethod
-    def get_last_token(self) -> "AttentionOutput":
+    def get_last_token(self) -> "AttentionManager":
         pass
     
-    @abstractmethod
     def save(self, path: str) -> None:
+        if not path.endswith(".pth"):
+            path += ".pth"
+        torch.save(self, f"{path}")
+    
+    @abstractmethod
+    def mean(self) -> "AttentionManager":
         pass
     
     @abstractmethod
-    def mean(self) -> "AttentionOutput":
-        pass
-    
-    @abstractmethod
-    def to(self, device: str) -> "AttentionOutput":
+    def to(self, device: str) -> "AttentionManager":
         pass
 
-class AttentionOutputItem(list):
-    def __add__(self, other: "AttentionOutputItem") -> "AttentionOutputItem":
+class AttentionManagerItem(list):
+    def __add__(self, other: "AttentionManagerItem") -> "AttentionManagerItem":
         if other is None:
             return self
-        if not isinstance(other, AttentionOutputItem):
-            raise TypeError("Addition is only supported between AttentionOutputItem objects")
+        if not isinstance(other, AttentionManagerItem):
+            raise TypeError("Addition is only supported between AttentionManagerItem objects")
         mylist = []
         for i, item in enumerate(self):
             if item is None and other[i] is None:
@@ -70,14 +71,14 @@ class AttentionOutputItem(list):
                 mylist.append(item)
             else:
                 mylist.append(item + other[i])
-        return AttentionOutputItem(mylist)
+        return AttentionManagerItem(mylist)
     
-    def __sub__(self, other: "AttentionOutputItem") -> "AttentionOutputItem":
+    def __sub__(self, other: "AttentionManagerItem") -> "AttentionManagerItem":
         if other is None:
             import pdb; pdb.set_trace()
             return self
-        if not isinstance(other, AttentionOutputItem):
-            raise TypeError("Subtraction is only supported between AttentionOutputItem objects")
+        if not isinstance(other, AttentionManagerItem):
+            raise TypeError("Subtraction is only supported between AttentionManagerItem objects")
         mylist = []
         for i, item in enumerate(self):
             if item is None and other[i] is None:
@@ -88,43 +89,43 @@ class AttentionOutputItem(list):
                 mylist.append(item)
             else:
                 mylist.append(item - other[i])
-        return AttentionOutputItem(mylist)
+        return AttentionManagerItem(mylist)
     
-    def __truediv__(self, other: int) -> "AttentionOutputItem":
+    def __truediv__(self, other: int) -> "AttentionManagerItem":
         mylist = []
         for item in self:
             if item is None:
                 mylist.append(None)
             else:
                 mylist.append(item / other)
-        return AttentionOutputItem(mylist)
+        return AttentionManagerItem(mylist)
     
-    def __mul__(self, other: int) -> "AttentionOutputItem":
+    def __mul__(self, other: int) -> "AttentionManagerItem":
         mylist = []
         for item in self:
             if item is None:
                 mylist.append(None)
             else:
                 mylist.append(item * other)
-        return AttentionOutputItem(mylist)
+        return AttentionManagerItem(mylist)
     
-    def __rmul__(self, other: int) -> "AttentionOutputItem":
+    def __rmul__(self, other: int) -> "AttentionManagerItem":
         return self.__mul__(other)
     
-    def get_last_token(self) -> "AttentionOutputItem":
+    def get_last_token(self) -> "AttentionManagerItem":
         mylist = []
         for item in self:
             if item is None:
                 mylist.append(None)
             else:
                 mylist.append(item[..., -1, :])
-        return AttentionOutputItem(mylist)
+        return AttentionManagerItem(mylist)
     
-    def to(self, device: str | torch.DeviceObjType) -> "AttentionOutputItem":
+    def to(self, device: str | torch.DeviceObjType) -> "AttentionManagerItem":
         mylist = []
         for item in self:
             if item is None:
                 mylist.append(None)
             else:
                 mylist.append(item.to(device))
-        return AttentionOutputItem(mylist)
+        return AttentionManagerItem(mylist)

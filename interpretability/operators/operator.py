@@ -3,7 +3,7 @@ from transformers import AutoModelForCausalLM
 from interpretability.tokenizers import Tokenizer
 import torch
 from typing import Callable
-from interpretability.attention_outputs import AttentionOutput
+from interpretability.attention_managers import AttentionManager
 from abc import ABC, abstractmethod
 import os, logging
 
@@ -35,43 +35,43 @@ class Operator(ABC):
         """
         pass
     
-    def get_attention_mean(self, attn: AttentionOutput) -> AttentionOutput:
+    def get_attention_mean(self, attn: AttentionManager) -> AttentionManager:
         """
         Get mean attention values along sequence dimension
         Args:
-            attn (AttentionOutput): attention values
+            attn (AttentionManager): attention values
         Returns:
-            AttentionOutput: mean attention values
+            AttentionManager: mean attention values
         """
         return attn.mean()
     
-    def get_attention_last_token(self, attn: AttentionOutput) -> AttentionOutput:
+    def get_attention_last_token(self, attn: AttentionManager) -> AttentionManager:
         """
         Get attention values of last token
         Args:
-            attn (AttentionOutput): attention values
+            attn (AttentionManager): attention values
         Returns:
-            AttentionOutput: last token attention values at each layer
+            AttentionManager: last token attention values at each layer
         """
         return attn.get_last_token()
     
     @abstractmethod
-    def extract_attention_outputs(self, inputs: list[str], activation_callback: Callable = lambda x: x) -> list[AttentionOutput]:
+    def extract_attention_outputs(self, inputs: list[str], activation_callback: Callable = lambda x: x) -> list[AttentionManager]:
         """
         Extract attentions at specified layers of attention stream
         Args:
             inputs (list): list of inputs
-            activation_callback (function(AttentionOutput)): callback function to extracted activations, applied to activation values at each layer
+            activation_callback (function(AttentionManager)): callback function to extracted activations, applied to activation values at each layer
         Returns:
-            list[AttentionOutput]: attention outputs
+            list[AttentionManager]: attention outputs
         """
         pass
     
-    def store_attention_outputs(self, attention_outputs: list[AttentionOutput], dir: str, fnames: list[str] = None) -> None:
+    def store_attention_outputs(self, attention_outputs: list[AttentionManager], dir: str, fnames: list[str] = None) -> None:
         """
         Store attention outputs to specified path
         Args:
-            attention_outputs (list[AttentionOutput]): list of attention outputs
+            attention_outputs (list[AttentionManager]): list of attention outputs
             dir (str): directory to save to
             fnames (list[str]): list of filenames to override default naming of indexing
         """
@@ -88,14 +88,14 @@ class Operator(ABC):
                     attention_output.save(f"{dir}{i}.pth")
         logger.info(f"Stored attention outputs to {dir}")
     
-    def load_attention_output(self, fname: str = "") -> AttentionOutput:
+    def load_attention_output(self, fname: str = "") -> AttentionManager:
         """
         Load attention outputs
         Args:
             dir (str): directory to load attention outputs
             fname (str): special filename
         Returns:
-            AttentionOutput: attention outputs
+            AttentionManager: attention outputs
         """
         hybrid_output = torch.load(fname).to(self.device)
         return hybrid_output

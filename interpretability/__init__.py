@@ -1,6 +1,6 @@
 from interpretability.operators import Operator, Qwen2Operator, Llama3Operator, HymbaOperator, RWKVOperator, MambaOperator, ZambaOperator, HybridOperator, Mamba2Operator
 from . import hooks
-from .attention_outputs import AttentionOutput
+from .attention_managers import AttentionManager
 
 __all__ = [
     "Operator",
@@ -12,6 +12,6 @@ __all__ = [
     "ZambaOperator",
     "HybridOperator",
     "hooks",
-    "AttentionOutput",
+    "AttentionManager",
     "Llama3Operator",
 ]
