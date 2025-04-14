@@ -76,7 +76,7 @@ class HybridOperator(Operator, ABC):
             for head in self.n_attn_heads:
                 head_logits, head_fv_logits = [], []
                 for i, attn in enumerate(steer):
-                    attn_kwargs = self.attention2kwargs(attn, layers=[layer], last_k=1, heads=[head])
+                    attn_kwargs = self.attention2kwargs(attn, layers=[layer], last_k=1, heads=[head], keep_scan=False)
                     inputs_task = inputs[i]
                     task_logits, task_fv_logits = [], []
                     for input in inputs_task:
@@ -94,7 +94,7 @@ class HybridOperator(Operator, ABC):
             for head in self.n_scan_heads:
                 head_logits, head_fv_logits = [], []
                 for i, attn in enumerate(steer):
-                    attn_kwargs = self.attention2kwargs(attn, layers=[layer], last_k=1, heads=[head])
+                    attn_kwargs = self.attention2kwargs(attn, layers=[layer], last_k=1, heads=[head], keep_attention=False)
                     inputs_task = inputs[i]
                     task_logits, task_fv_logits = [], []
                     for input in inputs_task:
@@ -135,10 +135,20 @@ class HybridOperator(Operator, ABC):
         """
         if layers is None:
             layers = set(self.ALL_LAYERS)
+        attn_layers, scan_layers = set(self.attn_layers), set(self.scan_layers)
         _, attn_outputs, scan_outputs = attention
         params = ()
+        attn_index, scan_index = 0, 0
         for layer in self.ALL_LAYERS:
-            attn = attn_outputs[layer] if keep_attention and layer in layers else None
-            scan = scan_outputs[layer] if keep_scan and layer in layers else None
+            if keep_attention and layer in layers and layer in attn_layers:
+                attn = attn_outputs[attn_index]
+                attn_index += 1
+            else:
+                attn = None
+            if keep_scan and layer in layers and layer in scan_layers:
+                scan = scan_outputs[scan_index]
+                scan_index += 1
+            else:
+                scan = None
             params += ((attention_intervention_fn, attn, scan_intervention_fn, scan, kwargs),)
         return {"attention_overrides": params}

@@ -1,6 +1,6 @@
 import torch, logging
 from utils.dataset import Dataset
-from interpretability import Operator
+from interpretability.operators import Operator
 import numpy as np
 from collections import defaultdict
 

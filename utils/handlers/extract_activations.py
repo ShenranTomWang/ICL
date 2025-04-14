@@ -1,7 +1,7 @@
 import logging
 from collections import Counter
 from utils.dataset import Dataset
-from interpretability import Operator
+from interpretability.operators import Operator
 from interpretability import AttentionManager
 
 def train_handler(

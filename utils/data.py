@@ -80,14 +80,14 @@ def load_data(task: str | None, dataset: str | None, split: str, k: int, n: int,
     logger.info("Loaded data for seed %s" % seed)
     return train_data, test_data
 
-def load_data_by_task(task, split, k, n, seed=0, data_dir: str = "data"):
+def load_data_by_task(task: str, split: str, k: int, n: int, seed: int = 0, data_dir: str = "data"):
     with open(os.path.join("config", task + ".json"), "r") as f:
         datasets = json.load(f)
 
     data = load_data_by_datasets(datasets=datasets, k=k, n=n, seed=seed, split=split, data_dir=data_dir)
     return data
 
-def load_data_by_datasets(datasets, k, n, split, seed=0, data_dir: str = "data"):
+def load_data_by_datasets(datasets: list[str], k: int, n: int, split: str, seed: int = 0, data_dir: str = "data"):
     logger = logging.getLogger(__name__)
     data = []
     for dataset in datasets:

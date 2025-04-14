@@ -1,7 +1,7 @@
 from collections import Counter
 from utils.inference import do_inference, evaluate
 from utils.dataset import Dataset
-from interpretability import Operator
+from interpretability.operators import Operator
 import torch
 
 def baseline_handler(operator: Operator, dataset: Dataset, device: torch.DeviceObjType, verbose: bool) -> dict:

@@ -4,7 +4,7 @@ from utils.data import load_data
 import numpy as np
 import torch
 from utils.dataset import Dataset
-from interpretability import Operator
+from interpretability.operators import Operator
 import interpretability
 from utils.inference import do_inference, evaluate
 from constants import ALL_OPERATORS, ALL_DTYPES

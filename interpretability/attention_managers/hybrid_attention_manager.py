@@ -2,7 +2,13 @@ import torch
 from .attention_manager import AttentionManager, AttentionManagerItem
 
 class HybridAttentionManager(AttentionManager):
-    def __init__(self, all_attns: list[torch.Tensor] | None, attn_outputs: list[torch.Tensor] | None, scan_outputs: list[torch.Tensor] | None, device: str = "cpu"):
+    def __init__(
+        self,
+        all_attns: list[torch.Tensor] | None,
+        attn_outputs: list[torch.Tensor] | None,
+        scan_outputs: list[torch.Tensor] | None,
+        device: str = "cpu"
+    ):
         self.all_attns = AttentionManagerItem(all_attns).to(device) if all_attns is not None else None
         self.attn_outputs = AttentionManagerItem(attn_outputs).to(device) if attn_outputs is not None else None
         self.scan_outputs = AttentionManagerItem(scan_outputs).to(device) if scan_outputs is not None else None

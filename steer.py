@@ -3,7 +3,7 @@ from utils.inference import count_option_changes
 from utils.dataset import Dataset
 from utils.data import load_data
 from utils.utils import init_counters, log_counters
-from interpretability import Operator
+from interpretability.operators import Operator
 import argparse, os, logging, json
 import interpretability
 from collections import Counter
