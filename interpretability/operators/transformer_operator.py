@@ -55,8 +55,8 @@ class TransformerOperator(Operator):
             TransformerFVMap: AIE map
         """
         attn_map = torch.empty((self.n_layers, self.n_heads))
-        for layer in self.n_layers:
-            for head in self.n_heads:
+        for layer in range(self.n_layers):
+            for head in range(self.n_heads):
                 head_logits, head_fv_logits = [], []
                 for i, attn in enumerate(steer):
                     attn_kwargs = self.attention2kwargs(attn, layers=[layer], last_k=1, heads=[head])

@@ -25,10 +25,10 @@ class HybridOperator(Operator, ABC):
     ):
         self.n_layers = n_layers
         self.attn_layers = attn_layers
-        self.n_attn_lauers = len(attn_layers)
+        self.n_attn_layers = len(attn_layers)
         self.n_scan_layers = len(scan_layers)
         self.scan_layers = scan_layers
-        self.n_attn_heads = n_attn_heads,
+        self.n_attn_heads = n_attn_heads
         self.n_scan_heads = n_scan_heads
         self.ALL_LAYERS = [i for i in range(n_layers)]
         super().__init__(tokenizer, model, device, dtype)
@@ -73,7 +73,7 @@ class HybridOperator(Operator, ABC):
         attn_map = torch.empty((self.n_attn_layers, self.n_attn_heads))
         scan_map = torch.empty((self.n_scan_layers, self.n_scan_heads))
         for layer in self.attn_layers:
-            for head in self.n_attn_heads:
+            for head in range(self.n_attn_heads):
                 head_logits, head_fv_logits = [], []
                 for i, attn in enumerate(steer):
                     attn_kwargs = self.attention2kwargs(attn, layers=[layer], last_k=1, heads=[head], keep_scan=False)
@@ -91,7 +91,7 @@ class HybridOperator(Operator, ABC):
                 head_AIE = self.compute_AIE(head_fv_logits, head_logits, label_ids)
                 attn_map[layer, head] = head_AIE
         for layer in self.scan_layers:
-            for head in self.n_scan_heads:
+            for head in range(self.n_scan_heads):
                 head_logits, head_fv_logits = [], []
                 for i, attn in enumerate(steer):
                     attn_kwargs = self.attention2kwargs(attn, layers=[layer], last_k=1, heads=[head], keep_attention=False)
