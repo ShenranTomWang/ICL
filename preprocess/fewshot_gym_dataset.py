@@ -165,12 +165,16 @@ class FewshotGymClassificationDataset(FewshotGymDataset):
         # make train, dev, test data
         k_shot_train = []
         for label in label_list:
-            for line in label_list[label][:train_k]:
-                k_shot_train.append(line)
+            if train_k != -1:
+                for line in label_list[label][valid_k: valid_k + train_k]:
+                    k_shot_train.append(line)
+            else:
+                for line in label_list[label][valid_k:]:
+                    k_shot_train.append(line)
 
         k_shot_dev = []
         for label in label_list:
-            for line in label_list[label][train_k: train_k + valid_k]:
+            for line in label_list[label][:valid_k]:
                 k_shot_dev.append(line)
 
         k_shot_test = test_lines

@@ -20,7 +20,7 @@ def train_handler(
     """
     logger = logging.getLogger(__name__)
     for train_task in train_counter:
-        logger.info(f"Processing {train_task} (demo)")
+        logger.info(f"Processing {train_task} (train)")
         train = [dp for dp in train_data if dp["task"] == train_task]
         options = train[0]["options"]
         assert len(options) == 2, "Steer stream only works for binary classification"
@@ -76,7 +76,17 @@ def dev_handler(
         args (NameSpace)
         seed (int)
     """
-    basic_handler(test_counter, train_data, test_data, operator, args, seed)
+    if args.stream == "fv_steer":
+        logger = logging.getLogger(__name__)
+        for train_task in train_counter:
+            logger.info(f"Processing {train_task} (dev)")
+            curr_train_data = [dp for dp in train_data if dp["task"] == train_task]
+            curr_test_data = [dp for dp in test_data if dp["task"] == train_task]
+            
+            dataset = Dataset(curr_train_data, curr_test_data, verbose=args.verbose)
+            run_operator_fv_steer(args, operator, dataset, f"{args.out_dir}/{train_task}/{seed}/", seed)
+    else:
+        basic_handler(test_counter, train_data, test_data, operator, args, seed)
     
 def test_handler(
     train_counter: Counter, test_counter: Counter, train_data: list, test_data: list, operator: Operator, args, seed: int
@@ -118,7 +128,7 @@ def basic_handler(
         dataset.preprocess()
         run_operator_generic(operator, args, dataset.inputs, f"{args.out_dir}/{task}/{seed}/{args.split}_{args.stream}/")
 
-def run_operator_generic(operator: Operator, args, inputs: list | tuple, dir: str = "") -> None:
+def run_operator_generic(operator: Operator, args, inputs: list, dir: str = "") -> None:
     """
     Run operator to extract activations from dataset
     Args:
@@ -130,17 +140,13 @@ def run_operator_generic(operator: Operator, args, inputs: list | tuple, dir: st
         inputs (list)
     """
     if args.stream == "attn":
-        attn = operator.extract_attention_outputs(inputs)
-        operator.store_attention_outputs(attn, dir)
-    elif args.stream == "attn_last":
-        attn = operator.extract_attention_outputs(inputs, operator.get_attention_last_token)
-        attn = attn[0].mean()
-        operator.store_attention_outputs([attn], dir, fnames=["attn_last_mean"])
+        attn = operator.extract_attention_managers(inputs)
+        operator.store_attention_managers(attn, dir)
     elif args.stream == "attn_mean":
-        attn = operator.extract_attention_outputs(inputs, operator.get_attention_mean)
-        operator.store_attention_outputs(attn, dir, fnames=["attn_mean"])
+        attn = operator.extract_attention_managers(inputs, operator.get_attention_mean)
+        operator.store_attention_managers(attn, dir, fnames=["attn_mean"])
     else:
-        raise ValueError(f"Invalid stream: {args.stream}")
+        raise ValueError(f"Invalid stream split combination: {args.stream} and {args.split}")
     
 def run_operator_steer(operator: Operator, stream: str, inputs: list, dir: str, fnames: list) -> None:
     """
@@ -155,14 +161,32 @@ def run_operator_steer(operator: Operator, stream: str, inputs: list, dir: str, 
     """
     if stream == "steer":
         inputs0, inputs1 = inputs
-        steer1 = [output.mean() for output in operator.extract_attention_outputs(inputs1, operator.get_attention_mean)]
-        steer0 = [output.mean() for output in operator.extract_attention_outputs(inputs0, operator.get_attention_mean)]
+        steer1 = [output.mean() for output in operator.extract_attention_managers(inputs1, operator.get_attention_mean)]
+        steer0 = [output.mean() for output in operator.extract_attention_managers(inputs0, operator.get_attention_mean)]
         steer1 = AttentionManager.mean_of(steer1)
         steer0 = AttentionManager.mean_of(steer0)
         if steer1 != None:
             steer = steer1 - steer0
         else:
             steer = -1 * steer0
-        operator.store_attention_outputs([steer0, steer1, steer], dir, fnames=fnames)
+        operator.store_attention_managers([steer0, steer1, steer], dir, fnames=fnames)
     else:
         raise ValueError(f"Invalid stream: {stream}")
+    
+def run_operator_fv_steer(args, operator: Operator, dataset: Dataset, dir: str, seed: int) -> None:
+    """
+    Run operator to extract activations
+
+    Args:
+        args (Namespace)
+        operator (Operator)
+        dataset (Dataset)
+        dir (str): directory to store outputs
+        seed (int): seed
+    """
+    dataset.choose(args.choice, seed)
+    dataset.preprocess()
+    attn = operator.extract_attention_managers(dataset.inputs, operator.get_attention_last_token)
+    attn = [output.get_last_token() for output in attn]
+    attn = AttentionManager.mean_of(attn)
+    operator.store_attention_managers([attn], dir, fnames=["fv_steer"])

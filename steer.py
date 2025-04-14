@@ -118,7 +118,7 @@ if __name__ == "__main__":
 
     args.dtype = getattr(torch, args.dtype)
     args.device = torch.device(args.device)
-    args.operator = getattr(interpretability, args.operator)
+    args.operator = getattr(interpretability.operators, args.operator)
     handlers = [logging.StreamHandler()]
     if args.log_file is not None:
         os.makedirs(os.path.dirname(args.log_file), exist_ok=True)

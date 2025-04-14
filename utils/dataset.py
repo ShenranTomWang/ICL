@@ -1,5 +1,6 @@
 import logging
 from interpretability.tokenizers import Tokenizer
+import numpy as np
 
 class Dataset:
     def __init__(self, train: list, test: list, verbose=False):
@@ -15,6 +16,20 @@ class Dataset:
         self.output_ids = None
         self.indices = None
         self.option_ids = None
+        
+    def choose(self, k: int, seed: int) -> None:
+        """
+        Choose k examples from the training set to use as demos.
+        Args:
+            k: int, number of examples to choose
+            seed: int, seed for random number generator
+        Requires:
+            self.train is not None
+        Effects:
+            self.train: list<{"input": str, "output": str, "options": list<str>}>
+        """
+        np.random.seed(seed)
+        self.train = np.random.choice(self.train, k, replace=False).tolist()
     
     def prepare_demo(self) -> None:
         """
@@ -34,7 +49,6 @@ class Dataset:
         
     def preprocess(self) -> None:
         """
-        Args:
         Requires:
             self.test is not None
             self.train is not None

@@ -58,18 +58,12 @@ def process_tasks(idx, task_list, args, fail_dict):
     failed_tasks = []
     for task in task_list:
         print("Process {}: Processing {} ...".format(idx, task))
-        if args.task == "ALL":
-            output_dir = "../data"
-        elif args.task == "FV":
-            output_dir = "../function_vectors_data"
-        else:
-            raise NotImplementedError("Unknown task: {}".format(args.task))
         command = "python %s%s%s%s%s --train_k %d --valid_k %d" % (
             task,
             " --inst" if args.inst else "",
             " --do_train" if args.do_train else "",
             " --do_test" if args.do_test else "",
-            " --output_dir %s" % output_dir,
+            " --output_dir %s" % "../data",
             args.train_k,
             args.valid_k)
         ret_code = subprocess.run([command], shell=True) # stdout=open(os.devnull, 'wb'), stderr=open(os.devnull, 'wb'))

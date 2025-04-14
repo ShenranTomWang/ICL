@@ -1,17 +1,11 @@
-from interpretability.operators import Operator, Qwen2Operator, Llama3Operator, HymbaOperator, RWKVOperator, MambaOperator, ZambaOperator, HybridOperator, Mamba2Operator
+from . import operators
 from . import hooks
 from .attention_managers import AttentionManager
+from . import fv_maps
 
 __all__ = [
-    "Operator",
-    "Qwen2Operator",
-    "HymbaOperator",
-    "RWKVOperator",
-    "MambaOperator",
-    "Mamba2Operator",
-    "ZambaOperator",
-    "HybridOperator",
+    "operators",
     "hooks",
     "AttentionManager",
-    "Llama3Operator",
+    "fv_maps"
 ]

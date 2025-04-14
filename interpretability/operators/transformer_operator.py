@@ -1,5 +1,6 @@
 import shutup; shutup.please()
 from interpretability.attention_managers import SelfAttentionManager
+from interpretability.fv_maps import TransformerFVMap
 from interpretability.hooks import add_mean_hybrid
 from transformers import AutoModelForCausalLM
 from interpretability.tokenizers import Tokenizer
@@ -8,13 +9,24 @@ from .operator import Operator
 from typing import Callable
 
 class TransformerOperator(Operator):    
-    def __init__(self, model: AutoModelForCausalLM, tokenizer: Tokenizer, device: torch.DeviceObjType, dtype: torch.dtype):
+    def __init__(
+        self,
+        model: AutoModelForCausalLM,
+        tokenizer: Tokenizer,
+        device: torch.DeviceObjType,
+        dtype: torch.dtype,
+        n_layers: int,
+        n_heads: int
+    ):
+        self.n_layers = n_layers
+        self.n_heads = n_heads
+        self.ALL_LAYERS = [i for i in range(n_layers)]
         super().__init__(tokenizer=tokenizer, model=model, device=device, dtype=dtype)
         
     def get_attention_add_mean_hook(self):
         return add_mean_hybrid
         
-    def extract_attention_outputs(self, inputs: list[str], activation_callback = lambda x: x) -> SelfAttentionManager:
+    def extract_attention_managers(self, inputs: list[str], activation_callback = lambda x: x) -> SelfAttentionManager:
         """
         Extract internal representations at of attention outputs
         Args:
@@ -31,6 +43,38 @@ class TransformerOperator(Operator):
             attn_output = activation_callback(attn_output)
             attn_outputs.append(attn_output)
         return attn_outputs
+    
+    def generate_AIE_map(self, steer: list[SelfAttentionManager], inputs: list[list[str]], label_ids: list[torch.Tensor]) -> TransformerFVMap:
+        """
+        Generate AIE map from attention outputs
+        Args:
+            steer (list[SelfAttentionManager]): steer values for each task
+            inputs (list[list[str]]): list of inputs for each task
+            label_ids (list[torch.Tensor]): list of label ids for each task
+        Returns:
+            TransformerFVMap: AIE map
+        """
+        attn_map = torch.empty((self.n_layers, self.n_heads))
+        for layer in self.n_layers:
+            for head in self.n_heads:
+                head_logits, head_fv_logits = [], []
+                for i, attn in enumerate(steer):
+                    attn_kwargs = self.attention2kwargs(attn, layers=[layer], last_k=1, heads=[head])
+                    inputs_task = inputs[i]
+                    task_logits, task_fv_logits = [], []
+                    for input in inputs_task:
+                        logit = self.forward(input).logits[:, -1, :]
+                        logit_fv = self.forward(input, **attn_kwargs).logits[:, -1, :]
+                        task_logits.append(logit)
+                        task_fv_logits.append(logit_fv)
+                    task_logits = torch.stack(task_logits, dim=0)
+                    task_fv_logits = torch.stack(task_fv_logits, dim=0)
+                    head_logits.append(task_logits)
+                    head_fv_logits.append(task_fv_logits)
+                head_AIE = self.compute_AIE(head_fv_logits, head_logits, label_ids)
+                attn_map[layer, head] = head_AIE
+        return TransformerFVMap(attn_map, self.dtype)
+                        
     
     def attention2kwargs(
         self,

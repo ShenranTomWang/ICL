@@ -14,6 +14,9 @@ class ZambaOperator(HybridOperator):
         self.dtype = dtype
         tokenizer = AutoTokenizer.from_pretrained(path, trust_remote_code=True)
         model = Zamba2ForCausalLM.from_pretrained(path).to(device).to(dtype)
-        self.ALL_LAYERS = [i for i in range(model.config.num_hidden_layers)]
-        self.HYBRID_LAYERS = model.config.hybrid_layer_ids
-        super().__init__(HybridTokenizer(tokenizer), model, device, dtype)
+        n_layers = model.config.num_hidden_layers
+        attn_layers = [i for i in range(n_layers) if model.config.layers_block_type[i] == "hybrid"]
+        scan_layers = [i for i in range(n_layers) if model.config.layers_block_type[i] == "mamba"]
+        n_attn_heads = model.config.num_attention_heads
+        n_scan_heads = model.config.n_mamba_heads
+        super().__init__(HybridTokenizer(tokenizer), model, device, dtype, n_layers, attn_layers, scan_layers, n_attn_heads, n_scan_heads)
