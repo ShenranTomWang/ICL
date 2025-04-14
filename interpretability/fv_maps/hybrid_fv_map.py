@@ -3,6 +3,7 @@ import torch
 import matplotlib.pyplot as plt
 import seaborn as sns
 from matplotlib.figure import Figure
+import os
 
 class HybridFVMap(FVMap):
     def __init__(
@@ -38,6 +39,8 @@ class HybridFVMap(FVMap):
         return HybridFVMap(attn_map, scan_map, self.attn_layers, self.scan_layers, self.dtype)
     
     def visualize(self, save_path: str = None) -> Figure:
+        if not os.path.exists(save_path):
+            os.makedirs(save_path, exist_ok=True)
         fig, (ax1, ax2) = plt.subplots(1, 2)
         sns.heatmap(self.attn_map.numpy(), ax=ax1, cmap="viridis", yticklabels=self.attn_layers)
         ax1.set_title("Attention Stream Function Vectors")
