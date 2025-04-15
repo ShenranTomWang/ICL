@@ -65,12 +65,12 @@ class TransformerOperator(Operator):
                     inputs_task = inputs[i]
                     task_logits, task_fv_logits = [], []
                     for input in inputs_task:
-                        logit = self.forward(input).logits[:, -1, :]
-                        logit_fv = self.forward(input, **attn_kwargs).logits[:, -1, :]
+                        logit = self.forward(input).logits[:, -1, :].to("cpu")
+                        logit_fv = self.forward(input, **attn_kwargs).logits[:, -1, :].to("cpu")
                         task_logits.append(logit)
                         task_fv_logits.append(logit_fv)
-                    task_logits = torch.stack(task_logits, dim=0)
-                    task_fv_logits = torch.stack(task_fv_logits, dim=0)
+                    task_logits = torch.cat(task_logits, dim=0)
+                    task_fv_logits = torch.cat(task_fv_logits, dim=0)
                     head_logits.append(task_logits)
                     head_fv_logits.append(task_fv_logits)
                 head_AIE = self.compute_AIE(head_fv_logits, head_logits, label_ids)

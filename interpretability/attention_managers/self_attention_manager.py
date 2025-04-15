@@ -1,5 +1,6 @@
 import torch
-from .attention_manager import AttentionManager, AttentionManagerItem
+from .attention_manager import AttentionManager
+from .manager_item import AttentionManagerItem
 
 class SelfAttentionManager(AttentionManager):
     def __init__(self, all_attns: list[torch.Tensor] | None, attn_outputs: list[torch.Tensor] | None, device: torch.DeviceObjType = "cpu"):

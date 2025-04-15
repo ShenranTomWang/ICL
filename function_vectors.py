@@ -1,4 +1,4 @@
-import argparse
+import argparse, logging
 import interpretability
 from constants import ALL_OPERATORS, ALL_DTYPES
 from utils.handlers.function_vectors import function_vectors_handler
@@ -22,4 +22,11 @@ if __name__ == "__main__":
     args.device = torch.device(args.device)
     seed = args.seed.split(",")
     args.seed = [int(s) for s in seed]
+    logging.basicConfig(format='%(asctime)s - %(levelname)s - %(name)s - %(message)s',
+                        datefmt='%m/%d/%Y %H:%M:%S',
+                        level=logging.INFO)
+    logging.basicConfig(level=logging.ERROR, format='%(asctime)s - %(levelname)s - %(message)s')
+    logger = logging.getLogger(__name__)
+    logger.info(args)
+    
     function_vectors_handler(args)

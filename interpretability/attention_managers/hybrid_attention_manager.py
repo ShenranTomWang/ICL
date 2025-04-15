@@ -1,5 +1,6 @@
 import torch
-from .attention_manager import AttentionManager, AttentionManagerItem
+from .attention_manager import AttentionManager
+from .manager_item import AttentionManagerItem
 
 class HybridAttentionManager(AttentionManager):
     def __init__(

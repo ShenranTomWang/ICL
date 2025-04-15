@@ -30,7 +30,7 @@ def add_mean_hybrid(
     elif last_k > 0:
         intervention_mean[:, :-last_k, ...] = 0
     if heads is not None and intervention_mean.dim() > 3:
-        for head in intervention_mean.shape[-2]:
+        for head in range(intervention_mean.shape[-2]):
             if head not in heads:
                 intervention_mean[..., head, :] = 0
     stream += intervention_mean

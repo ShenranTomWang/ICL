@@ -287,13 +287,13 @@ class Mamba2Mixer(nn.Module):
                 dt_bias=dt_bias,
                 dt_softplus=True,
             )
-            hidden_states = hidden_states.view(batch_size, self.num_heads * self.head_dim)
-            hidden_states = self.norm(hidden_states, gate)
             attention = hidden_states if output_attentions else None
             if attention_override is not None:
                 hook, scan_intervention, hook_kwargs = attention_override
-                scan_outputs = hook(hidden_states, scan_intervention, **hook_kwargs)
-
+                hidden_states = hook(hidden_states, scan_intervention, **hook_kwargs)
+            hidden_states = hidden_states.view(batch_size, self.num_heads * self.head_dim)
+            hidden_states = self.norm(hidden_states, gate)
+            
             # 4. Final linear projection
             out = self.out_proj(hidden_states)[:, None, ...]
 
@@ -382,16 +382,16 @@ class Mamba2Mixer(nn.Module):
                 if ssm_state is not None and cache_params is not None:
                     cache_params.update_ssm_state(layer_idx=self.layer_idx, new_ssm_state=ssm_state)
 
+                attention = scan_output if output_attentions else None
+                if attention_override is not None:
+                    hook, scan_intervention, hook_kwargs = attention_override
+                    scan_output = hook(scan_output, scan_intervention, **hook_kwargs)
                 scan_output = scan_output.view(batch_size, seq_len, -1)
                 # Multiply "gate" branch and apply extra normalization layer
                 scan_output = self.norm(scan_output, gate)
 
                 # 4. Final linear projection
                 out = self.out_proj(scan_output)
-            attention = scan_outputs if output_attentions else None
-            if attention_override is not None:
-                hook, scan_intervention, hook_kwargs = attention_override
-                scan_outputs = hook(scan_outputs, scan_intervention, **hook_kwargs)
         return out, attention
 
     # fmt: off

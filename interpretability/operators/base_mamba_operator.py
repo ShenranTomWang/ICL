@@ -4,7 +4,7 @@ from typing import Callable
 from transformers import AutoModelForCausalLM
 from .operator import Operator
 from interpretability.tokenizers import Tokenizer
-from interpretability.attention_managers import ScanManager
+from interpretability.attention_managers import AttentionManager
 from interpretability.fv_maps import ScanFVMap
 from interpretability.hooks import add_mean_scan
 
@@ -25,33 +25,13 @@ class BaseMambaOperator(Operator):
         
     def get_attention_add_mean_hook(self) -> Callable:
         return add_mean_scan
-        
-    @torch.inference_mode()
-    def extract_attention_managers(self, inputs, activation_callback = lambda x: x) -> list[ScanManager]:
-        """
-        Extract internal representations at of attention outputs
-        Args:
-            inputs (list): list of inputs
-            activation_callback (function(torch.Tensor)): callback function applied to all attention outputs from all layers
-        Returns:
-            list[ScanManager]: list of ScanOutputs
-        """
-        attention_outputs = []
-        for input in inputs:
-            tokenized = self.tokenizer(input, return_tensors="pt", truncation=True).to(self.device)
-            scan_outputs = self.model(**tokenized, output_attentions=True).attentions
-            scan_outputs = list(scan_outputs)
-            scan_outputs = ScanManager(scan_outputs)
-            scan_outputs = activation_callback(scan_outputs)
-            attention_outputs.append(scan_outputs)
-        return attention_outputs
     
     @torch.inference_mode()
-    def generate_AIE_map(self, steer: list[ScanManager], inputs: list[list[str]], label_ids: list[torch.Tensor]) -> ScanFVMap:
+    def generate_AIE_map(self, steer: list[AttentionManager], inputs: list[list[str]], label_ids: list[torch.Tensor]) -> ScanFVMap:
         """
         Generate AIE map from attention outputs
         Args:
-            steer (list[ScanManager]): steer values for each task
+            steer (list[AttentionManager]): steer values for each task
             inputs (list[list[str]]): list of inputs for each task
             label_ids (list[torch.Tensor]): list of label ids for each task
         Returns:
@@ -66,12 +46,12 @@ class BaseMambaOperator(Operator):
                     inputs_task = inputs[i]
                     task_logits, task_fv_logits = [], []
                     for input in inputs_task:
-                        logit = self.forward(input).logits[:, -1, :]
-                        logit_fv = self.forward(input, **attn_kwargs).logits[:, -1, :]
+                        logit = self.forward(input).logits[:, -1, :].to("cpu")
+                        logit_fv = self.forward(input, **attn_kwargs).logits[:, -1, :].to("cpu")
                         task_logits.append(logit)
                         task_fv_logits.append(logit_fv)
-                    task_logits = torch.stack(task_logits, dim=0)
-                    task_fv_logits = torch.stack(task_fv_logits, dim=0)
+                    task_logits = torch.cat(task_logits, dim=0)
+                    task_fv_logits = torch.cat(task_fv_logits, dim=0)
                     head_logits.append(task_logits)
                     head_fv_logits.append(task_fv_logits)
                 head_AIE = self.compute_AIE(head_fv_logits, head_logits, label_ids)
@@ -80,7 +60,7 @@ class BaseMambaOperator(Operator):
     
     def attention2kwargs(
         self,
-        scan_outputs: ScanManager,
+        scan_outputs: AttentionManager,
         scan_intervention_fn: Callable = add_mean_scan,
         layers: list[int] = None,
         **kwargs
@@ -88,7 +68,7 @@ class BaseMambaOperator(Operator):
         """
         Convert attention outputs to kwargs for intervention
         Args:
-            scan_outputs (ScanManager): intervention values
+            scan_outputs (AttentionManager): intervention values
             scan_intervention_fn (Callable): intervention function for scan, defaults to add_mean_scan
             layers (list[int], optional): list of layers to use attention, if None, use all layers. Defaults to None.
             **kwargs: additional kwargs for intervention function
