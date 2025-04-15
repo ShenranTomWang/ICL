@@ -5,6 +5,7 @@ import torch
 from transformers import AutoTokenizer
 from interpretability.tokenizers import StandardTokenizer
 from interpretability.attention_managers import Mamba2ScanManager
+from interpretability.hooks import add_mean_hybrid
 
 class Mamba2Operator(BaseMambaOperator):
     def __init__(self, path: str, device: torch.DeviceObjType, dtype: torch.dtype):
@@ -13,6 +14,9 @@ class Mamba2Operator(BaseMambaOperator):
         n_layers = model.config.num_hidden_layers
         n_heads = model.config.num_heads
         super().__init__(model, StandardTokenizer(tokenizer), device, dtype, n_layers, n_heads)
+        
+    def get_attention_add_mean_hook(self):
+        return add_mean_hybrid
         
     @torch.inference_mode()
     def extract_attention_managers(self, inputs, activation_callback = lambda x: x) -> list[Mamba2ScanManager]:

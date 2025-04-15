@@ -6,7 +6,6 @@ from .operator import Operator
 from interpretability.tokenizers import Tokenizer
 from interpretability.attention_managers import AttentionManager
 from interpretability.fv_maps import ScanFVMap
-from interpretability.hooks import add_mean_scan
 
 class BaseMambaOperator(Operator):
     def __init__(
@@ -22,9 +21,6 @@ class BaseMambaOperator(Operator):
         self.n_heads = n_heads
         self.ALL_LAYERS = [i for i in range(n_layers)]
         super().__init__(tokenizer, model, device, dtype)
-        
-    def get_attention_add_mean_hook(self) -> Callable:
-        return add_mean_scan
     
     @torch.inference_mode()
     def generate_AIE_map(self, steer: list[AttentionManager], inputs: list[list[str]], label_ids: list[torch.Tensor]) -> ScanFVMap:
@@ -61,7 +57,7 @@ class BaseMambaOperator(Operator):
     def attention2kwargs(
         self,
         scan_outputs: AttentionManager,
-        scan_intervention_fn: Callable = add_mean_scan,
+        scan_intervention_fn: Callable = None,
         layers: list[int] = None,
         **kwargs
     ) -> dict:
@@ -69,7 +65,7 @@ class BaseMambaOperator(Operator):
         Convert attention outputs to kwargs for intervention
         Args:
             scan_outputs (AttentionManager): intervention values
-            scan_intervention_fn (Callable): intervention function for scan, defaults to add_mean_scan
+            scan_intervention_fn (Callable): intervention function for scan, defaults to None for using default
             layers (list[int], optional): list of layers to use attention, if None, use all layers. Defaults to None.
             **kwargs: additional kwargs for intervention function
         Returns:
@@ -77,6 +73,8 @@ class BaseMambaOperator(Operator):
         """
         if layers is None:
             layers = self.ALL_LAYERS
+        if scan_intervention_fn is None:
+            scan_intervention_fn = self.get_attention_add_mean_hook()
         params = ()
         scan_output = scan_outputs.scan_outputs
         for layer in self.ALL_LAYERS:
