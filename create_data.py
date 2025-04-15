@@ -1,11 +1,11 @@
 import argparse
-import utils.handlers as handlers
+import utils.handlers.create_data as handlers
 import os, json
 from constants import ALL_VARIANTS
 
 def main(args: dict) -> None:
-    if args.variant == "random":
-        handler = getattr(handlers, "random_handler")
+    if not args.variant.endswith("correct"):
+        handler = getattr(handlers, f"{args.variant}_handler")
     else:
         handler = getattr(handlers, "percent_" + args.variant + "_handler")
     handler(args)

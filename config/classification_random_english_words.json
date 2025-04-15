@@ -1,0 +1,18 @@
+[
+    "tweet_eval-stance_feminist_random_english_words",
+    "ethos-national_origin_random_english_words",
+    "tweet_eval-hate_random_english_words",
+    "hate_speech18_random_english_words",
+    "poem_sentiment_random_english_words",
+    "glue-mrpc_random_english_words",
+    "glue-wnli_random_english_words",
+    "glue-rte_random_english_words",
+    "sick_random_english_words",
+    "climate_fever_random_english_words",
+    "medical_questions_pairs_random_english_words",
+    "tweet_eval-stance_atheism_random_english_words",
+    "superglue-cb_random_english_words",
+    "ethos-religion_random_english_words",
+    "financial_phrasebank_random_english_words",
+    "ethos-race_random_english_words"
+]

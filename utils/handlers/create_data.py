@@ -2,6 +2,22 @@ import os, json
 import numpy as np
 from utils.data import load_jsonl, save_jsonl, save_json, update_task
 from typing import Callable
+from english_words import english_words_set
+
+def change_options_and_output(data: list, mapping: dict) -> list:
+    """Change the options and output of the data according to the mapping
+
+    Args:
+        data (list)
+        mapping (dict): mapping from option to random english words
+
+    Returns:
+        list
+    """
+    for dp in data:
+        dp["options"] = [mapping[option] for option in dp["options"]]
+        dp["output"] = mapping[dp["output"]]
+    return data
 
 def random_option(data: list, seed: int, **kwargs) -> list:
     """assign random option to each data point
@@ -177,6 +193,66 @@ def random_handler(args) -> None:
         k=args.k,
         option_fn=random_option
     )
+
+def random_english_words_handler(args) -> None:
+    """handler for create data with random english words output
+    
+    Args:
+        args (NameSpace): should contain the following keys:
+            - task (str): the task name
+            - dataset (str): the dataset name
+            - k (int): the number of distractors
+            - seed (str): the seed for random number generator
+            - data_dir (str): the directory to save the data
+            - variant (str): the variant of the handler
+            - method (str): the method to use for creating the data (direct or channel)
+            - config_dir (str): the directory to save the config file
+    """
+    seeds = [int(seed) for seed in args.seed.split(",")]
+    for dataset in args.datasets:
+        curr_data_dir = os.path.join(args.data_dir, dataset)
+        if os.path.exists(curr_data_dir):
+            for seed in seeds:
+                try:
+                    np.random.seed(seed)
+                    train_data_path = os.path.join(curr_data_dir, f"{dataset}_{args.k}_{seed}_train.jsonl")
+                    train_data = load_jsonl(train_data_path)
+                    train_data = update_task(train_data, args.variant)
+                    true_options = train_data[0]["options"]
+                    mapping = {option: np.random.choice(sorted(english_words_set)) for option in true_options}
+                    train_data = change_options_and_output(train_data, mapping)
+                    
+                    dev_data_path = os.path.join(curr_data_dir, f"{dataset}_{args.k}_{seed}_dev.jsonl")
+                    dev_data = load_jsonl(dev_data_path)
+                    dev_data = update_task(dev_data, args.variant)
+                    dev_data = change_options_and_output(dev_data, mapping)
+                    
+                    test_data_path = os.path.join(curr_data_dir, f"{dataset}_{args.k}_{seed}_test.jsonl")
+                    test_data = load_jsonl(test_data_path)
+                    test_data = update_task(test_data, args.variant)
+                    test_data = change_options_and_output(test_data, mapping)
+                    
+                    new_train_path = os.path.join(args.data_dir, f"{dataset}_{args.variant}", f"{dataset}_{args.variant}_{args.k}_{seed}_train.jsonl")
+                    new_dev_path = os.path.join(args.data_dir, f"{dataset}_{args.variant}", f"{dataset}_{args.variant}_{args.k}_{seed}_dev.jsonl")
+                    new_test_path = os.path.join(args.data_dir, f"{dataset}_{args.variant}", f"{dataset}_{args.variant}_{args.k}_{seed}_test.jsonl")
+                    
+                    save_jsonl(train_data, new_train_path)
+                    save_jsonl(dev_data, new_dev_path)
+                    save_jsonl(test_data, new_test_path)
+                    
+                    config_file = os.path.join(args.config_dir, "tasks", dataset)
+                    with open(config_file + ".json", "r") as f:
+                        config = json.load(f)
+                    save_json(config, os.path.join(args.config_dir, "tasks", f"{dataset}_{args.variant}.json"))
+                    
+                    print(f"Completed for seed {seed} of dataset {dataset}")
+                except Exception as e:
+                    print(f"Failed for seed {seed} of dataset {dataset}")
+                    print(e)
+        else:
+            print(f"Data directory for {dataset} does not exist")
+    if args.task != None:
+        save_config(args.config_dir, args.datasets, args.task, args.variant)
         
 def generic_handler(
     datasets: list[str],
