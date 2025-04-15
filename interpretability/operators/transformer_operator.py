@@ -26,6 +26,7 @@ class TransformerOperator(Operator):
     def get_attention_add_mean_hook(self):
         return add_mean_hybrid
         
+    @torch.inference_mode()
     def extract_attention_managers(self, inputs: list[str], activation_callback = lambda x: x) -> SelfAttentionManager:
         """
         Extract internal representations at of attention outputs
@@ -39,11 +40,12 @@ class TransformerOperator(Operator):
         for input in inputs:
             tokenized = self.tokenizer(input, return_tensors="pt", truncation=True).to(self.device)
             all_attn, attn_output = self.model(**tokenized, output_attentions=True).attentions
-            attn_output = SelfAttentionManager(all_attn, attn_output)
+            attn_output = SelfAttentionManager(all_attn, attn_output, "cpu")
             attn_output = activation_callback(attn_output)
             attn_outputs.append(attn_output)
         return attn_outputs
     
+    @torch.inference_mode()
     def generate_AIE_map(self, steer: list[SelfAttentionManager], inputs: list[list[str]], label_ids: list[torch.Tensor]) -> TransformerFVMap:
         """
         Generate AIE map from attention outputs

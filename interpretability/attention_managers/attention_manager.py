@@ -118,7 +118,7 @@ class AttentionManagerItem(list):
             if item is None:
                 mylist.append(None)
             else:
-                mylist.append(item[..., -1, :])
+                mylist.append(item[:, -1, ...])
         return AttentionManagerItem(mylist)
     
     def to(self, device: str | torch.DeviceObjType) -> "AttentionManagerItem":

@@ -10,7 +10,6 @@ from interpretability.tokenizers import Tokenizer
 from abc import ABC
 
 class HybridOperator(Operator, ABC):
-    
     def __init__(
         self,
         tokenizer: Tokenizer,
@@ -60,6 +59,7 @@ class HybridOperator(Operator, ABC):
             outputs.append(hybrid_output)
         return outputs
     
+    @torch.inference_mode()
     def generate_AIE_map(self, steer: list[HybridAttentionManager], inputs: list[list[str]], label_ids: list[torch.Tensor]) -> HybridFVMap:
         """
         Generate AIE map from attention outputs
@@ -135,20 +135,12 @@ class HybridOperator(Operator, ABC):
         """
         if layers is None:
             layers = set(self.ALL_LAYERS)
-        attn_layers, scan_layers = set(self.attn_layers), set(self.scan_layers)
         _, attn_outputs, scan_outputs = attention
         params = ()
-        attn_index, scan_index = 0, 0
         for layer in self.ALL_LAYERS:
-            if keep_attention and layer in layers and layer in attn_layers:
-                attn = attn_outputs[attn_index]
-                attn_index += 1
-            else:
-                attn = None
-            if keep_scan and layer in layers and layer in scan_layers:
-                scan = scan_outputs[scan_index]
-                scan_index += 1
-            else:
-                scan = None
+            if keep_attention and layer in layers:
+                attn = attn_outputs[layer]
+            if keep_scan and layer in layers:
+                scan = scan_outputs[layer]
             params += ((attention_intervention_fn, attn, scan_intervention_fn, scan, kwargs),)
         return {"attention_overrides": params}

@@ -187,6 +187,5 @@ def run_operator_fv_steer(args, operator: Operator, dataset: Dataset, dir: str, 
     dataset.choose(args.choice, seed)
     dataset.preprocess()
     attn = operator.extract_attention_managers(dataset.inputs, operator.get_attention_last_token)
-    attn = [output.get_last_token() for output in attn]
     attn = AttentionManager.mean_of(attn)
     operator.store_attention_managers([attn], dir, fnames=["fv_steer"])

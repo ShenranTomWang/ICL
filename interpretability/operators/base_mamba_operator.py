@@ -26,6 +26,7 @@ class BaseMambaOperator(Operator):
     def get_attention_add_mean_hook(self) -> Callable:
         return add_mean_scan
         
+    @torch.inference_mode()
     def extract_attention_managers(self, inputs, activation_callback = lambda x: x) -> list[ScanManager]:
         """
         Extract internal representations at of attention outputs
@@ -45,6 +46,7 @@ class BaseMambaOperator(Operator):
             attention_outputs.append(scan_outputs)
         return attention_outputs
     
+    @torch.inference_mode()
     def generate_AIE_map(self, steer: list[ScanManager], inputs: list[list[str]], label_ids: list[torch.Tensor]) -> ScanFVMap:
         """
         Generate AIE map from attention outputs
