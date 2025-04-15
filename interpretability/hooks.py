@@ -44,6 +44,7 @@ def add_mean_scan(
     **kwargs
 ) -> torch.Tensor:
     """
+    TODO: debug this with Mamba2
     Add intervention_mean to stream. Only one of first_k and last_k can be set to a positive value.
     Args:
         stream (torch.Tensor): stream tensor of shape (batch_size, stream_dims..., seqlen)
