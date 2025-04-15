@@ -29,7 +29,8 @@ class Dataset:
             self.train: list<{"input": str, "output": str, "options": list<str>}>
         """
         np.random.seed(seed)
-        self.train = np.random.choice(self.train, k, replace=False).tolist()
+        if len(self.train) >= k:
+            self.train = np.random.choice(self.train, k, replace=False).tolist()
     
     def prepare_demo(self) -> None:
         """

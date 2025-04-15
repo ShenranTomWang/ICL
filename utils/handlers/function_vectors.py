@@ -4,6 +4,7 @@ from utils.dataset import Dataset
 from utils.utils import init_counters, log_counters
 import torch
 from interpretability.fv_maps import FVMap
+import os
 
 def to_base(dataset: str) -> str:
     if dataset.endswith("_random"):
@@ -39,6 +40,9 @@ def function_vectors_handler(args):
         label_ids = [torch.tensor(dataset.output_ids) for dataset in datasets]
         fv_map = operator.generate_AIE_map(steers, inputs, label_ids)
         all_fv_maps.append(fv_map)
-        fv_map.visualize(f"{args.output_dir}/{seed}/function_vectors.png")
+        os.makedirs(f"{args.out_dir}/function_vectors/{args.task}/{seed}", exist_ok=True)
+        torch.save(fv_map, f"{args.out_dir}/function_vectors/{args.task}/{seed}/function_vectors.pth")
+        fv_map.visualize(f"{args.out_dir}/function_vectors/{args.task}/{seed}/function_vectors.png")
     mean_fv_map = FVMap.mean_of(all_fv_maps)
-    mean_fv_map.visualize(f"{args.output_dir}/mean_function_vectors.png")
+    torch.save(mean_fv_map, f"{args.out_dir}/function_vectors/{args.task}/mean_function_vectors.pth")
+    mean_fv_map.visualize(f"{args.out_dir}/function_vectors/{args.task}/mean_function_vectors.png")

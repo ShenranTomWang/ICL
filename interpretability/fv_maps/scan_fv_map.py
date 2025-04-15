@@ -22,10 +22,10 @@ class ScanFVMap(FVMap):
     
     def visualize(self, save_path: str = None) -> Figure:
         fig, ax = plt.subplots()
-        sns.heatmap(self.scan_map.numpy(), ax=ax, cmap="viridis")
+        sns.heatmap(self.scan_map.to(torch.float32).numpy(), ax=ax, cmap="viridis")
         ax.set_title("Mamba Stream Function Vectors")
         ax.set_xlabel("Heads")
         ax.set_ylabel("Layers")
-        if save_path:
+        if save_path is not None:
             plt.savefig(save_path)
         return fig

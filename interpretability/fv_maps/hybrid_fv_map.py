@@ -42,15 +42,15 @@ class HybridFVMap(FVMap):
         if not os.path.exists(save_path):
             os.makedirs(save_path, exist_ok=True)
         fig, (ax1, ax2) = plt.subplots(1, 2)
-        sns.heatmap(self.attn_map.numpy(), ax=ax1, cmap="viridis", yticklabels=self.attn_layers)
+        sns.heatmap(self.attn_map.to(torch.float32).numpy(), ax=ax1, cmap="viridis", yticklabels=self.attn_layers)
         ax1.set_title("Attention Stream Function Vectors")
         ax1.set_xlabel("Heads")
         ax1.set_ylabel("Layers")
-        sns.heatmap(self.scan_map.numpy(), ax=ax2, cmap="viridis", yticklabels=self.scan_layers)
+        sns.heatmap(self.scan_map.to(torch.float32).numpy(), ax=ax2, cmap="viridis", yticklabels=self.scan_layers)
         ax2.set_title("Mamba Stream Function Vectors")
         ax2.set_xlabel("Heads")
         ax2.set_ylabel("Layers")
         plt.tight_layout()
-        if save_path:
+        if save_path is not None:
             plt.savefig(save_path)
         return fig
