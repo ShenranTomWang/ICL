@@ -47,7 +47,7 @@ class MambaScanManager(AttentionManager):
     
     def to(self, device: str) -> "MambaScanManager":
         scan_outputs = self.scan_outputs.to(device)
-        return MambaScanManager(scan_outputs, self.device)
+        return MambaScanManager(scan_outputs, device)
     
 class Mamba2ScanManager(AttentionManager):
     def __init__(self, scan_outputs: list[torch.Tensor] | None, device: torch.DeviceObjType = "cpu"):
@@ -94,4 +94,4 @@ class Mamba2ScanManager(AttentionManager):
     
     def to(self, device: str) -> "Mamba2ScanManager":
         scan_outputs = self.scan_outputs.to(device)
-        return Mamba2ScanManager(scan_outputs, self.device)
+        return Mamba2ScanManager(scan_outputs, device)

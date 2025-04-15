@@ -29,7 +29,6 @@ class MambaOperator(BaseMambaOperator):
             tokenized = self.tokenizer(input, return_tensors="pt", truncation=True).to(self.device)
             scan_outputs = self.model(**tokenized, output_attentions=True).attentions
             scan_outputs = list(scan_outputs)
-            import pdb; pdb.set_trace()
             scan_outputs = MambaScanManager(scan_outputs)
             scan_outputs = activation_callback(scan_outputs)
             attention_outputs.append(scan_outputs)
