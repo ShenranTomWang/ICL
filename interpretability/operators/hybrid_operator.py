@@ -72,8 +72,7 @@ class HybridOperator(Operator, ABC):
         """
         attn_map = torch.empty((self.n_attn_layers, self.n_attn_heads))
         scan_map = torch.empty((self.n_scan_layers, self.n_scan_heads))
-        layer_idx = 0
-        for layer in self.attn_layers:
+        for layer_idx, layer in enumerate(self.attn_layers):
             for head in range(self.n_attn_heads):
                 head_logits, head_fv_logits = [], []
                 for i, attn in enumerate(steer):
@@ -91,9 +90,7 @@ class HybridOperator(Operator, ABC):
                     head_fv_logits.append(task_fv_logits)
                 head_AIE = self.compute_AIE(head_fv_logits, head_logits, label_ids)
                 attn_map[layer_idx, head] = head_AIE
-            layer_idx += 1
-        layer_idx = 0
-        for layer in self.scan_layers:
+        for layer_idx, layer in enumerate(self.scan_layers):
             for head in range(self.n_scan_heads):
                 head_logits, head_fv_logits = [], []
                 for i, attn in enumerate(steer):
@@ -111,7 +108,6 @@ class HybridOperator(Operator, ABC):
                     head_fv_logits.append(task_fv_logits)
                 head_AIE = self.compute_AIE(head_fv_logits, head_logits, label_ids)
                 scan_map[layer_idx, head] = head_AIE
-            layer_idx += 1
         return HybridFVMap(attn_map, scan_map, self.attn_layers, self.scan_layers, self.dtype)
 
     def attention2kwargs(
