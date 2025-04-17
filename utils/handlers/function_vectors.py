@@ -3,8 +3,7 @@ from utils.data import load_data
 from utils.dataset import Dataset
 from utils.utils import init_counters, log_counters
 import torch
-from interpretability.fv_maps import FVMap
-import os
+import os, logging
 
 def to_base(dataset: str) -> str:
     if dataset.endswith("_random"):
@@ -17,32 +16,29 @@ def to_base(dataset: str) -> str:
         return dataset
 
 def function_vectors_handler(args):
+    logger = logging.getLogger(__name__)
     operator: Operator = args.operator(args.model, args.device, args.dtype)
-    all_fv_maps = []
     for seed in args.seed:
         train_data, test_data = load_data(args.task, None, "dev", -1, -1, seed)
         train_counter, test_counter = init_counters(train_data, test_data)
         log_counters(train_counter, test_counter)
         
-        datasets, steers = [], []
         for test_task in test_counter:
+            logging.info(f"Processing task {test_task} with seed {seed}")
             curr_test_data = [dp for dp in test_data if dp["task"] == test_task]
             curr_train_data = [dp for dp in train_data if dp["task"] == test_task]
             dataset = Dataset(curr_train_data, curr_test_data)
             dataset.choose(args.k, seed)
             dataset.preprocess()
             dataset.tensorize(operator.tokenizer)
-            datasets.append(dataset)
             test_task_base = to_base(test_task)
             steer = operator.load_attention_manager(f"{args.out_dir}/{test_task_base}/{seed}/fv_steer.pth")
-            steers.append(steer)
-        inputs = [dataset.inputs for dataset in datasets]
-        label_ids = [torch.tensor(dataset.output_ids) for dataset in datasets]
-        fv_map = operator.generate_AIE_map(steers, inputs, label_ids)
-        all_fv_maps.append(fv_map)
-        os.makedirs(f"{args.out_dir}/function_vectors/{args.task}/{seed}", exist_ok=True)
-        torch.save(fv_map, f"{args.out_dir}/function_vectors/{args.task}/{seed}/function_vectors.pth")
-        fv_map.visualize(f"{args.out_dir}/function_vectors/{args.task}/{seed}/function_vectors.png")
-    mean_fv_map = FVMap.mean_of(all_fv_maps)
-    torch.save(mean_fv_map, f"{args.out_dir}/function_vectors/{args.task}/mean_function_vectors.pth")
-    mean_fv_map.visualize(f"{args.out_dir}/function_vectors/{args.task}/mean_function_vectors.png")
+            input = dataset.inputs
+            label_id = torch.tensor(dataset.output_ids)
+            fv_map = operator.generate_AIE_map([steer], [input], [label_id])
+            out_dir = f"{args.out_dir}/{test_task}/{seed}"
+            os.makedirs(out_dir, exist_ok=True)
+            torch.save(fv_map, f"{out_dir}/function_vectors.pth")
+            fv_map.visualize(f"{out_dir}/function_vectors.png")
+            logger.info(f"Function vectors saved to {out_dir}/function_vectors.pth")
+            logger.info(f"Function vectors visualization saved to {out_dir}/function_vectors.png")
