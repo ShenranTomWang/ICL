@@ -3,6 +3,7 @@ import torch
 import matplotlib.pyplot as plt
 import seaborn as sns
 from matplotlib.figure import Figure
+import os
 
 class TransformerFVMap(FVMap):
     def __init__(self, attn_map: torch.Tensor, dtype: torch.dtype = torch.float32):
@@ -27,5 +28,6 @@ class TransformerFVMap(FVMap):
         ax.set_xlabel("Heads")
         ax.set_ylabel("Layers")
         if save_path is not None:
+            os.makedirs(os.path.dirname(save_path), exist_ok=True)
             plt.savefig(save_path)
         return fig

@@ -39,8 +39,6 @@ class HybridFVMap(FVMap):
         return HybridFVMap(attn_map, scan_map, self.attn_layers, self.scan_layers, self.dtype)
     
     def visualize(self, save_path: str = None) -> Figure:
-        if not os.path.exists(save_path):
-            os.makedirs(save_path, exist_ok=True)
         fig, (ax1, ax2) = plt.subplots(1, 2)
         sns.heatmap(self.attn_map.to(torch.float32).numpy(), ax=ax1, cmap="viridis", yticklabels=self.attn_layers)
         ax1.set_title("Attention Stream Function Vectors")
@@ -52,5 +50,6 @@ class HybridFVMap(FVMap):
         ax2.set_ylabel("Layers")
         plt.tight_layout()
         if save_path is not None:
+            os.makedirs(os.path.dirname(save_path), exist_ok=True)
             plt.savefig(save_path)
         return fig
