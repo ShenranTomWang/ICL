@@ -3,7 +3,7 @@ from interpretability.tokenizers import Tokenizer
 import numpy as np
 
 class Dataset:
-    def __init__(self, train: list, test: list, verbose: bool = False, template: bool = False):
+    def __init__(self, train: list, test: list, verbose: bool = False, template: bool = False, options: list = None):
         self.train = train
         self.test = test
         self.logger = logging.getLogger(__name__)
@@ -11,7 +11,7 @@ class Dataset:
         self.template = template
         self.task = train[0]["task"] if len(train) > 0 else test[0]["task"]
         self.demo = None
-        self.options = train[0]["options"] if len(train) > 0 else test[0]["options"]
+        self.options = options if options else (train[0]["options"] if len(train) > 0 else test[0]["options"])
         self.inputs = None
         self.outputs = None
         self.output_ids = None
