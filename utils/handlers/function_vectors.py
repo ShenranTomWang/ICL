@@ -19,7 +19,7 @@ def function_vectors_handler(args):
     logger = logging.getLogger(__name__)
     operator: Operator = args.operator(args.model, args.device, args.dtype)
     for seed in args.seed:
-        train_data, test_data = load_data(args.task, None, "dev", -1, -1, seed)
+        train_data, test_data = load_data(args.task, None, "dev", -1, args.n, seed)
         train_counter, test_counter = init_counters(train_data, test_data)
         log_counters(train_counter, test_counter)
         

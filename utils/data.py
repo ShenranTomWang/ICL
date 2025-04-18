@@ -57,6 +57,7 @@ def load_data(task: str | None, dataset: str | None, split: str, k: int, n: int,
         k (int): number of training samples
         n (int): number of test samples to load, -1 to load all
         seed (int): seed
+        data_dir (str, optional): data directory, defaults to "data"
 
     Returns:
         tuple<list<{task: str, input: str, output: str, options: list<str>}>>: train_data, test_data

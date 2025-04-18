@@ -13,6 +13,7 @@ from tqdm import tqdm
 from collections import defaultdict
 
 from utils import load_configs, load_prompts, apply_prompt, map_hf_dataset_to_list, preprocess
+from sklearn.model_selection import train_test_split
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--inst', action='store_true',
@@ -182,6 +183,76 @@ class FewshotGymClassificationDataset(FewshotGymDataset):
         # save to path
         self.save(path, train_k, seed, k_shot_train, k_shot_dev, k_shot_test)
         return k_shot_train, k_shot_dev, k_shot_test
+    
+class FewshotGymFunctionVectorDataset(FewshotGymDataset):
+
+    def generate_k_shot_data(self, k, seed):
+        """
+        generate a k-shot (k) dataset using random seed (seed)
+        return train, dev, test
+        """
+        path = args.output_dir
+
+        if do_train:
+            if seed<100:
+                return None, None, None
+            train_k = args.train_k
+            valid_k = train_k
+        elif do_test:
+            train_k = args.train_k
+            valid_k = args.valid_k
+
+        # load dataset
+        dataset = self.load_dataset()
+        dataset = self.dataset2list(dataset)
+
+        # formulate into list (for consistency in np.random)
+        train_lines, test_lines = self.get_train_test_lines(dataset)
+
+        # shuffle the data
+        np.random.seed(seed)
+        np.random.shuffle(train_lines)
+
+        # make train, dev, test data
+        if train_k != -1:
+            k_shot_train = train_lines[valid_k: valid_k + train_k]
+        else:
+            k_shot_train = train_lines[valid_k:]
+
+        k_shot_dev = train_lines[:valid_k]
+        k_shot_test = test_lines
+
+        # save to path
+        self.save(path, train_k, seed, k_shot_train, k_shot_dev, k_shot_test)
+        return k_shot_train, k_shot_dev, k_shot_test
+
+    def load_dataset(self):
+        with open(f"function_vectors_datasets/{self.hf_identifier}.json", "r") as f:
+            data = json.load(f)
+        return data
+        
+    def get_train_test_lines(self, dataset):
+        train_lines, test_lines = train_test_split(dataset, test_size=0.3)
+        return train_lines, test_lines
+    
+    def dataset2list(self, dataset):
+        for i in range(len(dataset)):
+            dataset[i]["options"] = []
+            dataset[i]["task"] = self.hf_identifier
+        return dataset
+    
+    def save(self, path, k, seed, train, dev, test) -> None:
+        save_path = os.path.join(path, self.hf_identifier, str(seed))
+        os.makedirs(save_path, exist_ok=True)
+        with open(os.path.join(save_path, f"{self.hf_identifier}_{k}_{seed}_train.jsonl"), "w") as f:
+            for line in train:
+                f.write(json.dumps(line) + "\n")
+        with open(os.path.join(save_path, f"{self.hf_identifier}_{k}_{seed}_dev.jsonl"), "w") as f:
+            for line in dev:
+                f.write(json.dumps(line) + "\n")
+        with open(os.path.join(save_path, f"{self.hf_identifier}_{k}_{seed}_test.jsonl"), "w") as f:
+            for line in test:
+                f.write(json.dumps(line) + "\n")
 
 class FewshotGymTextToTextDataset(FewshotGymDataset):
 

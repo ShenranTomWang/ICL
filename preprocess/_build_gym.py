@@ -15,6 +15,7 @@ from multiprocessing import Process, Manager
 from _md5sum import MD5SUM
 from _all_tasks import ALL_TASKS
 from _function_vectors import FV_TASKS
+from _function_vectors_original import FV_OG_TASKS
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -26,7 +27,7 @@ def parse_args():
                         help="Verify the datafiles with pre-computed MD5")
     parser.add_argument('--debug', action='store_true',
                         help="Run 2 tasks per process to test the code")
-    parser.add_argument('--task', default="ALL", type=str, choices=["ALL", "FV"])
+    parser.add_argument('--task', default="ALL", type=str, choices=["ALL", "FV", "FV_OG"])
 
     parser.add_argument('--inst', action='store_true',
                         help="Construct data from hg datasets.")
@@ -85,6 +86,8 @@ def build_gym(args):
                 all_tasks.append(filename)
     elif args.task == "FV":
         all_tasks = FV_TASKS
+    elif args.task == "FV_OG":
+        all_tasks = FV_OG_TASKS
     else:
         raise NotImplementedError("Unknown task: {}".format(args.task))
 
