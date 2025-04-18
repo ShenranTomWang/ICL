@@ -1,0 +1,20 @@
+[
+    "antonym",
+    "capitalize",
+    "capitalize_first_letter",
+    "country-capital",
+    "country-currency",
+    "english-french",
+    "english-german",
+    "english-spanish",
+    "landmark-country",
+    "lowercase_first_letter",
+    "national_parks",
+    "park-country",
+    "person-sport",
+    "present-past",
+    "product-company",
+    "sentiment",
+    "singular-plural",
+    "synonym"
+]
