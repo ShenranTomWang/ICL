@@ -356,7 +356,6 @@ class LlamaDecoderLayer(nn.Module):
             use_cache=use_cache,
             cache_position=cache_position,
             position_embeddings=position_embeddings,
-            output_attentions=output_attentions,
             attention_override=attention_override,
             **kwargs,
         )
