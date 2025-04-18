@@ -3,11 +3,12 @@ from interpretability.tokenizers import Tokenizer
 import numpy as np
 
 class Dataset:
-    def __init__(self, train: list, test: list, verbose=False):
+    def __init__(self, train: list, test: list, verbose: bool = False, template: bool = False):
         self.train = train
         self.test = test
         self.logger = logging.getLogger(__name__)
         self.verbose = verbose
+        self.template = template
         self.task = train[0]["task"] if len(train) > 0 else test[0]["task"]
         self.demo = None
         self.options = train[0]["options"] if len(train) > 0 else test[0]["options"]
@@ -41,9 +42,13 @@ class Dataset:
         """
         demo = ""
         for dp_train in self.train:
+            if self.template:
+                demo += "Q: "
             demo += dp_train["input"]
             dp_train["options"] = self.options
             demo += "\n "
+            if self.template:
+                demo += "A: "
             demo += dp_train["output"]
             demo += "\n\n"
         self.demo = demo
@@ -61,7 +66,10 @@ class Dataset:
         if self.demo is None:
             self.prepare_demo()
         for i, dp_test in enumerate(self.test):
-            self.test[i]["input"] = self.demo + dp_test["input"] + "\n"
+            if self.template:
+                dp_test["input"] = "Q: " + dp_test["input"] + "\nA: "
+            else:
+                self.test[i]["input"] = self.demo + dp_test["input"] + "\n"
         self.inputs = [dp["input"] for dp in self.test]
         self.outputs = [dp["output"] for dp in self.test]
         
