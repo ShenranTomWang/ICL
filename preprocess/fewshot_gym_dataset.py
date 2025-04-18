@@ -242,7 +242,7 @@ class FewshotGymFunctionVectorDataset(FewshotGymDataset):
         return dataset
     
     def save(self, path, k, seed, train, dev, test) -> None:
-        save_path = os.path.join(path, self.hf_identifier, str(seed))
+        save_path = os.path.join(path, self.hf_identifier)
         os.makedirs(save_path, exist_ok=True)
         with open(os.path.join(save_path, f"{self.hf_identifier}_{k}_{seed}_train.jsonl"), "w") as f:
             for line in train:

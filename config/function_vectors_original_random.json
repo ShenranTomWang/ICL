@@ -1,0 +1,20 @@
+[
+    "antonym_random",
+    "capitalize_random",
+    "capitalize_first_letter_random",
+    "country-capital_random",
+    "country-currency_random",
+    "english-french_random",
+    "english-german_random",
+    "english-spanish_random",
+    "landmark-country_random",
+    "lowercase_first_letter_random",
+    "national_parks_random",
+    "park-country_random",
+    "person-sport_random",
+    "present-past_random",
+    "product-company_random",
+    "sentiment_random",
+    "singular-plural_random",
+    "synonym_random"
+]
