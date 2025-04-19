@@ -236,8 +236,9 @@ class FewshotGymFunctionVectorDataset(FewshotGymDataset):
         return train_lines, test_lines
     
     def dataset2list(self, dataset):
+        options = {dp["output"] for dp in dataset}
         for i in range(len(dataset)):
-            dataset[i]["options"] = []
+            dataset[i]["options"] = list(options)
             dataset[i]["task"] = self.hf_identifier
         return dataset
     
