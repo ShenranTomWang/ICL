@@ -1,0 +1,18 @@
+[
+    "tweet_eval-stance_feminist_incorrect_mapping",
+    "ethos-national_origin_incorrect_mapping",
+    "tweet_eval-hate_incorrect_mapping",
+    "hate_speech18_incorrect_mapping",
+    "poem_sentiment_incorrect_mapping",
+    "glue-mrpc_incorrect_mapping",
+    "glue-wnli_incorrect_mapping",
+    "glue-rte_incorrect_mapping",
+    "sick_incorrect_mapping",
+    "climate_fever_incorrect_mapping",
+    "medical_questions_pairs_incorrect_mapping",
+    "tweet_eval-stance_atheism_incorrect_mapping",
+    "superglue-cb_incorrect_mapping",
+    "ethos-religion_incorrect_mapping",
+    "financial_phrasebank_incorrect_mapping",
+    "ethos-race_incorrect_mapping"
+]
