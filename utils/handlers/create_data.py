@@ -304,10 +304,13 @@ def generic_handler(
                     save_jsonl(dev_data, new_dev_path)
                     save_jsonl(test_data, new_test_path)
                     
-                    config_file = os.path.join(config_dir, "tasks", dataset)
-                    with open(config_file + ".json", "r") as f:
-                        config = json.load(f)
-                    save_json(config, os.path.join(config_dir, "tasks", f"{dataset}_{variant}.json"))
+                    try:
+                        config_file = os.path.join(config_dir, "tasks", dataset)
+                        with open(config_file + ".json", "r") as f:
+                            config = json.load(f)
+                        save_json(config, os.path.join(config_dir, "tasks", f"{dataset}_{variant}.json"))
+                    except FileNotFoundError:
+                        pass
                     
                     print(f"Completed for seed {seed} of dataset {dataset}")
                 except Exception as e:
