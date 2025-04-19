@@ -16,6 +16,7 @@ if __name__ == "__main__":
     parser.add_argument("--k", type=int, default=10, help="Number of ICL examples to use")
     parser.add_argument("--n", type=int, default=25, help="Number of inputs to use for each task")
     parser.add_argument("--fv_load_dir", type=str, required=True, help="Directory to load function vectors from")
+    parser.add_argument("--use_template", default=False, action="store_true", help="Use template for ICL")
     
     args = parser.parse_args()
     args.operator = getattr(interpretability.operators, args.operator)

@@ -59,7 +59,7 @@ def demo_handler(
         logger.info(f"Processing {train_task} (demo)")
         curr_train_data = [dp for dp in train_data if dp["task"] == train_task]
         
-        dataset = Dataset(curr_train_data, [], verbose=args.verbose)
+        dataset = Dataset(curr_train_data, [], verbose=args.verbose, template=args.use_template)
         dataset.prepare_demo()
         run_operator_generic(operator, args, [dataset.demo], f"{args.out_dir}/{train_task}/{seed}/{args.split}_{args.stream}")
         
@@ -83,7 +83,7 @@ def dev_handler(
             curr_train_data = [dp for dp in train_data if dp["task"] == train_task]
             curr_test_data = [dp for dp in test_data if dp["task"] == train_task]
             
-            dataset = Dataset(curr_train_data, curr_test_data, verbose=args.verbose)
+            dataset = Dataset(curr_train_data, curr_test_data, verbose=args.verbose, template=args.use_template)
             run_operator_fv_steer(args, operator, dataset, f"{args.out_dir}/{train_task}/{seed}/", seed)
     else:
         basic_handler(test_counter, train_data, test_data, operator, args, seed)
@@ -124,7 +124,7 @@ def basic_handler(
         curr_train_data = [dp for dp in train_data if dp["task"] == task]
         assert len(curr_test_data) > 0
         
-        dataset = Dataset(curr_train_data, curr_test_data, verbose=args.verbose)
+        dataset = Dataset(curr_train_data, curr_test_data, verbose=args.verbose, template=args.use_template)
         dataset.preprocess()
         run_operator_generic(operator, args, dataset.inputs, f"{args.out_dir}/{task}/{seed}/{args.split}_{args.stream}/")
 

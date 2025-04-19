@@ -61,6 +61,7 @@ if __name__ == "__main__":
     parser.add_argument("--seed", type=str, default="100,13,21,42,87")
     parser.add_argument("--n", type=int, default=-1, help="number of test points to use")
     parser.add_argument("--k", type=int, default=4, help="number of examples to load")
+    parser.add_argument("--use_template", default=False, action="store_true", help="Use template for ICL")
     
     parser.add_argument("--layers", type=str, default="-1", help="comma separated list of layer indices, or -1 for all layers")
     get_subparsers(parser, "stream")

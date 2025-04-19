@@ -27,7 +27,7 @@ def function_vectors_handler(args):
             logging.info(f"Processing task {test_task} with seed {seed}")
             curr_test_data = [dp for dp in test_data if dp["task"] == test_task]
             curr_train_data = [dp for dp in train_data if dp["task"] == test_task]
-            dataset = Dataset(curr_train_data, curr_test_data)
+            dataset = Dataset(curr_train_data, curr_test_data, template=args.use_template)
             dataset.choose(args.k, seed)
             dataset.preprocess()
             dataset.tensorize(operator.tokenizer)
