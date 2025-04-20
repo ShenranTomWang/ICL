@@ -617,7 +617,7 @@ class LlamaModel(LlamaPreTrainedModel):
                     use_cache=use_cache,
                     cache_position=cache_position,
                     position_embeddings=position_embeddings,
-                    attention_override=attention_overrides[i] if attention_overrides else None
+                    attention_override=attention_overrides[i] if attention_overrides else None,
                     **flash_attn_kwargs,
                 )
 

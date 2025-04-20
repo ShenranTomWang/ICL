@@ -65,7 +65,6 @@ if __name__ == "__main__":
     
     parser.add_argument("--layers", type=str, default="-1", help="comma separated list of layer indices, or -1 for all layers")
     get_subparsers(parser, "stream")
-    parser.add_argument("--stream", type=str, default="resid", choices=["attn", "attn_mean", "fv_steer", "steer"])
     parser.add_argument("--operator", type=str, required=True, choices=ALL_OPERATORS)
     parser.add_argument("--verbose", default=False, action="store_true")
     

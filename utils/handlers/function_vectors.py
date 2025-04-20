@@ -15,11 +15,11 @@ def to_base(dataset: str) -> str:
     else:
         return dataset
 
-def function_vectors_handler(args):
+def AIE_handler(args):
     logger = logging.getLogger(__name__)
     operator: Operator = args.operator(args.model, args.device, args.dtype)
     for seed in args.seed:
-        train_data, test_data = load_data(args.task, None, "dev", -1, args.n, seed)
+        train_data, test_data = load_data(args.task, None, args.split, -1, args.n, seed)
         train_counter, test_counter = init_counters(train_data, test_data)
         log_counters(train_counter, test_counter)
         
@@ -32,7 +32,7 @@ def function_vectors_handler(args):
             dataset.preprocess()
             dataset.tensorize(operator.tokenizer)
             test_task_base = to_base(test_task)
-            steer = operator.load_attention_manager(f"{args.out_dir}/{test_task_base}/{seed}/fv_steer.pth")
+            steer = operator.load_attention_manager(f"{args.fv_load_dir}/{test_task_base}/{seed}/fv_steer.pth")
             input = dataset.inputs
             label_id = torch.tensor(dataset.output_ids)
             fv_map = operator.generate_AIE_map([steer], [input], [label_id])

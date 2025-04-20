@@ -1,7 +1,7 @@
 import argparse, logging
 import interpretability
 from constants import ALL_OPERATORS, ALL_DTYPES
-from utils.handlers.function_vectors import function_vectors_handler
+import utils.handlers.function_vectors as handlers
 import torch
 
 if __name__ == "__main__":
@@ -17,6 +17,11 @@ if __name__ == "__main__":
     parser.add_argument("--n", type=int, default=25, help="Number of inputs to use for each task")
     parser.add_argument("--fv_load_dir", type=str, required=True, help="Directory to load function vectors from")
     parser.add_argument("--use_template", default=False, action="store_true", help="Use template for ICL")
+    subparser = parser.add_subparsers(dest="operation", required=True)
+    aie_subparser = subparser.add_parser("AIE", help="Generate AIE function vectors")
+    aie_subparser.add_argument("--split", type=str, default="dev", choices=["test", "dev"], help="Split to use for AIE")
+    ablation_subparser = subparser.add_parser("ablation", help="Generate top-p ablation function vectors")
+    ablation_subparser.add_argument("--p", type=float, default=0.05, help="Keep only p of the top function vectors")
     
     args = parser.parse_args()
     args.operator = getattr(interpretability.operators, args.operator)
@@ -31,4 +36,5 @@ if __name__ == "__main__":
     logger = logging.getLogger(__name__)
     logger.info(args)
     
-    function_vectors_handler(args)
+    handler = getattr(handlers, f"{args.operation}_handler")
+    handler(args)
