@@ -3,6 +3,7 @@ import torch
 import matplotlib.pyplot as plt
 import seaborn as sns
 from matplotlib.figure import Figure
+from matplotlib import gridspec
 import os
 
 class ScanFVMap(FVMap):
@@ -21,12 +22,17 @@ class ScanFVMap(FVMap):
     def __truediv__(self, other: int | float) -> "ScanFVMap":
         return ScanFVMap(self.scan_map / other, self.dtype)
     
-    def visualize(self, save_path: str = None) -> Figure:
-        fig, ax = plt.subplots()
+    def visualize_on_spec(self, spec: gridspec.SubplotSpec) -> None:
+        gs_inner = gridspec.GridSpecFromSubplotSpec(1, 1, subplot_spec=spec, wspace=0.5)
+        ax = plt.subplot(gs_inner[0])
         sns.heatmap(self.scan_map.to(torch.float32).numpy(), ax=ax, cmap="viridis")
         ax.set_title("Mamba Stream Function Vectors")
         ax.set_xlabel("Heads")
         ax.set_ylabel("Layers")
+    
+    def visualize(self, save_path: str = None) -> Figure:
+        fig, ax = plt.subplots()
+        self.visualize_on_axis(ax)
         if save_path is not None:
             os.makedirs(os.path.dirname(save_path), exist_ok=True)
             plt.savefig(save_path)
