@@ -22,13 +22,16 @@ class TransformerFVMap(FVMap):
     def __truediv__(self, other: int | float) -> "TransformerFVMap":
         return TransformerFVMap(self.attn_map / other, self.dtype)
     
-    def visualize_on_spec(self, spec: gridspec.SubplotSpec) -> None:
-        gs_inner = gridspec.GridSpecFromSubplotSpec(1, 1, subplot_spec=spec, wspace=0.1)
-        ax = plt.subplot(gs_inner[0])
+    def visualize_on_axis(self, ax: plt.Axes) -> None:
         sns.heatmap(self.attn_map.to(torch.float32).numpy(), ax=ax, cmap="viridis")
         ax.set_title("Attention Stream Function Vectors")
         ax.set_xlabel("Heads")
         ax.set_ylabel("Layers")
+    
+    def visualize_on_spec(self, spec: gridspec.SubplotSpec) -> None:
+        gs_inner = gridspec.GridSpecFromSubplotSpec(1, 1, subplot_spec=spec, wspace=0.1)
+        ax = plt.subplot(gs_inner[0])
+        self.visualize_on_axis(ax)
     
     def visualize(self, save_path: str = None) -> Figure:
         fig, ax = plt.subplots()
