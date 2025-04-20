@@ -56,6 +56,42 @@ class HybridFVMap(FVMap):
         ax2 = plt.subplot(gs_inner[1])
         self.visualize_on_axis(ax1, ax2)
 
+    def top_k_heads(self, k: int, stream: str = None, **kwargs) -> list[tuple[int, int, str]]:
+        """
+        Get the top k heads overall in the attention map.
+        
+        Args:
+            k (int): number of heads to return.
+            stream (str, optional): stream to use, one of attn or scan. Defaults to None to use both streams.
+            **kwargs: not used.
+        
+        Returns:
+            list[tuple[int, int, str]]: list of tuples of (layer, head, stream) for the top k heads.
+        """
+        if stream is not None:
+            if stream == "attn":
+                map_ = self.attn_map.flatten()
+            elif stream == "scan":
+                map_ = self.scan_map.flatten()
+            else:
+                raise ValueError(f"Invalid stream: {stream}. Must be one of attn or scan.")
+            top_k = torch.topk(map_, k).indices
+            return [(i // self.attn_map.shape[1], i % self.attn_map.shape[1], stream) for i in top_k]
+        else:
+            map_ = torch.cat((self.attn_map.flatten(), self.scan_map.flatten()))
+            stream_cutoff = self.attn_map.numel()
+            top_k = torch.topk(map_, k).indices
+            top_k_heads = []
+            for i in top_k:
+                if i < stream_cutoff:
+                    layer = i // self.attn_map.shape[1]
+                    head = i % self.attn_map.shape[1]
+                    top_k_heads.append((layer, head, "attn"))
+                else:
+                    layer = (i - stream_cutoff) // self.scan_map.shape[1]
+                    head = (i - stream_cutoff) % self.scan_map.shape[1]
+                    top_k_heads.append((layer, head, "scan"))
+            return top_k_heads
     
     def visualize(self, save_path: str = None) -> Figure:
         fig, (ax1, ax2) = plt.subplots(1, 2)

@@ -10,13 +10,13 @@ class SelfAttentionManager(AttentionManager):
         
     def __add__(self, other: "SelfAttentionManager") -> "SelfAttentionManager":
         if other is None:
-            return SelfAttentionManager(None, self.attn_outputs, self.device)
+            return SelfAttentionManager(None, self.attn_outputs.clone(), self.device)
         attn_outputs = self.attn_outputs + other.attn_outputs if self.attn_outputs is not None else other.attn_outputs
         return SelfAttentionManager(None, attn_outputs, self.device)
         
     def __sub__(self, other: "SelfAttentionManager") -> "SelfAttentionManager":
         if other is None:
-            return SelfAttentionManager(None, self.attn_outputs, self.device)
+            return SelfAttentionManager(None, self.attn_outputs.clone(), self.device)
         attn_outputs = self.attn_outputs - other.attn_outputs if self.attn_outputs is not None else [-1 * attn for attn in other.attn_outputs]
         return SelfAttentionManager(None, attn_outputs, self.device)
     
@@ -45,7 +45,7 @@ class SelfAttentionManager(AttentionManager):
         return SelfAttentionManager(all_attns, attn_outputs, self.device)
     
     def mean(self) -> "SelfAttentionManager":
-        all_attn, attn_output = self.all_attns, self.attn_outputs
+        all_attn, attn_output = self.all_attns.clone(), self.attn_outputs.clone()
         for i, attn_i in enumerate(attn_output):
             if attn_i is not None:
                 attn_output[i] = attn_i.mean(dim=1).unsqueeze(1)   # (1, attn_channels)

@@ -32,6 +32,11 @@ class ScanFVMap(FVMap):
         gs_inner = gridspec.GridSpecFromSubplotSpec(1, 1, subplot_spec=spec, wspace=0.5)
         ax = plt.subplot(gs_inner[0])
         self.visualize_on_axis(ax)
+        
+    def top_k_heads(self, k: int, **kwargs) -> list[tuple[int, int, str]]:
+        top_k_indices = torch.topk(self.scan_map.flatten(), k).indices
+        top_k_heads = [(i // self.scan_map.shape[1], i % self.scan_map.shape[1], "scan") for i in top_k_indices]
+        return top_k_heads
     
     def visualize(self, save_path: str = None) -> Figure:
         fig, ax = plt.subplots()

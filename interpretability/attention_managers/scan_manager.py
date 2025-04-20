@@ -9,13 +9,13 @@ class MambaScanManager(AttentionManager):
         
     def __add__(self, other: "MambaScanManager") -> "MambaScanManager":
         if other is None:
-            return MambaScanManager(self.scan_outputs, self.device)
+            return MambaScanManager(self.scan_outputs.clone(), self.device)
         scan_outputs = self.scan_outputs + other.scan_outputs if self.scan_outputs is not None else other.scan_outputs
         return MambaScanManager(scan_outputs, self.device)
         
     def __sub__(self, other: "MambaScanManager") -> "MambaScanManager":
         if other is None:
-            return MambaScanManager(self.scan_outputs, self.device)
+            return MambaScanManager(self.scan_outputs.clone(), self.device)
         scan_outputs = self.scan_outputs - other.scan_outputs if self.scan_outputs is not None else [-1 * attn for attn in other.scan_outputs]
         return MambaScanManager(scan_outputs, self.device)
     
@@ -39,7 +39,7 @@ class MambaScanManager(AttentionManager):
         return MambaScanManager(scan_outputs, self.device)
     
     def mean(self) -> "MambaScanManager":
-        scan_output = self.scan_outputs
+        scan_output = self.scan_outputs.clone()
         for i, scan_i in enumerate(scan_output):
             if scan_i is not None:
                 scan_output[i] = scan_i.mean(dim=2).unsqueeze(2)
@@ -56,13 +56,13 @@ class Mamba2ScanManager(AttentionManager):
         
     def __add__(self, other: "Mamba2ScanManager") -> "Mamba2ScanManager":
         if other is None:
-            return Mamba2ScanManager(self.scan_outputs, self.device)
+            return Mamba2ScanManager(self.scan_outputs.clone(), self.device)
         scan_outputs = self.scan_outputs + other.scan_outputs if self.scan_outputs is not None else other.scan_outputs
         return Mamba2ScanManager(scan_outputs, self.device)
         
     def __sub__(self, other: "Mamba2ScanManager") -> "Mamba2ScanManager":
         if other is None:
-            return Mamba2ScanManager(self.scan_outputs, self.device)
+            return Mamba2ScanManager(self.scan_outputs.clone(), self.device)
         scan_outputs = self.scan_outputs - other.scan_outputs if self.scan_outputs is not None else [-1 * attn for attn in other.scan_outputs]
         return Mamba2ScanManager(scan_outputs, self.device)
     
@@ -86,7 +86,7 @@ class Mamba2ScanManager(AttentionManager):
         return Mamba2ScanManager(scan_outputs, self.device)
     
     def mean(self) -> "Mamba2ScanManager":
-        scan_output = self.scan_outputs
+        scan_output = self.scan_outputs.clone()
         for i, scan_i in enumerate(scan_output):
             if scan_i is not None:
                 scan_output[i] = scan_i.mean(dim=2).unsqueeze(2)

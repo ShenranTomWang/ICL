@@ -55,17 +55,3 @@ class AttentionManager(ABC):
     @abstractmethod
     def to(self, device: str) -> "AttentionManager":
         pass
-    
-    @abstractmethod
-    def top_p_heads(self, p: float, aie_map: FVMap) -> "AttentionManager":
-        """
-        Keep only top p of heads based on ranking in FVMap
-
-        Args:
-            p (float): percentage [0, 1]
-            aie_map (FVMap): provides ranking of heads
-
-        Returns:
-            AttentionManager: AttentionManager object with only top p heads, others being None
-        """
-        pass

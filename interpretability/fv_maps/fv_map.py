@@ -70,6 +70,20 @@ class FVMap(ABC):
         """
         pass
     
+    @abstractmethod
+    def top_k_heads(self, k: int, **kwargs) -> list[tuple[int, int, str]]:
+        """
+        Get the top k heads for the FVMap.
+        
+        Args:
+            k (int): The number of heads to retrieve.
+            kwargs: Additional arguments for the method.
+        
+        Returns:
+            list[tuple[int, int, str]]: List of tuples containing the head indices (layer, head, stream).
+        """
+        pass
+    
     @staticmethod
     def visualize_all(maps: list["FVMap"], titles: list[str] = None, save_path: str = None) -> Figure:
         """

@@ -17,14 +17,14 @@ class HybridAttentionManager(AttentionManager):
         
     def __add__(self, other: "HybridAttentionManager") -> "HybridAttentionManager":
         if other is None:
-            return HybridAttentionManager(None, self.attn_outputs, self.scan_outputs, self.device)
+            return HybridAttentionManager(None, self.attn_outputs.clone(), self.scan_outputs.clone(), self.device)
         attn_outputs = self.attn_outputs + other.attn_outputs if self.attn_outputs is not None else other.attn_outputs
         scan_outputs = self.scan_outputs + other.scan_outputs if self.scan_outputs is not None else other.scan_outputs
         return HybridAttentionManager(None, attn_outputs, scan_outputs, self.device)
         
     def __sub__(self, other: "HybridAttentionManager") -> "HybridAttentionManager":
         if other is None:
-            return HybridAttentionManager(None, self.attn_outputs, self.scan_outputs, self.device)
+            return HybridAttentionManager(None, self.attn_outputs.clone(), self.scan_outputs.clone(), self.device)
         attn_outputs = self.attn_outputs - other.attn_outputs if self.attn_outputs is not None else [-1 * attn for attn in other.attn_outputs]
         scan_outputs = self.scan_outputs - other.scan_outputs if self.scan_outputs is not None else [-1 * attn for attn in other.scan_outputs]
         return HybridAttentionManager(None, attn_outputs, scan_outputs, self.device)
@@ -59,7 +59,7 @@ class HybridAttentionManager(AttentionManager):
         return HybridAttentionManager(all_attns, attn_outputs, scan_outputs, self.device)
     
     def mean(self) -> "HybridAttentionManager":
-        all_attn, attn_output, scan_output = self.all_attns, self.attn_outputs, self.scan_outputs
+        all_attn, attn_output, scan_output = self.all_attns.clone(), self.attn_outputs.clone(), self.scan_outputs.clone()
         for i, attn_i in enumerate(attn_output):
             if attn_i is not None:
                 attn_output[i] = attn_i.mean(dim=1)
@@ -69,7 +69,7 @@ class HybridAttentionManager(AttentionManager):
         return HybridAttentionManager(all_attn, attn_output, scan_output, self.device)
     
     def to(self, device: str | torch.DeviceObjType) -> "HybridAttentionManager":
-        all_attns = self.all_attns if self.all_attns is not None else None
-        attn_outputs = self.attn_outputs if self.attn_outputs is not None else None
-        scan_outputs = self.scan_outputs if self.scan_outputs is not None else None
+        all_attns = self.all_attns.to(device) if self.all_attns is not None else None
+        attn_outputs = self.attn_outputs.to(device) if self.attn_outputs is not None else None
+        scan_outputs = self.scan_outputs.to(device) if self.scan_outputs is not None else None
         return HybridAttentionManager(all_attns, attn_outputs, scan_outputs, device)

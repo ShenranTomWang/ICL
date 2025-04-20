@@ -29,31 +29,35 @@ class ManagerItem(list, ABC):
     @abstractmethod
     def to(self, device: str) -> "ManagerItem":
         pass
+    
+    def clone(self) -> "ManagerItem":
+        mylist = []
+        for item in self:
+            if item is None:
+                mylist.append(None)
+            else:
+                mylist.append(item.clone())
+        return ManagerItem(mylist)
 
 class AttentionManagerItem(ManagerItem):
     def __add__(self, other: "AttentionManagerItem") -> "AttentionManagerItem":
         if other is None:
-            return self
-        if not isinstance(other, AttentionManagerItem):
-            raise TypeError("Addition is only supported between AttentionManagerItem objects")
+            return self.clone()
         mylist = []
         for i, item in enumerate(self):
             if item is None and other[i] is None:
                 mylist.append(None)
             elif item is None:
-                mylist.append(other[i])
+                mylist.append(other[i].clone())
             elif other[i] is None:
-                mylist.append(item)
+                mylist.append(item.clone())
             else:
                 mylist.append(item + other[i])
         return AttentionManagerItem(mylist)
     
     def __sub__(self, other: "AttentionManagerItem") -> "AttentionManagerItem":
         if other is None:
-            import pdb; pdb.set_trace()
-            return self
-        if not isinstance(other, AttentionManagerItem):
-            raise TypeError("Subtraction is only supported between AttentionManagerItem objects")
+            return self.clone()
         mylist = []
         for i, item in enumerate(self):
             if item is None and other[i] is None:
@@ -61,7 +65,7 @@ class AttentionManagerItem(ManagerItem):
             elif item is None:
                 mylist.append(-1 * other[i])
             elif other[i] is None:
-                mylist.append(item)
+                mylist.append(item.clone())
             else:
                 mylist.append(item - other[i])
         return AttentionManagerItem(mylist)
@@ -93,7 +97,7 @@ class AttentionManagerItem(ManagerItem):
             if item is None:
                 mylist.append(None)
             else:
-                mylist.append(item[:, -1, ...])
+                mylist.append(item[:, -1, ...].clone())
         return AttentionManagerItem(mylist)
     
     def to(self, device: str | torch.DeviceObjType) -> "AttentionManagerItem":
@@ -108,7 +112,7 @@ class AttentionManagerItem(ManagerItem):
 class MambaScanManagerItem(ManagerItem):
     def __add__(self, other: "MambaScanManagerItem") -> "MambaScanManagerItem":
         if other is None:
-            return self
+            return self.clone()
         if not isinstance(other, MambaScanManagerItem):
             raise TypeError("Addition is only supported between MambaScanManagerItem objects")
         mylist = []
@@ -116,17 +120,16 @@ class MambaScanManagerItem(ManagerItem):
             if item is None and other[i] is None:
                 mylist.append(None)
             elif item is None:
-                mylist.append(other[i])
+                mylist.append(other[i].clone())
             elif other[i] is None:
-                mylist.append(item)
+                mylist.append(item.clone())
             else:
                 mylist.append(item + other[i])
         return MambaScanManagerItem(mylist)
     
     def __sub__(self, other: "MambaScanManagerItem") -> "MambaScanManagerItem":
         if other is None:
-            import pdb; pdb.set_trace()
-            return self
+            return self.clone()
         if not isinstance(other, MambaScanManagerItem):
             raise TypeError("Subtraction is only supported between MambaScanManagerItem objects")
         mylist = []
@@ -136,7 +139,7 @@ class MambaScanManagerItem(ManagerItem):
             elif item is None:
                 mylist.append(-1 * other[i])
             elif other[i] is None:
-                mylist.append(item)
+                mylist.append(item.clone())
             else:
                 mylist.append(item - other[i])
         return MambaScanManagerItem(mylist)
@@ -168,7 +171,7 @@ class MambaScanManagerItem(ManagerItem):
             if item is None:
                 mylist.append(None)
             else:
-                mylist.append(item[..., -1])
+                mylist.append(item[..., -1].clone())
         return MambaScanManagerItem(mylist)
     
     def to(self, device: str | torch.DeviceObjType) -> "MambaScanManagerItem":
