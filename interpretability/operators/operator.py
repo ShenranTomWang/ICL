@@ -102,6 +102,18 @@ class Operator(ABC):
         return manager
     
     @abstractmethod
+    def attention2kwargs(self, attn: AttentionManager, **kwargs) -> dict:
+        """
+        Convert attention manager to kwargs for model override
+        Args:
+            attn (AttentionManager): attention manager
+            **kwargs: additional arguments
+        Returns:
+            dict: kwargs for model
+        """
+        pass
+    
+    @abstractmethod
     def generate_AIE_map(self, steer: list[AttentionManager], inputs: list[list[str]], label_ids: list[torch.Tensor]) -> FVMap:
         """
         Generate AIE map for each attention head at each layer using inputs and steer
