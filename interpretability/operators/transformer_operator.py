@@ -56,24 +56,29 @@ class TransformerOperator(Operator):
         Returns:
             TransformerFVMap: AIE map
         """
+        original_logits = []
+        for inputs_task in inputs:
+            task_logits = []
+            for input in inputs_task:
+                logit = self.forward(input).logits[:, -1, :].to("cpu")
+                task_logits.append(logit)
+            task_logits = torch.cat(task_logits, dim=0)
+            original_logits.append(task_logits)
+        
         attn_map = torch.empty((self.n_layers, self.n_heads))
         for layer in range(self.n_layers):
             for head in range(self.n_heads):
-                head_logits, head_fv_logits = [], []
+                head_fv_logits = []
                 for i, attn in enumerate(steer):
                     attn_kwargs = self.attention2kwargs(attn, layers=[layer], last_k=1, heads=[head])
                     inputs_task = inputs[i]
-                    task_logits, task_fv_logits = [], []
+                    task_fv_logits = []
                     for input in inputs_task:
-                        logit = self.forward(input).logits[:, -1, :].to("cpu")
                         logit_fv = self.forward(input, **attn_kwargs).logits[:, -1, :].to("cpu")
-                        task_logits.append(logit)
                         task_fv_logits.append(logit_fv)
-                    task_logits = torch.cat(task_logits, dim=0)
                     task_fv_logits = torch.cat(task_fv_logits, dim=0)
-                    head_logits.append(task_logits)
                     head_fv_logits.append(task_fv_logits)
-                head_AIE = self.compute_AIE(head_fv_logits, head_logits, label_ids)
+                head_AIE = self.compute_AIE(head_fv_logits, original_logits, label_ids)
                 attn_map[layer, head] = head_AIE
         return TransformerFVMap(attn_map, self.dtype)
                         
