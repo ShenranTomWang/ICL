@@ -1,7 +1,7 @@
 import shutup; shutup.please()
 from interpretability.attention_managers import SelfAttentionManager
 from interpretability.fv_maps import TransformerFVMap
-from interpretability.hooks import add_mean_hybrid
+from interpretability.hooks import add_mean_hybrid, fv_replace_head_generic
 from transformers import AutoModelForCausalLM
 from interpretability.tokenizers import Tokenizer
 import torch
@@ -48,7 +48,7 @@ class TransformerOperator(Operator):
     @torch.inference_mode()
     def generate_AIE_map(self, steer: list[SelfAttentionManager], inputs: list[list[str]], label_ids: list[torch.Tensor]) -> TransformerFVMap:
         """
-        Generate AIE map from attention outputs
+        Generate AIE map from attention outputs for a list of inputs
         Args:
             steer (list[SelfAttentionManager]): steer values for each task
             inputs (list[list[str]]): list of inputs for each task
@@ -69,9 +69,8 @@ class TransformerOperator(Operator):
         for layer in range(self.n_layers):
             for head in range(self.n_heads):
                 head_fv_logits = []
-                for i, attn in enumerate(steer):
-                    attn_kwargs = self.attention2kwargs(attn, layers=[layer], last_k=1, heads=[head])
-                    inputs_task = inputs[i]
+                for i, (attn, inputs_task) in enumerate(zip(steer, inputs)):
+                    attn_kwargs = self.attention2kwargs(attn, layers=[layer], attention_intervention_fn=fv_replace_head_generic, head=head)
                     task_fv_logits = []
                     for input in inputs_task:
                         logit_fv = self.forward(input, **attn_kwargs).logits[:, -1, :].to("cpu")

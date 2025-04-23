@@ -5,7 +5,7 @@ from typing import Callable
 from .operator import Operator
 from interpretability.attention_managers import HybridAttentionManager
 from interpretability.fv_maps import HybridFVMap
-from interpretability.hooks import add_mean_hybrid
+from interpretability.hooks import add_mean_hybrid, fv_replace_head_generic
 from interpretability.tokenizers import Tokenizer
 from abc import ABC
 
@@ -83,11 +83,10 @@ class HybridOperator(Operator, ABC):
         scan_map = torch.empty((self.n_scan_layers, self.n_scan_heads))
         for layer_idx, layer in enumerate(self.attn_layers):
             for head in range(self.n_attn_heads):
-                head_fv_logits = [], []
-                for i, attn in enumerate(steer):
-                    attn_kwargs = self.attention2kwargs(attn, layers=[layer], last_k=1, heads=[head], keep_scan=False)
-                    inputs_task = inputs[i]
-                    task_fv_logits = [], []
+                head_fv_logits = []
+                for i, (attn, inputs_task) in enumerate(zip(steer, inputs)):
+                    attn_kwargs = self.attention2kwargs(attn, layers=[layer], keep_scan=False, attention_intervention_fn=fv_replace_head_generic, head=head)
+                    task_fv_logits = []
                     for input in inputs_task:
                         logit_fv = self.forward(input, **attn_kwargs).logits[:, -1, :].to("cpu")
                         task_fv_logits.append(logit_fv)
@@ -97,11 +96,10 @@ class HybridOperator(Operator, ABC):
                 attn_map[layer_idx, head] = head_AIE
         for layer_idx, layer in enumerate(self.scan_layers):
             for head in range(self.n_scan_heads):
-                head_fv_logits = [], []
-                for i, attn in enumerate(steer):
-                    attn_kwargs = self.attention2kwargs(attn, layers=[layer], last_k=1, heads=[head], keep_attention=False)
-                    inputs_task = inputs[i]
-                    task_fv_logits = [], []
+                head_fv_logits = []
+                for i, (attn, inputs_task) in enumerate(zip(steer, inputs)):
+                    attn_kwargs = self.attention2kwargs(attn, layers=[layer], keep_attention=False, scan_intervention_fn=fv_replace_head_generic, head=head)
+                    task_fv_logits = []
                     for input in inputs_task:
                         logit_fv = self.forward(input, **attn_kwargs).logits[:, -1, :].to("cpu")
                         task_fv_logits.append(logit_fv)

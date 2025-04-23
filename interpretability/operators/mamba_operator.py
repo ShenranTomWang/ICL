@@ -4,7 +4,9 @@ from .base_mamba_operator import BaseMambaOperator
 import torch
 from transformers import AutoTokenizer
 from interpretability.tokenizers import StandardTokenizer
-from interpretability.attention_managers import MambaScanManager
+from interpretability.attention_managers import MambaScanManager, AttentionManager
+from interpretability.fv_maps import ScanFVMap
+from interpretability.hooks import fv_replace_head_mamba
 from interpretability.hooks import add_mean_scan_mamba
 
 class MambaOperator(BaseMambaOperator):
@@ -17,6 +19,42 @@ class MambaOperator(BaseMambaOperator):
         
     def get_attention_add_mean_hook(self):
         return add_mean_scan_mamba
+    
+    @torch.inference_mode()
+    def generate_AIE_map(self, steer: list[AttentionManager], inputs: list[list[str]], label_ids: list[torch.Tensor]) -> ScanFVMap:
+        """
+        Generate AIE map from attention outputs
+        Args:
+            steer (list[AttentionManager]): steer values for each task
+            inputs (list[list[str]]): list of inputs for each task
+            label_ids (list[torch.Tensor]): list of label ids for each task
+        Returns:
+            TransformerFVMap: AIE map
+        """
+        original_logits = []
+        for inputs_task in inputs:
+            task_logits = []
+            for input in inputs_task:
+                logit = self.forward(input).logits[:, -1, :].to("cpu")
+                task_logits.append(logit)
+            task_logits = torch.cat(task_logits, dim=0)
+            original_logits.append(task_logits)
+        
+        scan_map = torch.empty((self.n_layers, self.n_heads))
+        for layer in range(self.n_layers):
+            for head in range(self.n_heads):
+                head_fv_logits = []
+                for i, (attn, inputs_task) in enumerate(zip(steer, inputs)):
+                    attn_kwargs = self.attention2kwargs(attn, layers=[layer], scan_intervention_fn=fv_replace_head_mamba)
+                    task_fv_logits = []
+                    for input in inputs_task:
+                        logit_fv = self.forward(input, **attn_kwargs).logits[:, -1, :].to("cpu")
+                        task_fv_logits.append(logit_fv)
+                    task_fv_logits = torch.cat(task_fv_logits, dim=0)
+                    head_fv_logits.append(task_fv_logits)
+                head_AIE = self.compute_AIE(head_fv_logits, original_logits, label_ids)
+                scan_map[layer, head] = head_AIE
+        return ScanFVMap(scan_map, self.dtype)
     
     @torch.inference_mode()
     def extract_attention_managers(self, inputs, activation_callback = lambda x: x) -> list[MambaScanManager]:

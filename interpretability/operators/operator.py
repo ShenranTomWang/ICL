@@ -116,7 +116,7 @@ class Operator(ABC):
     @abstractmethod
     def generate_AIE_map(self, steer: list[AttentionManager], inputs: list[list[str]], label_ids: list[torch.Tensor]) -> FVMap:
         """
-        Generate AIE map for each attention head at each layer using inputs and steer
+        Generate AIE map for each attention head at each layer using inputs and steer for a list of tasks
 
         Args:
             steer (list[AttentionManager]): steer values for each task

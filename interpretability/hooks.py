@@ -37,6 +37,51 @@ def add_mean_hybrid(
     stream += intervention_mean
     return stream
 
+def fv_replace_head_generic(
+    stream: torch.Tensor,
+    intervention: torch.Tensor | None,
+    head: int = None,
+    **kwargs
+) -> torch.Tensor:
+    """
+    Hook for attributing AIE of heads on generic (and potentially multihead) models. This will add intervention to the last token of stream
+    Args:
+        stream (torch.Tensor): stream tensor of shape (batch_size, seqlen, stream_dims...)
+        intervention (torch.Tensor | None): intervention tensor (extracted mean of last token), shape (batch_size, stream_dims...) or None if user does not perform intervention on stream
+        head (int, optional): head index to add to. Defaults to None for single head models.
+        **kwargs: additional kwargs, not used
+
+    Returns:
+        torch.Tensor: intervened results
+    """
+    if intervention is None:
+        return stream
+    if head is not None and stream.dim() > 3:
+        stream[:, -1, head, :] = intervention[:, head, :]
+    else:
+        stream[:, -1, :] = intervention
+    return stream
+
+def fv_replace_head_mamba(
+    stream: torch.Tensor,
+    intervention: torch.Tensor | None,
+    **kwargs
+) -> torch.Tensor:
+    """
+    Hook for attributing AIE of heads on Mamba. This will add intervention to the last token of stream
+    Args:
+        stream (torch.Tensor): stream tensor of shape (batch_size, n_channels, seqlen)
+        intervention (torch.Tensor | None): intervention tensor (extracted mean of last token), shape (batch_size, n_channels) or None if user does not perform intervention on stream
+        **kwargs: additional kwargs, not used
+
+    Returns:
+        torch.Tensor: intervened results
+    """
+    if intervention is None:
+        return stream
+    stream[:, :, -1] = intervention
+    return stream
+
 def add_mean_scan_mamba(
     stream: torch.Tensor,
     intervention_mean: torch.Tensor | None,
