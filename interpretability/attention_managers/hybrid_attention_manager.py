@@ -18,15 +18,15 @@ class HybridAttentionManager(AttentionManager):
     def __add__(self, other: "HybridAttentionManager") -> "HybridAttentionManager":
         if other is None:
             return HybridAttentionManager(None, self.attn_outputs.clone(), self.scan_outputs.clone(), self.device)
-        attn_outputs = self.attn_outputs + other.attn_outputs if self.attn_outputs is not None else other.attn_outputs
-        scan_outputs = self.scan_outputs + other.scan_outputs if self.scan_outputs is not None else other.scan_outputs
+        attn_outputs = self.attn_outputs + other.attn_outputs if self.attn_outputs is not None else other.attn_outputs.clone()
+        scan_outputs = self.scan_outputs + other.scan_outputs if self.scan_outputs is not None else other.scan_outputs.clone()
         return HybridAttentionManager(None, attn_outputs, scan_outputs, self.device)
         
     def __sub__(self, other: "HybridAttentionManager") -> "HybridAttentionManager":
         if other is None:
             return HybridAttentionManager(None, self.attn_outputs.clone(), self.scan_outputs.clone(), self.device)
-        attn_outputs = self.attn_outputs - other.attn_outputs if self.attn_outputs is not None else [-1 * attn for attn in other.attn_outputs]
-        scan_outputs = self.scan_outputs - other.scan_outputs if self.scan_outputs is not None else [-1 * attn for attn in other.scan_outputs]
+        attn_outputs = self.attn_outputs - other.attn_outputs if self.attn_outputs is not None else -1 * other.attn_outputs
+        scan_outputs = self.scan_outputs - other.scan_outputs if self.scan_outputs is not None else -1 * other.scan_outputs
         return HybridAttentionManager(None, attn_outputs, scan_outputs, self.device)
     
     def __truediv__(self, other: int) -> "HybridAttentionManager":

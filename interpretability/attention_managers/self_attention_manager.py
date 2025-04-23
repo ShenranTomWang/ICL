@@ -11,13 +11,13 @@ class SelfAttentionManager(AttentionManager):
     def __add__(self, other: "SelfAttentionManager") -> "SelfAttentionManager":
         if other is None:
             return SelfAttentionManager(None, self.attn_outputs.clone(), self.device)
-        attn_outputs = self.attn_outputs + other.attn_outputs if self.attn_outputs is not None else other.attn_outputs
+        attn_outputs = self.attn_outputs + other.attn_outputs if self.attn_outputs is not None else other.attn_outputs.clone()
         return SelfAttentionManager(None, attn_outputs, self.device)
         
     def __sub__(self, other: "SelfAttentionManager") -> "SelfAttentionManager":
         if other is None:
             return SelfAttentionManager(None, self.attn_outputs.clone(), self.device)
-        attn_outputs = self.attn_outputs - other.attn_outputs if self.attn_outputs is not None else [-1 * attn for attn in other.attn_outputs]
+        attn_outputs = self.attn_outputs - other.attn_outputs if self.attn_outputs is not None else -1 * other.attn_outputs
         return SelfAttentionManager(None, attn_outputs, self.device)
     
     def __truediv__(self, other: int) -> "SelfAttentionManager":

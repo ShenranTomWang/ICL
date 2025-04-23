@@ -10,13 +10,13 @@ class MambaScanManager(AttentionManager):
     def __add__(self, other: "MambaScanManager") -> "MambaScanManager":
         if other is None:
             return MambaScanManager(self.scan_outputs.clone(), self.device)
-        scan_outputs = self.scan_outputs + other.scan_outputs if self.scan_outputs is not None else other.scan_outputs
+        scan_outputs = self.scan_outputs + other.scan_outputs if self.scan_outputs is not None else other.scan_outputs.clone()
         return MambaScanManager(scan_outputs, self.device)
         
     def __sub__(self, other: "MambaScanManager") -> "MambaScanManager":
         if other is None:
             return MambaScanManager(self.scan_outputs.clone(), self.device)
-        scan_outputs = self.scan_outputs - other.scan_outputs if self.scan_outputs is not None else [-1 * attn for attn in other.scan_outputs]
+        scan_outputs = self.scan_outputs - other.scan_outputs if self.scan_outputs is not None else -1 * other.scan_outputs
         return MambaScanManager(scan_outputs, self.device)
     
     def __truediv__(self, other: int) -> "MambaScanManager":
@@ -57,13 +57,13 @@ class Mamba2ScanManager(AttentionManager):
     def __add__(self, other: "Mamba2ScanManager") -> "Mamba2ScanManager":
         if other is None:
             return Mamba2ScanManager(self.scan_outputs.clone(), self.device)
-        scan_outputs = self.scan_outputs + other.scan_outputs if self.scan_outputs is not None else other.scan_outputs
+        scan_outputs = self.scan_outputs + other.scan_outputs if self.scan_outputs is not None else other.scan_outputs.clone()
         return Mamba2ScanManager(scan_outputs, self.device)
         
     def __sub__(self, other: "Mamba2ScanManager") -> "Mamba2ScanManager":
         if other is None:
             return Mamba2ScanManager(self.scan_outputs.clone(), self.device)
-        scan_outputs = self.scan_outputs - other.scan_outputs if self.scan_outputs is not None else [-1 * attn for attn in other.scan_outputs]
+        scan_outputs = self.scan_outputs - other.scan_outputs if self.scan_outputs is not None else -1 * other.scan_outputs
         return Mamba2ScanManager(scan_outputs, self.device)
     
     def __truediv__(self, other: int) -> "Mamba2ScanManager":
