@@ -40,5 +40,9 @@ def AIE_handler(args):
             os.makedirs(out_dir, exist_ok=True)
             torch.save(fv_map, f"{out_dir}/function_vectors.pth")
             fv_map.visualize(f"{out_dir}/function_vectors.png")
-            logger.info(f"Function vectors saved to {out_dir}/function_vectors.pth")
-            logger.info(f"Function vectors visualization saved to {out_dir}/function_vectors.png")
+            logger.info(f"Function vectors saved to {out_dir}/{args.task}_function_vectors.pth")
+            logger.info(f"Function vectors visualization saved to {out_dir}/{args.task}_function_vectors.png")
+
+def ablation_removal_handler(args):
+    # TODO: Implement this function
+    pass
