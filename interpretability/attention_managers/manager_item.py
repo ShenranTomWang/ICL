@@ -2,6 +2,10 @@ from abc import ABC, abstractmethod
 import torch
 
 class ManagerItem(list, ABC):
+    """
+    Abstract base class for attention manager items. This is a list of tensors. It supports basic arithmetic operations
+    and device transfer for interpretability tasks.
+    """
     @abstractmethod
     def __add__(self, other: "ManagerItem") -> "ManagerItem":
         pass
@@ -39,8 +43,11 @@ class ManagerItem(list, ABC):
                 mylist.append(item.clone())
         return ManagerItem(mylist)
 
-class AttentionManagerItem(ManagerItem):
-    def __add__(self, other: "AttentionManagerItem") -> "AttentionManagerItem":
+class GenericManagerItem(ManagerItem):
+    """
+    For generic use, this class is designed for attention outputs that are if shape (batch_size, seqlen, stream_dims...)
+    """
+    def __add__(self, other: "GenericManagerItem") -> "GenericManagerItem":
         if other is None:
             return self.clone()
         mylist = []
@@ -53,9 +60,9 @@ class AttentionManagerItem(ManagerItem):
                 mylist.append(item.clone())
             else:
                 mylist.append(item + other[i])
-        return AttentionManagerItem(mylist)
+        return GenericManagerItem(mylist)
     
-    def __sub__(self, other: "AttentionManagerItem") -> "AttentionManagerItem":
+    def __sub__(self, other: "GenericManagerItem") -> "GenericManagerItem":
         if other is None:
             return self.clone()
         mylist = []
@@ -68,48 +75,52 @@ class AttentionManagerItem(ManagerItem):
                 mylist.append(item.clone())
             else:
                 mylist.append(item - other[i])
-        return AttentionManagerItem(mylist)
+        return GenericManagerItem(mylist)
     
-    def __truediv__(self, other: int) -> "AttentionManagerItem":
+    def __truediv__(self, other: int) -> "GenericManagerItem":
         mylist = []
         for item in self:
             if item is None:
                 mylist.append(None)
             else:
                 mylist.append(item / other)
-        return AttentionManagerItem(mylist)
+        return GenericManagerItem(mylist)
     
-    def __mul__(self, other: int) -> "AttentionManagerItem":
+    def __mul__(self, other: int) -> "GenericManagerItem":
         mylist = []
         for item in self:
             if item is None:
                 mylist.append(None)
             else:
                 mylist.append(item * other)
-        return AttentionManagerItem(mylist)
+        return GenericManagerItem(mylist)
     
-    def __rmul__(self, other: int) -> "AttentionManagerItem":
+    def __rmul__(self, other: int) -> "GenericManagerItem":
         return self.__mul__(other)
     
-    def get_last_token(self) -> "AttentionManagerItem":
+    def get_last_token(self) -> "GenericManagerItem":
         mylist = []
         for item in self:
             if item is None:
                 mylist.append(None)
             else:
                 mylist.append(item[:, -1, ...].clone())
-        return AttentionManagerItem(mylist)
+        return GenericManagerItem(mylist)
     
-    def to(self, device: str | torch.DeviceObjType) -> "AttentionManagerItem":
+    def to(self, device: str | torch.DeviceObjType) -> "GenericManagerItem":
         mylist = []
         for item in self:
             if item is None:
                 mylist.append(None)
             else:
                 mylist.append(item.to(device))
-        return AttentionManagerItem(mylist)
+        return GenericManagerItem(mylist)
     
 class MambaScanManagerItem(ManagerItem):
+    """
+    Since Mamba has a different attention output shape, we need to override the methods in the base class.
+    This class is designed for attention outputs that are of shape (batch_size, stream_dims..., seqlen)
+    """
     def __add__(self, other: "MambaScanManagerItem") -> "MambaScanManagerItem":
         if other is None:
             return self.clone()

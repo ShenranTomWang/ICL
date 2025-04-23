@@ -1,8 +1,11 @@
 from abc import ABC, abstractmethod
 import torch
-from interpretability.fv_maps import FVMap
 
 class AttentionManager(ABC):
+    """
+    AttentionManager manages the attention values of a model (e.g. attention map, attention output). 
+    It supports basic arithmetics and device transfer of tensors, as well as some other operations required for interpretability.
+    """
     def __init__(self, device: str = "cpu"):
         self.device = device
     
@@ -50,6 +53,11 @@ class AttentionManager(ABC):
     
     @abstractmethod
     def mean(self) -> "AttentionManager":
+        """Computes mean along sequence dimension
+
+        Returns:
+            AttentionManager: mean
+        """
         pass
     
     @abstractmethod

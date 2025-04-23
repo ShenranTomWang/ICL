@@ -10,6 +10,10 @@ from interpretability.tokenizers import Tokenizer
 from abc import ABC
 
 class HybridOperator(Operator, ABC):
+    """
+    Operator class for hybrid models. This is not an abstract class, but it is not meant to be used directly.
+    Inherit this class to create an operator for a specific hybrid model.
+    """
     def __init__(
         self,
         tokenizer: Tokenizer,

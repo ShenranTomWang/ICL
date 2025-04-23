@@ -7,6 +7,9 @@ from matplotlib import gridspec
 import os
 
 class TransformerFVMap(FVMap):
+    """
+    TransformerFVMap is a class that represents a function vector AIE map for the Transformer model.
+    """
     def __init__(self, attn_map: torch.Tensor, dtype: torch.dtype = torch.float32):
         """
         Args:

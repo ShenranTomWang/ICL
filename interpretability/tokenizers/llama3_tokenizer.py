@@ -2,6 +2,9 @@ from .tokenizer import Tokenizer
 from transformers import AutoTokenizer
 
 class Llama3Tokenizer(Tokenizer):
+    """
+    Tokenizer used by Llama3, which has <bos> token
+    """
     def __init__(self, tokenizer: AutoTokenizer):
         super().__init__(tokenizer)
 

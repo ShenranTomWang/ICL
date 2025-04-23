@@ -7,6 +7,10 @@ import torch
 from typing import Callable
 
 class ForwardWrapperTransformerOperator(TransformerOperator):
+    """
+    This is a wrapper class for general transformer models. It does not support any interpretability features.
+    It is used to run the model in inference mode and get the output.
+    """
     def __init__(self, path: str, device: torch.DeviceObjType, dtype: torch.dtype):
         tokenizer = AutoTokenizer.from_pretrained(path, trust_remote_code=True)
         model = AutoModelForCausalLM.from_pretrained(path, trust_remote_code=True).to(device).to(dtype)

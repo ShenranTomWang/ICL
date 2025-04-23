@@ -9,6 +9,9 @@ from matplotlib.gridspec import SubplotSpec
 import os
 
 class HybridFVMap(FVMap):
+    """
+    HybridFVMap is a class that represents a hybrid attention and Mamba (or Mamba2) function vector AIE map.
+    """
     def __init__(
         self,
         attn_map: torch.Tensor,

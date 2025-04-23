@@ -1,11 +1,14 @@
 import torch
 from .attention_manager import AttentionManager
-from .manager_item import AttentionManagerItem
+from .manager_item import GenericManagerItem
 
 class SelfAttentionManager(AttentionManager):
+    """
+    Manager class for self-attention.
+    """
     def __init__(self, all_attns: list[torch.Tensor] | None, attn_outputs: list[torch.Tensor] | None, device: torch.DeviceObjType = "cpu"):
-        self.all_attns = AttentionManagerItem(all_attns).to(device) if all_attns is not None else None
-        self.attn_outputs = AttentionManagerItem(attn_outputs).to(device) if attn_outputs is not None else None
+        self.all_attns = GenericManagerItem(all_attns).to(device) if all_attns is not None else None
+        self.attn_outputs = GenericManagerItem(attn_outputs).to(device) if attn_outputs is not None else None
         super().__init__(device)
         
     def __add__(self, other: "SelfAttentionManager") -> "SelfAttentionManager":

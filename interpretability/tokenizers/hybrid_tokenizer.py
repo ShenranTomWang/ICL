@@ -2,6 +2,9 @@ from .tokenizer import Tokenizer
 from transformers import AutoTokenizer
 
 class HybridTokenizer(Tokenizer):
+    """
+    Non-standard tokenizer which has <bos> and empty tokens
+    """
     def __init__(self, tokenizer: AutoTokenizer):
         super().__init__(tokenizer)
 

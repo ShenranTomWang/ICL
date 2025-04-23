@@ -5,6 +5,10 @@ import matplotlib.gridspec as gridspec
 import numpy as np
 
 class FVMap(ABC):
+    """
+    This is an abstract base class for AIE heatmaps for the function vector experiments.
+    It defines the interface for FVMap objects, which are used to visualize and analyze the function vector maps.
+    """
     @staticmethod
     def mean_of(maps: list["FVMap"]) -> "FVMap":
         """

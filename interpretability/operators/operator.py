@@ -8,10 +8,10 @@ from interpretability.attention_managers import AttentionManager
 from abc import ABC, abstractmethod
 import os, logging
 
-def layer_callback(resid: torch.Tensor) -> torch.Tensor:
-    return resid[0, -1, :]
-
 class Operator(ABC):
+    """
+    Operator class is a base class that operates an LLM. It contains all the methods necessary for interpretability experiments.
+    """
     def __init__(self, tokenizer: Tokenizer, model: AutoModelForCausalLM, device: torch.DeviceObjType, dtype: torch.dtype):
         self.model = model
         self.tokenizer = tokenizer

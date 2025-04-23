@@ -7,6 +7,9 @@ from interpretability.tokenizers import Tokenizer
 from interpretability.attention_managers import AttentionManager
 
 class BaseMambaOperator(Operator):
+    """
+    Operator for Mamba models. This is an abstract class.
+    """
     def __init__(
         self,
         model: AutoModelForCausalLM,

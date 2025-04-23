@@ -2,16 +2,19 @@ from abc import abstractmethod, ABC
 from transformers import AutoTokenizer
 
 class Tokenizer(ABC):
+    """
+    This is an abstract base class for tokenizers. It defines the interface for tokenizers used in the ICL framework.
+    """
     def __init__(self, tokenizer: AutoTokenizer):
         self.tokenizer = tokenizer
     
     @abstractmethod
     def get_option_id(self, option: str) -> dict:
         """
-        Tokenize an options.
+        Tokenize an option.
         
         Args:
-            options: str
+            option: str
         Returns:
             dict
         """

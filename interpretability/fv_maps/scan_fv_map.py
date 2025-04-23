@@ -7,6 +7,9 @@ from matplotlib import gridspec
 import os
 
 class ScanFVMap(FVMap):
+    """
+    ScanFVMap is a class that represents a function vector AIE map for the Mamba (or Mamba2) model.
+    """
     def __init__(self, scan_map: torch.Tensor, dtype: torch.dtype = torch.float32):
         """
         Args:

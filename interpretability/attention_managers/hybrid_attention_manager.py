@@ -1,8 +1,11 @@
 import torch
 from .attention_manager import AttentionManager
-from .manager_item import AttentionManagerItem
+from .manager_item import GenericManagerItem
 
 class HybridAttentionManager(AttentionManager):
+    """
+    This is the manager class for hybrid models, where we have both self-attention and Mamba streams
+    """
     def __init__(
         self,
         all_attns: list[torch.Tensor] | None,
@@ -10,9 +13,9 @@ class HybridAttentionManager(AttentionManager):
         scan_outputs: list[torch.Tensor] | None,
         device: str = "cpu"
     ):
-        self.all_attns = AttentionManagerItem(all_attns).to(device) if all_attns is not None else None
-        self.attn_outputs = AttentionManagerItem(attn_outputs).to(device) if attn_outputs is not None else None
-        self.scan_outputs = AttentionManagerItem(scan_outputs).to(device) if scan_outputs is not None else None
+        self.all_attns = GenericManagerItem(all_attns).to(device) if all_attns is not None else None
+        self.attn_outputs = GenericManagerItem(attn_outputs).to(device) if attn_outputs is not None else None
+        self.scan_outputs = GenericManagerItem(scan_outputs).to(device) if scan_outputs is not None else None
         super().__init__(device)
         
     def __add__(self, other: "HybridAttentionManager") -> "HybridAttentionManager":
