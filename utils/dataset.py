@@ -3,6 +3,9 @@ from interpretability.tokenizers import Tokenizer
 import numpy as np
 
 class Dataset:
+    """
+    ICL Dataset class.
+    """
     def __init__(self, train: list, test: list, verbose: bool = False, template: bool = False, options: list = None):
         self.train = train
         self.test = test
@@ -15,7 +18,6 @@ class Dataset:
         self.inputs = None
         self.outputs = None
         self.output_ids = None
-        self.indices = None
         self.option_ids = None
         
     def choose(self, k: int, seed: int) -> None:
@@ -35,10 +37,11 @@ class Dataset:
     
     def prepare_demo(self) -> None:
         """
-        Requires:
-            self.train is not None
-        Effects:
-            self.demo: str
+        Prepares the demonstrations string for ICL. This will create demo of format
+            "<input>\n <output>\n\n"
+        for each example in the training set. If self.template is True, it will create:
+            "Q: <input>\n A: <output>\n\n"
+        The resulting string will be stored in self.demo.
         """
         demo = ""
         for dp_train in self.train:
@@ -55,9 +58,9 @@ class Dataset:
         
     def preprocess(self) -> None:
         """
-        Requires:
-            self.test is not None
-            self.train is not None
+        Appends the demo to each test example. The resulting string will be stored in self.inputs.
+        Will also apply template if self.template is True.
+        
         Effects:
             self.test: list<{"input": str, "output": str, "options": list<str>}>
             self.inputs: list<str>, 
@@ -75,12 +78,16 @@ class Dataset:
         
     def tensorize(self, tokenizer: Tokenizer) -> None:
         """
+        Tensorize inputs, outputs and options using the tokenizer.
+        This will create a list of dictionaries for each input, with the keys "input_ids" and "attention_mask".
+        The output_ids and option_ids will be created using the tokenizer.get_option_id method.
+        The resulting tensors will be stored in self.inputs_tokenized, self.output_ids and self.option_ids.
+        This function will also create a tensor for the demo, which will be stored in self.demo_tokenized.
         Args:
             tokenizer: Tokenizer object
         Effects:
-            self.inputs: list<{"input_ids": tensor, "attention_mask": tensor}>, 
-            self.output_ids: list<int>, 
-            self.indices: list<int>,
+            self.inputs_tokenized: list<{"input_ids": tensor, "attention_mask": tensor}>,
+            self.output_ids: list<int>,
             self.option_ids: list<int>
         """
         if self.inputs is None or self.outputs is None:
@@ -97,7 +104,6 @@ class Dataset:
             }
             for input in inputs
         ]
-        indices = [input["input_ids"].shape[1] - 1 for input in inputs]
         output_ids = [tokenizer.get_option_id(output) for output in self.outputs]
         option_ids = [tokenizer.get_option_id(option) for option in self.options]
         if self.verbose:
@@ -107,5 +113,4 @@ class Dataset:
             self.logger.info(f"option ids: {option_ids}")
         self.inputs_tokenized = inputs
         self.output_ids = output_ids
-        self.indices = indices
         self.option_ids = option_ids

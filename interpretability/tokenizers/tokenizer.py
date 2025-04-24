@@ -11,7 +11,8 @@ class Tokenizer(ABC):
     @abstractmethod
     def get_option_id(self, option: str) -> dict:
         """
-        Tokenize an option.
+        Tokenize an option. This will add whitespace to the option and then tokenize it and return the first token,
+        if the option turns out to be more than 1 token.
         
         Args:
             option: str
