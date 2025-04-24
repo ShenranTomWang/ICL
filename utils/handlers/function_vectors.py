@@ -33,9 +33,9 @@ def AIE_handler(args):
             dataset.tensorize(operator.tokenizer)
             test_task_base = to_base(test_task)
             steer = operator.load_attention_manager(f"{args.fv_load_dir}/{test_task_base}/{seed}/fv_steer.pth")
-            input = dataset.inputs
+            inputs = dataset.inputs
             label_id = torch.tensor(dataset.output_ids)
-            fv_map = operator.generate_AIE_map([steer], [input], [label_id])
+            fv_map = operator.generate_AIE_map([steer], [inputs], [label_id])
             out_dir = f"{args.out_dir}/{test_task}/{seed}"
             os.makedirs(out_dir, exist_ok=True)
             torch.save(fv_map, f"{out_dir}/function_vectors.pth")

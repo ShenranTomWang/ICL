@@ -77,8 +77,8 @@ class HybridOperator(Operator, ABC):
         original_logits = []
         for inputs_task in inputs:
             task_logits = []
-            for input in inputs_task:
-                logit = self.forward(input).logits[:, -1, :].to("cpu")
+            for inputs in inputs_task:
+                logit = self.forward(inputs).logits[:, -1, :].to("cpu")
                 task_logits.append(logit)
             task_logits = torch.cat(task_logits, dim=0)
             original_logits.append(task_logits)
@@ -91,8 +91,8 @@ class HybridOperator(Operator, ABC):
                 for i, (attn, inputs_task) in enumerate(zip(steer, inputs)):
                     attn_kwargs = self.attention2kwargs(attn, layers=[layer], keep_scan=False, attention_intervention_fn=fv_replace_head_generic, head=head)
                     task_fv_logits = []
-                    for input in inputs_task:
-                        logit_fv = self.forward(input, **attn_kwargs).logits[:, -1, :].to("cpu")
+                    for inputs in inputs_task:
+                        logit_fv = self.forward(inputs, **attn_kwargs).logits[:, -1, :].to("cpu")
                         task_fv_logits.append(logit_fv)
                     task_fv_logits = torch.cat(task_fv_logits, dim=0)
                     head_fv_logits.append(task_fv_logits)
@@ -104,8 +104,8 @@ class HybridOperator(Operator, ABC):
                 for i, (attn, inputs_task) in enumerate(zip(steer, inputs)):
                     attn_kwargs = self.attention2kwargs(attn, layers=[layer], keep_attention=False, scan_intervention_fn=fv_replace_head_generic, head=head)
                     task_fv_logits = []
-                    for input in inputs_task:
-                        logit_fv = self.forward(input, **attn_kwargs).logits[:, -1, :].to("cpu")
+                    for inputs in inputs_task:
+                        logit_fv = self.forward(inputs, **attn_kwargs).logits[:, -1, :].to("cpu")
                         task_fv_logits.append(logit_fv)
                     task_fv_logits = torch.cat(task_fv_logits, dim=0)
                     head_fv_logits.append(task_fv_logits)

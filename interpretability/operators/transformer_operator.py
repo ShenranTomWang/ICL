@@ -76,9 +76,8 @@ class TransformerOperator(Operator):
                 for i, (attn, inputs_task) in enumerate(zip(steer, inputs)):
                     attn_kwargs = self.attention2kwargs(attn, layers=[layer], attention_intervention_fn=fv_replace_head_generic, head=head)
                     task_fv_logits = []
-                    for input in inputs_task:
-                        import pdb; pdb.set_trace()
-                        logit_fv = self.forward(input, **attn_kwargs).logits[:, -1, :].to("cpu")
+                    for inputs in inputs_task:
+                        logit_fv = self.forward(inputs, **attn_kwargs).logits[:, -1, :].to("cpu")
                         task_fv_logits.append(logit_fv)
                     task_fv_logits = torch.cat(task_fv_logits, dim=0)
                     head_fv_logits.append(task_fv_logits)

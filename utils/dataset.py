@@ -70,7 +70,7 @@ class Dataset:
             self.prepare_demo()
         for i, dp_test in enumerate(self.test):
             if self.template:
-                dp_test["input"] = self.demo + "\n\nQ: " + dp_test["input"] + "\nA:"
+                dp_test["input"] = self.demo + "Q: " + dp_test["input"] + "\nA:"
             else:
                 self.test[i]["input"] = self.demo + dp_test["input"] + "\n"
         self.inputs = [dp["input"] for dp in self.test]
