@@ -38,9 +38,9 @@ class Dataset:
     def prepare_demo(self) -> None:
         """
         Prepares the demonstrations string for ICL. This will create demo of format
-            "<input>\n <output>\n\n"
+            "<input>\\n <output>\\n\\n"
         for each example in the training set. If self.template is True, it will create:
-            "Q: <input>\n A: <output>\n\n"
+            "Q: <input>\\n A: <output>\\n\\n"
         The resulting string will be stored in self.demo.
         """
         demo = ""
