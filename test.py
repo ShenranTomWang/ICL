@@ -77,7 +77,7 @@ def main(args):
             assert len(curr_test_data) > 0
             assert not use_demonstrations or len(curr_train_data) == args.k, (use_demonstrations, len(curr_train_data), args.k)
             
-            dataset = Dataset(curr_train_data, curr_test_data, verbose=args.verbose)
+            dataset = Dataset(curr_train_data, curr_test_data, verbose=args.verbose, template=args.use_template)
             dataset.tensorize(operator.tokenizer)
             f1, acc = run(args, dataset, operator, seed)
 
@@ -105,6 +105,7 @@ if __name__=='__main__':
     parser.add_argument("--k", type=int, default=16)
     parser.add_argument("--n", type=int, default=-1)
     parser.add_argument("--seed", type=str, default="100,13,21,42,87")
+    parser.add_argument("--use_template", default=False, action="store_true")
 
     parser.add_argument("--dtype", type=str, default="bfloat16", choices=ALL_DTYPES)
     parser.add_argument("--device", type=str, default="cuda")
