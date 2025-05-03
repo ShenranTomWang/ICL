@@ -1,0 +1,10 @@
+[
+    "tweet_eval-hate_incorrect_mapping",
+    "hate_speech18_incorrect_mapping",
+    "glue-mrpc_incorrect_mapping",
+    "glue-rte_incorrect_mapping",
+    "sick_incorrect_mapping",
+    "climate_fever_incorrect_mapping",
+    "medical_questions_pairs_incorrect_mapping",
+    "financial_phrasebank_incorrect_mapping"
+]
