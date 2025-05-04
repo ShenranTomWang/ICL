@@ -109,5 +109,6 @@ class TransformerOperator(Operator):
         params = ()
         for layer in self.ALL_LAYERS:
             attn = attn_outputs[layer] if layer in layers else None
+            kwargs["layer"] = layer
             params += ((attention_intervention_fn, attn, kwargs),)
         return {"attention_overrides": params}

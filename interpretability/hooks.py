@@ -1,3 +1,7 @@
+"""
+A collection of hooks used for intervention. Each hook is a function of (stream, intervention, layer, **kwargs)
+"""
+
 import torch
 
 def add_mean_hybrid(

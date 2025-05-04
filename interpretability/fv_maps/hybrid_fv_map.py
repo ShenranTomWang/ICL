@@ -60,17 +60,6 @@ class HybridFVMap(FVMap):
         self.visualize_on_axis(ax1, ax2)
 
     def top_k_heads(self, k: int, stream: str = None, **kwargs) -> list[tuple[int, int, str]]:
-        """
-        Get the top k heads overall in the attention map.
-        
-        Args:
-            k (int): number of heads to return.
-            stream (str, optional): stream to use, one of attn or scan. Defaults to None to use both streams.
-            **kwargs: not used.
-        
-        Returns:
-            list[tuple[int, int, str]]: list of tuples of (layer, head, stream) for the top k heads.
-        """
         if stream is not None:
             if stream == "attn":
                 map_ = self.attn_map.flatten()

@@ -143,5 +143,6 @@ class HybridOperator(Operator, ABC):
         for layer in self.ALL_LAYERS:
             attn = attn_outputs[layer] if keep_attention and layer in layers else None
             scan = scan_outputs[layer] if keep_scan and layer in layers else None
+            kwargs["layer"] = layer
             params += ((attention_intervention_fn, attn, scan_intervention_fn, scan, kwargs),)
         return {"attention_overrides": params}

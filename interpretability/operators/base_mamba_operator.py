@@ -49,5 +49,6 @@ class BaseMambaOperator(Operator):
         scan_output = scan_outputs.scan_outputs
         for layer in self.ALL_LAYERS:
             scan = scan_output[layer] if layer in layers else None
+            kwargs["layer"] = layer
             params += ((scan_intervention_fn, scan, kwargs),)
         return {"attention_overrides": params}
