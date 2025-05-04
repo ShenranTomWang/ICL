@@ -75,7 +75,7 @@ class FVMap(ABC):
         pass
     
     @abstractmethod
-    def top_k_heads(self, k: int, **kwargs) -> list[tuple[int, int, str]]:
+    def top_k_heads(self, k: int, **kwargs) -> map[object]:
         """
         Get the top k heads for the FVMap.
         
@@ -84,7 +84,7 @@ class FVMap(ABC):
             kwargs: Additional arguments for the method.
         
         Returns:
-            list[tuple[int, int, str]]: List of tuples containing the head indices (layer, head, stream).
+            map[int: {head: int, stream: str}]: at each layer, the head and stream, stream is either "attn" or "scan".
         """
         pass
     

@@ -38,7 +38,12 @@ class TransformerFVMap(FVMap):
         
     def top_k_heads(self, k: int, **kwargs) -> list[tuple[int, int, str]]:
         top_k_indices = torch.topk(self.attn_map.flatten(), k).indices
-        top_k_heads = [(i // self.attn_map.shape[1], i % self.attn_map.shape[1], "scan") for i in top_k_indices]
+        top_k_heads = {}
+        for i in top_k_indices:
+            if i in top_k_heads:
+                top_k_heads[i].append({"head": i % self.attn_map.shape[1], "stream": "attn"})
+            else:
+                top_k_heads[i] = [{"head": i % self.attn_map.shape[1], "stream": "attn"}]
         return top_k_heads
     
     def visualize(self, save_path: str = None) -> Figure:
