@@ -290,7 +290,7 @@ class Mamba2Mixer(nn.Module):
             attention = hidden_states if output_attentions else None
             if attention_override is not None:
                 hook, scan_intervention, hook_kwargs = attention_override
-                hidden_states = hook(hidden_states, scan_intervention, **hook_kwargs)
+                hidden_states = hook(hidden_states, scan_intervention, curr_stream="scan", layer=self.layer_idx, **hook_kwargs)
             hidden_states = hidden_states.view(batch_size, self.num_heads * self.head_dim)
             hidden_states = self.norm(hidden_states, gate)
             
@@ -385,7 +385,7 @@ class Mamba2Mixer(nn.Module):
                 attention = scan_output if output_attentions else None
                 if attention_override is not None:
                     hook, scan_intervention, hook_kwargs = attention_override
-                    scan_output = hook(scan_output, scan_intervention, **hook_kwargs)
+                    scan_output = hook(scan_output, scan_intervention, curr_stream="scan", layer=self.layer_idx, **hook_kwargs)
                 scan_output = scan_output.view(batch_size, seq_len, -1)
                 # Multiply "gate" branch and apply extra normalization layer
                 scan_output = self.norm(scan_output, gate)
@@ -506,7 +506,7 @@ class Mamba2Mixer(nn.Module):
             attention = y if output_attentions else None
             if attention_override is not None:
                 hook, scan_intervention, hook_kwargs = attention_override
-                y = hook(y, scan_intervention, **hook_kwargs)
+                y = hook(y, scan_intervention, curr_stream="scan", layer=self.layer_idx, **hook_kwargs)
             # [bsz, num_heads, head_dim] -> [bsz, 1, intermediate_size]
             y = y.reshape(batch_size, -1)[:, None, ...]
         else:
@@ -585,7 +585,7 @@ class Mamba2Mixer(nn.Module):
             attention = y if output_attentions else None
             if attention_override is not None:
                 hook, scan_intervention, hook_kwargs = attention_override
-                y = hook(y, scan_intervention, **hook_kwargs)
+                y = hook(y, scan_intervention, curr_stream="scan", layer=self.layer_idx, **hook_kwargs)
             y = y.reshape(batch_size, seq_len, -1)
 
             # Init cache

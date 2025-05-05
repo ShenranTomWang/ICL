@@ -19,10 +19,8 @@ class BaseMambaOperator(Operator):
         n_layers: int,
         n_heads: int
     ):
-        self.n_layers = n_layers
-        self.n_heads = n_heads
-        self.ALL_LAYERS = [i for i in range(n_layers)]
-        super().__init__(tokenizer, model, device, dtype)
+        ALL_LAYERS = [i for i in range(n_layers)]
+        super().__init__(tokenizer, model, device, dtype, n_layers, n_heads, ALL_LAYERS)
     
     def attention2kwargs(
         self,
@@ -49,6 +47,5 @@ class BaseMambaOperator(Operator):
         scan_output = scan_outputs.scan_outputs
         for layer in self.ALL_LAYERS:
             scan = scan_output[layer] if layer in layers else None
-            kwargs["layer"] = layer
             params += ((scan_intervention_fn, scan, kwargs),)
         return {"attention_overrides": params}

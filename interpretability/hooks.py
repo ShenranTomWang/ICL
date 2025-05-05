@@ -1,5 +1,5 @@
 """
-A collection of hooks used for intervention. Each hook is a function of (stream, intervention, layer, **kwargs)
+A collection of hooks used for intervention. Each hook is a function of (stream, intervention, layer, curr_stream, **kwargs)
 """
 
 import torch
@@ -64,6 +64,42 @@ def fv_replace_head_generic(
         stream[:, -1, head, :] = intervention[:, head, :]
     else:
         stream[:, -1, :] = intervention
+    return stream
+
+def fv_remove_head_generic(
+    stream: torch.Tensor,
+    intervention: torch.Tensor | None,
+    heads: map,
+    layer: int,
+    curr_stream: str,
+    ablation_type: str = "zero",
+    **kwargs
+) -> torch.Tensor:
+    """
+    Hook for removing head during forward pass for generic (and potentially multihead) models. This will set the output of the specific head
+    to zero or a random head depending on ablation_type
+    Args:
+        stream (torch.Tensor): stream tensor of shape (batch_size, seqlen, stream_dims...)
+        intervention (torch.Tensor | None): intervention tensor, not used
+        heads (map): map of heads to remove, obtained from operator.top_p_heads
+        layer (int): current layer index
+        curr_stream (str): current stream, one of "attn" or "scan"
+        ablation_type (str, optional): type of ablation to perform. Defaults to "zero", which means set to zero. If "random", set to random head.
+        **kwargs: additional kwargs, not used
+    Returns:
+        torch.Tensor: intervened results
+    """
+    if layer in heads:
+        heads_to_ablate = heads[layer]
+        for head_to_ablate, stream_to_ablate in heads_to_ablate:
+            if stream_to_ablate == curr_stream:
+                if ablation_type == "zero":
+                    stream[:, :, head_to_ablate, :] = 0
+                elif ablation_type == "random":
+                    random_head = torch.randint(0, stream.shape[2], (1,))
+                    stream[:, :, head_to_ablate, :] = stream[:, :, random_head, :]
+                else:
+                    raise ValueError(f"Invalid ablation_type: {ablation_type}. Must be one of zero or random.")
     return stream
 
 def fv_replace_head_mamba(

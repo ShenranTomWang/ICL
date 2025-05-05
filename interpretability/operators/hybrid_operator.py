@@ -26,15 +26,14 @@ class HybridOperator(Operator, ABC):
         n_attn_heads: int,
         n_scan_heads: int
     ):
-        self.n_layers = n_layers
         self.attn_layers = attn_layers
         self.n_attn_layers = len(attn_layers)
         self.n_scan_layers = len(scan_layers)
         self.scan_layers = scan_layers
         self.n_attn_heads = n_attn_heads
         self.n_scan_heads = n_scan_heads
-        self.ALL_LAYERS = [i for i in range(n_layers)]
-        super().__init__(tokenizer, model, device, dtype)
+        ALL_LAYERS = [i for i in range(n_layers)]
+        super().__init__(tokenizer, model, device, dtype, n_layers, n_attn_heads + n_scan_heads, ALL_LAYERS)
         
     def get_attention_add_mean_hook(self):
         return add_mean_hybrid
@@ -143,6 +142,5 @@ class HybridOperator(Operator, ABC):
         for layer in self.ALL_LAYERS:
             attn = attn_outputs[layer] if keep_attention and layer in layers else None
             scan = scan_outputs[layer] if keep_scan and layer in layers else None
-            kwargs["layer"] = layer
             params += ((attention_intervention_fn, attn, scan_intervention_fn, scan, kwargs),)
         return {"attention_overrides": params}

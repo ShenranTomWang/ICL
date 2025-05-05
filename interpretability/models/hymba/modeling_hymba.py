@@ -671,7 +671,7 @@ class HymbaFlashAttention2(HymbaAttention):
         attention = attn_output if output_attentions else None
         if attention_override is not None:
             attn_hook, attn_intervention, _, _, hook_kwargs = attention_override
-            attn_output = attn_hook(attention, attn_intervention, **hook_kwargs)
+            attn_output = attn_hook(attention, attn_intervention, curr_stream="attn", layer=self.layer_idx, **hook_kwargs)
         attn_output = attn_output.reshape(bsz, q_len, v_dim).contiguous()
 
         if self.attn_only_wo_proj:
@@ -1071,7 +1071,7 @@ class HymbaSdpaAttention(HymbaAttention):
         attention = attn_output if output_attentions else None
         if attention_override is not None:
             attn_hook, attn_intervention, _, _, hook_kwargs = attention_override
-            attn_output = attn_hook(attn_output, attn_intervention, **hook_kwargs)
+            attn_output = attn_hook(attn_output, attn_intervention, curr_stream="attn", layer=self.layer_idx, **hook_kwargs)
         attn_output = attn_output.reshape(bsz, q_len, self.v_head_dim * self.num_heads)
 
         if self.attn_only_wo_proj:
@@ -1333,7 +1333,7 @@ class HymbaFlexAttention(HymbaFlashAttention2):
             attention = attn_output if output_attentions else None
             if attention_override is not None:
                 attn_hook, attn_intervention, _, _, hook_kwargs = attention_override
-                attn_output = attn_hook(attn_output, attn_intervention, **hook_kwargs)
+                attn_output = attn_hook(attn_output, attn_intervention, curr_stream="attn", layer=self.layer_idx, **hook_kwargs)
             attn_output = attn_output.reshape(bsz, q_len, v_dim).contiguous()
         
         else:
@@ -1360,7 +1360,7 @@ class HymbaFlexAttention(HymbaFlashAttention2):
             attention = attn_output if output_attentions else None
             if attention_override is not None:
                 attn_hook, attn_intervention, _, _, hook_kwargs = attention_override
-                attn_output = attn_hook(attn_output, attn_intervention, **hook_kwargs)
+                attn_output = attn_hook(attn_output, attn_intervention, curr_stream="attn", layer=self.layer_idx, **hook_kwargs)
             attn_output = attn_output.reshape(bsz, q_len, self.v_head_dim * self.num_heads)
             
         if self.attn_only_wo_proj:
@@ -1657,7 +1657,7 @@ class HymbaBlock(nn.Module):
         
         if attention_override is not None:
             _, _, scan_hook, scan_intervention, hook_kwargs = attention_override
-            scan_outputs = scan_hook(scan_outputs, scan_intervention, **hook_kwargs)
+            scan_outputs = scan_hook(scan_outputs, scan_intervention, curr_stream="scan", layer=self.layer_idx, **hook_kwargs)
 
         hidden_states = (self.pre_avg_layernorm1(attn_outputs) + self.pre_avg_layernorm2(scan_outputs)) / 2
         contextualized_states = self.out_proj(hidden_states)

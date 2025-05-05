@@ -496,7 +496,7 @@ class Zamba2Attention(nn.Module):
         attention = attn_output if output_attentions else None
         if attention_override is not None:
             attn_hook, attn_intervention, _, _, hook_kwargs = attention_override
-            attn_output = attn_hook(attn_output, attn_intervention, **hook_kwargs)
+            attn_output = attn_hook(attn_output, attn_intervention, curr_stream="attn", layer=self.layer_idx, **hook_kwargs)
         attn_output = attn_output.reshape(*input_shape, -1).contiguous()
         attn_output = self.o_proj(attn_output)
         return attn_output, attn_weights, attention
@@ -690,7 +690,7 @@ class Zamba2MambaMixer(nn.Module):
             scan = hidden_states
             if attention_override is not None:
                 _, _, scan_hook, scan_override, hook_kwargs = attention_override
-                scan_output = scan_hook(hidden_states, scan_override, **hook_kwargs)
+                scan_output = scan_hook(hidden_states, scan_override, curr_stream="scan", layer=self.layer_idx, **hook_kwargs)
             hidden_states = hidden_states.view(batch_size, self.num_heads * self.head_dim)
             hidden_states = self.norm(hidden_states, gate)
             out = self.out_proj(hidden_states)[:, None, ...]
@@ -786,7 +786,7 @@ class Zamba2MambaMixer(nn.Module):
                 scan = scan_output
                 if attention_override is not None:
                     _, _, scan_hook, scan_override, hook_kwargs = attention_override
-                    scan_output = scan_hook(scan_output, scan_override, **hook_kwargs)
+                    scan_output = scan_hook(scan_output, scan_override, curr_stream="scan", layer=self.layer_idx, **hook_kwargs)
                 scan_output = scan_output.view(batch_size, seq_len, -1)
                 # Multiply "gate" branch and apply extra normalization layer
                 scan_output = self.norm(scan_output, gate)

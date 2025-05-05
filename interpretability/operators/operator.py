@@ -12,11 +12,23 @@ class Operator(ABC):
     """
     Operator class is a base class that operates an LLM. It contains all the methods necessary for interpretability experiments.
     """
-    def __init__(self, tokenizer: Tokenizer, model: AutoModelForCausalLM, device: torch.DeviceObjType, dtype: torch.dtype):
+    def __init__(
+        self,
+        tokenizer: Tokenizer,
+        model: AutoModelForCausalLM,
+        device: torch.DeviceObjType,
+        dtype: torch.dtype,
+        n_layers: int,
+        n_heads: int,
+        ALL_LAYERS: list[int]
+    ):
         self.model = model
         self.tokenizer = tokenizer
         self.device = device
         self.dtype = dtype
+        self.n_layers = n_layers
+        self.n_heads = n_heads
+        self.ALL_LAYERS = ALL_LAYERS
         
     def __call__(self, text: str, **kwargs) -> torch.Tensor:
         return self.forward(text, **kwargs)
@@ -100,6 +112,20 @@ class Operator(ABC):
         """
         manager = torch.load(fname).to(self.device)
         return manager
+    
+    def top_p_heads(self, fv_map: FVMap, top_p: float) -> map:
+        """
+        Get top p heads from fv_map
+        Args:
+            fv_map (FVMap): fv_map object
+            top_p (float): top p value in [0, 1]
+        Returns:
+            map[int: list[{head: int, stream: str}]]: map of top p heads in corresponding streams at specific layers.
+                This is to be passed to hooks as a kwarg, stream is one of attn or scan
+        """
+        top_k = int(self.n_heads * top_p)
+        top_p_heads = fv_map.top_k_heads(top_k)
+        return top_p_heads
     
     @abstractmethod
     def attention2kwargs(self, attn: AttentionManager, **kwargs) -> dict:

@@ -234,7 +234,7 @@ class MambaMixer(nn.Module):
             attention = scan_outputs if output_attentions else None
             if attention_override is not None:
                 hook, scan_intervention, hook_kwargs = attention_override
-                scan_outputs = hook(scan_outputs, scan_intervention, **hook_kwargs)
+                scan_outputs = hook(scan_outputs, scan_intervention, curr_stream="scan", layer=self.layer_idx, **hook_kwargs)
             # 4. Final linear projection
             contextualized_states = self.out_proj(scan_outputs.transpose(1, 2))
         return contextualized_states, attention
@@ -326,8 +326,8 @@ class MambaMixer(nn.Module):
             if cache_params is not None:
                 cache_params.ssm_states[self.layer_idx].copy_(ssm_state)
             if attention_override is not None:
-                hook, scan_intervention = attention_override
-                scan_output = hook(scan_output, scan_intervention)
+                hook, scan_intervention, hook_kwargs = attention_override
+                scan_output = hook(scan_output, scan_intervention, curr_stream="scan", layer=self.layer_idx, **hook_kwargs)
 
         # 4. Final linear projection
         contextualized_states = self.out_proj(scan_output.transpose(1, 2))  # [batch, seq_len, hidden_size]
