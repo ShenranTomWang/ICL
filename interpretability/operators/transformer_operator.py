@@ -1,7 +1,7 @@
 import shutup; shutup.please()
 from interpretability.attention_managers import SelfAttentionManager
 from interpretability.fv_maps import TransformerFVMap
-from interpretability.hooks import add_mean_hybrid, fv_replace_head_generic
+from interpretability.hooks import add_mean_hybrid, fv_replace_head_generic, fv_remove_head_generic
 from transformers import AutoModelForCausalLM
 from interpretability.tokenizers import Tokenizer
 import torch
@@ -27,6 +27,20 @@ class TransformerOperator(Operator):
         
     def get_attention_add_mean_hook(self):
         return add_mean_hybrid
+    
+    def get_fv_remove_head_scan_hook(self):
+        return None
+    
+    def get_fv_remove_head_attn_hook(self):
+        return fv_remove_head_generic
+    
+    def get_dummy_attention_manager(self) -> SelfAttentionManager:
+        """
+        Get a dummy attention manager for the model
+        Returns:
+            SelfAttentionManager: dummy attention manager
+        """
+        return SelfAttentionManager(None, None, self.device)
         
     @torch.inference_mode()
     def extract_attention_managers(self, inputs: list[str], activation_callback = lambda x: x) -> SelfAttentionManager:
@@ -82,7 +96,6 @@ class TransformerOperator(Operator):
                 head_AIE = self.compute_AIE(head_fv_logits, original_logits, label_ids)
                 attn_map[layer, head] = head_AIE
         return TransformerFVMap(attn_map, self.dtype)
-                        
     
     def attention2kwargs(
         self,

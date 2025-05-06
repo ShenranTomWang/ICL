@@ -21,6 +21,9 @@ class BaseMambaOperator(Operator):
     ):
         ALL_LAYERS = [i for i in range(n_layers)]
         super().__init__(tokenizer, model, device, dtype, n_layers, n_heads, ALL_LAYERS)
+        
+    def get_fv_remove_head_attn_hook(self):
+        return None
     
     def attention2kwargs(
         self,

@@ -75,7 +75,7 @@ class FVMap(ABC):
         pass
     
     @abstractmethod
-    def top_k_heads(self, k: int, **kwargs) -> map[object]:
+    def top_k_heads(self, k: int, **kwargs) -> map:
         """
         Get the top k heads for the FVMap.
         

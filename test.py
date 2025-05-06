@@ -79,7 +79,17 @@ def main(args):
             
             dataset = Dataset(curr_train_data, curr_test_data, verbose=args.verbose, template=args.use_template)
             dataset.tensorize(operator.tokenizer)
-            f1, acc = run(args, dataset, operator, seed)
+            if args.ablate_top_p_heads > 0:
+                fv_map = torch.load(f"{args.fv_map_load_dir}/{test_task}_random/100/function_vectors.pth")
+                top_p_heads = operator.top_p_heads(fv_map, args.ablate_top_p_heads)
+                dummy_manager = operator.get_dummy_attention_manager()
+                kwargs = operator.attention2kwargs(
+                    dummy_manager,
+                    attention_intervention_fn=operator.get_fv_remove_head_attn_hook(),
+                    scan_intervention_fn=operator.get_fv_remove_head_scan_hook(),
+                    heads=top_p_heads
+                )
+            f1, acc = run(args, dataset, operator, seed, kwargs=kwargs)
 
             if f1 is None or acc is None:
                 errors.append("%s/%s" % (test_task, seed))
@@ -116,10 +126,14 @@ if __name__=='__main__':
     parser.add_argument("--split", type=str, default="test", choices=["test", "dev"])
     parser.add_argument("--model", type=str, required=True)
     parser.add_argument("--operator", type=str, required=True, choices=ALL_OPERATORS)
+    parser.add_argument("--ablate_top_p_heads", type=float, default=0.0, help="Ablate top p heads")
+    parser.add_argument("--fv_map_load_dir", type=str, default=None, help="Load fv_map from this directory (only needed when ablate_top_p_heads > 0), will use out_dir if not specified")
 
     args = parser.parse_args()
     if args.out_dir is None:
         args.out_dir = "out/" + "/".join(args.model.split("/")[-1:])
+    if args.fv_map_load_dir is None:
+        args.fv_map_load_dir = args.out_dir
     
     assert args.dataset is not None or args.task is not None, "Either dataset or task must be provided"
         

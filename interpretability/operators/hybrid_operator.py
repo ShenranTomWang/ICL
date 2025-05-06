@@ -5,7 +5,7 @@ from typing import Callable
 from .operator import Operator
 from interpretability.attention_managers import HybridAttentionManager
 from interpretability.fv_maps import HybridFVMap
-from interpretability.hooks import add_mean_hybrid, fv_replace_head_generic
+from interpretability.hooks import add_mean_hybrid, fv_replace_head_generic, fv_remove_head_generic
 from interpretability.tokenizers import Tokenizer
 from abc import ABC
 
@@ -37,6 +37,9 @@ class HybridOperator(Operator, ABC):
         
     def get_attention_add_mean_hook(self):
         return add_mean_hybrid
+    
+    def get_fv_remove_head_attn_hook(self):
+        return fv_remove_head_generic
     
     @torch.inference_mode()
     def extract_attention_managers(self, inputs: list[str], activation_callback: Callable = lambda x: x) -> list[HybridAttentionManager]:
@@ -111,6 +114,9 @@ class HybridOperator(Operator, ABC):
                 head_AIE = self.compute_AIE(head_fv_logits, original_logits, label_ids)
                 scan_map[layer_idx, head] = head_AIE
         return HybridFVMap(attn_map, scan_map, self.attn_layers, self.scan_layers, self.dtype)
+    
+    def get_dummy_attention_manager(self) -> HybridAttentionManager:
+        return HybridAttentionManager(None, None, None, self.device)
 
     def attention2kwargs(
         self,

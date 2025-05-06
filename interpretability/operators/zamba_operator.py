@@ -4,6 +4,7 @@ import torch
 from transformers import AutoTokenizer
 from .hybrid_operator import HybridOperator
 from interpretability.tokenizers import HybridTokenizer
+from interpretability.hooks import fv_remove_head_generic
 
 class ZambaOperator(HybridOperator):
     """Subclassing HymbaOperator to avoid redundant code
@@ -20,3 +21,6 @@ class ZambaOperator(HybridOperator):
         n_attn_heads = model.config.num_attention_heads
         n_scan_heads = model.config.n_mamba_heads
         super().__init__(HybridTokenizer(tokenizer), model, device, dtype, n_layers, attn_layers, scan_layers, n_attn_heads, n_scan_heads)
+
+    def get_fv_remove_head_scan_hook(self):
+        return fv_remove_head_generic

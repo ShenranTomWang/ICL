@@ -59,7 +59,7 @@ class HybridFVMap(FVMap):
         ax2 = plt.subplot(gs_inner[1])
         self.visualize_on_axis(ax1, ax2)
 
-    def top_k_heads(self, k: int, stream: str = None, **kwargs) -> map[object]:
+    def top_k_heads(self, k: int, stream: str = None, **kwargs) -> map:
         if stream is not None:
             if stream == "attn":
                 map_ = self.attn_map.flatten()

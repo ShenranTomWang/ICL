@@ -6,7 +6,7 @@ from transformers import AutoTokenizer
 from interpretability.tokenizers import StandardTokenizer
 from interpretability.attention_managers import Mamba2ScanManager, AttentionManager
 from interpretability.fv_maps import ScanFVMap
-from interpretability.hooks import fv_replace_head_generic
+from interpretability.hooks import fv_replace_head_generic, fv_remove_head_generic
 from interpretability.hooks import add_mean_hybrid
 
 class Mamba2Operator(BaseMambaOperator):
@@ -18,7 +18,13 @@ class Mamba2Operator(BaseMambaOperator):
         super().__init__(model, StandardTokenizer(tokenizer), device, dtype, n_layers, n_heads)
         
     def get_attention_add_mean_hook(self):
-        return add_mean_hybrid
+        return add_mean_hybrid\
+            
+    def get_dummy_attention_manager(self) -> Mamba2ScanManager:
+        return Mamba2ScanManager(None, self.device)
+    
+    def get_fv_remove_head_scan_hook(self):
+        return fv_remove_head_generic
     
     @torch.inference_mode()
     def generate_AIE_map(self, steer: list[AttentionManager], inputs: list[list[str]], label_ids: list[torch.Tensor]) -> ScanFVMap:

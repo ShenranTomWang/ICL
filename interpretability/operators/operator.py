@@ -128,11 +128,39 @@ class Operator(ABC):
         return top_p_heads
     
     @abstractmethod
-    def attention2kwargs(self, attn: AttentionManager, **kwargs) -> dict:
+    def get_fv_remove_head_attn_hook(self) -> Callable:
+        """
+        Get hook function to remove head from attention stream, returns None if not supported
+        Returns:
+            Callable: hook function
+        """
+        pass
+    
+    @abstractmethod
+    def get_fv_remove_head_scan_hook(self) -> Callable:
+        """
+        Get hook function to remove head from scan stream, returns None if not supported
+        Returns:
+            Callable: hook function
+        """
+        pass
+    
+    @abstractmethod
+    def get_dummy_attention_manager(self) -> AttentionManager:
+        """
+        Get dummy attention manager for model override
+        Returns:
+            AttentionManager: dummy attention manager
+        """
+        pass
+    
+    @abstractmethod
+    def attention2kwargs(self, attn: AttentionManager, layers: list[int] = None, **kwargs) -> dict:
         """
         Convert attention manager to kwargs for model override
         Args:
             attn (AttentionManager): attention manager
+            layers (list[int], optional): layers to perform intervention, defaults to None to perform on all layers
             **kwargs: additional arguments
         Returns:
             dict: kwargs for model
