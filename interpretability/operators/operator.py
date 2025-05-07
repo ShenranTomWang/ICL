@@ -146,20 +146,11 @@ class Operator(ABC):
         pass
     
     @abstractmethod
-    def get_dummy_attention_manager(self) -> AttentionManager:
-        """
-        Get dummy attention manager for model override
-        Returns:
-            AttentionManager: dummy attention manager
-        """
-        pass
-    
-    @abstractmethod
-    def attention2kwargs(self, attn: AttentionManager, layers: list[int] = None, **kwargs) -> dict:
+    def attention2kwargs(self, attn: AttentionManager | None, layers: list[int] = None, **kwargs) -> dict:
         """
         Convert attention manager to kwargs for model override
         Args:
-            attn (AttentionManager): attention manager
+            attn (AttentionManager | None): attention manager, set to None for a dummy value
             layers (list[int], optional): layers to perform intervention, defaults to None to perform on all layers
             **kwargs: additional arguments
         Returns:

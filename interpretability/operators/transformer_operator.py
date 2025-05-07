@@ -33,14 +33,6 @@ class TransformerOperator(Operator):
     
     def get_fv_remove_head_attn_hook(self):
         return fv_remove_head_generic
-    
-    def get_dummy_attention_manager(self) -> SelfAttentionManager:
-        """
-        Get a dummy attention manager for the model
-        Returns:
-            SelfAttentionManager: dummy attention manager
-        """
-        return SelfAttentionManager(None, None, self.device)
         
     @torch.inference_mode()
     def extract_attention_managers(self, inputs: list[str], activation_callback = lambda x: x) -> SelfAttentionManager:
@@ -99,7 +91,7 @@ class TransformerOperator(Operator):
     
     def attention2kwargs(
         self,
-        attention: SelfAttentionManager,
+        attention: SelfAttentionManager | None,
         attention_intervention_fn: Callable = add_mean_hybrid,
         layers: list[int] = None,
         **kwargs
@@ -107,7 +99,7 @@ class TransformerOperator(Operator):
         """
         Convert attention outputs to kwargs for intervention
         Args:
-            attention (SelfAttentionManager)
+            attention (SelfAttentionManager | None)
             attention_intervention_fn (Callable): intervention function for attention, defaults to add_mean_hybrid
             layers (list[int], optional): list of layers to use attention, if None, use all layers. Defaults to None.
             **kwargs: additional kwargs for intervention function
@@ -116,7 +108,7 @@ class TransformerOperator(Operator):
         """
         if layers is None:
             layers = self.ALL_LAYERS
-        _, attn_outputs = attention
+        _, attn_outputs = attention if attention else (None, None)
         params = ()
         for layer in self.ALL_LAYERS:
             attn = attn_outputs[layer] if attn_outputs and layer in layers else None

@@ -120,7 +120,7 @@ class HybridOperator(Operator, ABC):
 
     def attention2kwargs(
         self,
-        attention: HybridAttentionManager,
+        attention: HybridAttentionManager | None,
         attention_intervention_fn: Callable = add_mean_hybrid,
         scan_intervention_fn: Callable = add_mean_hybrid,
         layers: list[int] = None,
@@ -131,7 +131,7 @@ class HybridOperator(Operator, ABC):
         """
         Convert attention outputs to kwargs for intervention
         Args:
-            attention (HybridAttentionManager)
+            attention (HybridAttentionManager | None)
             attention_intervention_fn (Callable, optional): intervention function for attention, defaults to add_mean_hybrid
             scan_intervention_fn (Callable, optional): intervention function for scan, defaults to add_mean_hybrid
             layers (list[int], optional): list of layers to use attention, if None, use all layers. Defaults to None.
@@ -143,7 +143,7 @@ class HybridOperator(Operator, ABC):
         """
         if layers is None:
             layers = set(self.ALL_LAYERS)
-        _, attn_outputs, scan_outputs = attention
+        _, attn_outputs, scan_outputs = attention if attention else (None, None, None)
         params = ()
         for layer in self.ALL_LAYERS:
             attn = attn_outputs[layer] if keep_attention and attn_outputs and layer in layers else None

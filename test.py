@@ -82,9 +82,8 @@ def main(args):
             if args.ablate_top_p_heads > 0:
                 fv_map = torch.load(f"{args.fv_map_load_dir}/{test_task}_random/100/function_vectors.pth")
                 top_p_heads = operator.top_p_heads(fv_map, args.ablate_top_p_heads)
-                dummy_manager = operator.get_dummy_attention_manager()
                 kwargs = operator.attention2kwargs(
-                    dummy_manager,
+                    None,
                     attention_intervention_fn=operator.get_fv_remove_head_attn_hook(),
                     scan_intervention_fn=operator.get_fv_remove_head_scan_hook(),
                     heads=top_p_heads

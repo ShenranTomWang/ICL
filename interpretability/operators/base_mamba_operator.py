@@ -27,7 +27,7 @@ class BaseMambaOperator(Operator):
     
     def attention2kwargs(
         self,
-        scan_outputs: AttentionManager,
+        scan_outputs: AttentionManager | None,
         scan_intervention_fn: Callable = None,
         layers: list[int] = None,
         **kwargs
@@ -35,7 +35,7 @@ class BaseMambaOperator(Operator):
         """
         Convert attention outputs to kwargs for intervention
         Args:
-            scan_outputs (AttentionManager): intervention values
+            scan_outputs (AttentionManager | None): intervention values
             scan_intervention_fn (Callable): intervention function for scan, defaults to None for using default
             layers (list[int], optional): list of layers to use attention, if None, use all layers. Defaults to None.
             **kwargs: additional kwargs for intervention function
@@ -47,7 +47,7 @@ class BaseMambaOperator(Operator):
         if scan_intervention_fn is None:
             scan_intervention_fn = self.get_attention_add_mean_hook()
         params = ()
-        scan_outputs_ = scan_outputs.scan_outputs
+        scan_outputs_ = scan_outputs.scan_outputs if scan_outputs else None
         for layer in self.ALL_LAYERS:
             scan = scan_outputs_[layer] if scan_outputs_ and layer in layers else None
             params += ((scan_intervention_fn, scan, kwargs),)
