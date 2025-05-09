@@ -69,8 +69,8 @@ class HybridFVMap(FVMap):
                 raise ValueError(f"Invalid stream: {stream}. Must be one of attn or scan.")
             top_k = torch.topk(map_, k).indices
             for i in top_k_heads:
-                layer = i // self.attn_map.shape[1]
-                head = i % self.attn_map.shape[1]
+                layer = (i // self.attn_map.shape[1]).item()
+                head = (i % self.attn_map.shape[1]).item()
                 if layer in top_k_heads:
                     top_k_heads[layer].append({"head": head, "stream": stream})
                 else:
@@ -83,11 +83,11 @@ class HybridFVMap(FVMap):
             top_k_heads = {}
             for i in top_k:
                 if i < stream_cutoff:
-                    layer = i // self.attn_map.shape[1]
-                    head = i % self.attn_map.shape[1]
+                    layer = (i // self.attn_map.shape[1]).item()
+                    head = (i % self.attn_map.shape[1]).item()
                 else:
-                    layer = (i - stream_cutoff) // self.scan_map.shape[1]
-                    head = (i - stream_cutoff) % self.scan_map.shape[1]
+                    layer = ((i - stream_cutoff) // self.scan_map.shape[1]).item()
+                    head = ((i - stream_cutoff) % self.scan_map.shape[1]).item()
                 if layer in top_k_heads:
                     top_k_heads[layer].append({"head": head, "stream": "attn"})
                 else:
