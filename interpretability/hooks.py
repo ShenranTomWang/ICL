@@ -91,7 +91,9 @@ def fv_remove_head_generic(
     """
     if layer in heads:
         heads_to_ablate = heads[layer]
-        for head_to_ablate, stream_to_ablate in heads_to_ablate:
+        for item in heads_to_ablate:
+            stream_to_ablate = item["stream"]
+            head_to_ablate = item["head"]
             if stream_to_ablate == curr_stream:
                 if ablation_type == "zero":
                     stream[:, :, head_to_ablate, :] = 0

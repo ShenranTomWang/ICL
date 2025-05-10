@@ -123,7 +123,7 @@ class Operator(ABC):
             map[int: list[{head: int, stream: str}]]: map of top p heads in corresponding streams at specific layers.
                 This is to be passed to hooks as a kwarg, stream is one of attn or scan
         """
-        top_k = int(self.n_heads * top_p)
+        top_k = int(self.n_heads * self.n_layers * top_p)
         top_p_heads = fv_map.top_k_heads(top_k)
         return top_p_heads
     
