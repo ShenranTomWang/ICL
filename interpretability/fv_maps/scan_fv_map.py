@@ -40,7 +40,7 @@ class ScanFVMap(FVMap):
         top_k_indices = torch.topk(self.scan_map.flatten(), k).indices
         top_k_heads = {}
         for i in top_k_indices:
-            layer = i.item()
+            layer = (i // self.scan_map.shape[1]).item()
             head = (i % self.scan_map.shape[1]).item()
             if i in top_k_heads:
                 top_k_heads[layer].append({"head": head, "stream": "scan"})
