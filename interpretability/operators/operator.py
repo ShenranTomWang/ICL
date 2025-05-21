@@ -124,7 +124,6 @@ class Operator(ABC):
         """
         top_k = int(self.total_n_heads * top_p)
         top_p_heads = fv_map.top_k_heads(top_k)
-        import pdb; pdb.set_trace()
         return top_p_heads
     
     @abstractmethod
