@@ -19,16 +19,15 @@ class Operator(ABC):
         device: torch.DeviceObjType,
         dtype: torch.dtype,
         n_layers: int,
-        n_heads: int,
-        ALL_LAYERS: list[int]
+        total_n_heads: int
     ):
         self.model = model
         self.tokenizer = tokenizer
         self.device = device
         self.dtype = dtype
         self.n_layers = n_layers
-        self.n_heads = n_heads
-        self.ALL_LAYERS = ALL_LAYERS
+        self.ALL_LAYERS = [i for i in range(n_layers)]
+        self.total_n_heads = total_n_heads
         
     def __call__(self, text: str, **kwargs) -> torch.Tensor:
         return self.forward(text, **kwargs)
@@ -123,8 +122,9 @@ class Operator(ABC):
             map[int: list[{head: int, stream: str}]]: map of top p heads in corresponding streams at specific layers.
                 This is to be passed to hooks as a kwarg, stream is one of attn or scan
         """
-        top_k = int(self.n_heads * self.n_layers * top_p)
+        top_k = int(self.total_n_heads * top_p)
         top_p_heads = fv_map.top_k_heads(top_k)
+        import pdb; pdb.set_trace()
         return top_p_heads
     
     @abstractmethod

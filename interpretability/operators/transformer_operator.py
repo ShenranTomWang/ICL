@@ -22,8 +22,8 @@ class TransformerOperator(Operator):
         n_layers: int,
         n_heads: int
     ):
-        ALL_LAYERS = [i for i in range(n_layers)]
-        super().__init__(tokenizer=tokenizer, model=model, device=device, dtype=dtype, n_layers=n_layers, n_heads=n_heads, ALL_LAYERS=ALL_LAYERS)
+        self.n_heads = n_heads
+        super().__init__(tokenizer=tokenizer, model=model, device=device, dtype=dtype, n_layers=n_layers, total_n_heads=n_layers * n_heads)
         
     def get_attention_add_mean_hook(self):
         return add_mean_hybrid

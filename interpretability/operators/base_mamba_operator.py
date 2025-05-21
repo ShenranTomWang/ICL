@@ -19,8 +19,8 @@ class BaseMambaOperator(Operator):
         n_layers: int,
         n_heads: int
     ):
-        ALL_LAYERS = [i for i in range(n_layers)]
-        super().__init__(tokenizer, model, device, dtype, n_layers, n_heads, ALL_LAYERS)
+        self.n_heads = n_heads
+        super().__init__(tokenizer, model, device, dtype, n_layers, n_layers * n_heads)
         
     def get_fv_remove_head_attn_hook(self):
         return None

@@ -32,8 +32,8 @@ class HybridOperator(Operator, ABC):
         self.scan_layers = scan_layers
         self.n_attn_heads = n_attn_heads
         self.n_scan_heads = n_scan_heads
-        ALL_LAYERS = [i for i in range(n_layers)]
-        super().__init__(tokenizer, model, device, dtype, n_layers, n_attn_heads + n_scan_heads, ALL_LAYERS)
+        n_total_heads = self.n_attn_layers * n_attn_heads + self.n_scan_layers * n_scan_heads
+        super().__init__(tokenizer, model, device, dtype, n_layers, n_total_heads)
         
     def get_attention_add_mean_hook(self):
         return add_mean_hybrid
