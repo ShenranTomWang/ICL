@@ -88,6 +88,8 @@ def main(args):
                     scan_intervention_fn=operator.get_fv_remove_head_scan_hook(),
                     heads=top_p_heads
                 )
+            else:
+                kwargs = {}
             f1, acc = run(args, dataset, operator, seed, kwargs=kwargs)
 
             if f1 is None or acc is None:
