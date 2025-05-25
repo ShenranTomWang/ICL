@@ -36,7 +36,8 @@ class ScanFVMap(FVMap):
         ax = plt.subplot(gs_inner[0])
         self.visualize_on_axis(ax)
         
-    def top_k_heads(self, k: int, **kwargs) -> map:
+    def top_p_heads(self, p: int, **kwargs) -> map:
+        k = int(self.scan_map.numel() * p)
         top_k_indices = torch.topk(self.scan_map.flatten(), k).indices
         top_k_heads = {}
         for i in top_k_indices:

@@ -75,12 +75,12 @@ class FVMap(ABC):
         pass
     
     @abstractmethod
-    def top_k_heads(self, k: int, **kwargs) -> map:
+    def top_p_heads(self, k: int, **kwargs) -> map:
         """
-        Get the top k heads for the FVMap.
+        Get the top p heads for the FVMap.
         
         Args:
-            k (int): The number of heads to retrieve.
+            p (int): The proportion of heads to retrieve.
             kwargs: Additional arguments for the method.
         
         Returns:

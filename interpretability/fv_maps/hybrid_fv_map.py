@@ -59,14 +59,16 @@ class HybridFVMap(FVMap):
         ax2 = plt.subplot(gs_inner[1])
         self.visualize_on_axis(ax1, ax2)
 
-    def top_k_heads(self, k: int, stream: str = None) -> map:
+    def top_p_heads(self, p: float, stream: str = None) -> map:
         if stream is not None:
             if stream == "attn":
                 map_ = self.attn_map
                 layers = self.attn_layers
+                k = int(self.attn_map.numel() * p)
             elif stream == "scan":
                 map_ = self.scan_map
                 layers = self.scan_layers
+                k = int(self.scan_map.numel() * p)
             else:
                 raise ValueError(f"Invalid stream: {stream}. Must be one of attn or scan.")
             top_k = torch.topk(map_.flatten(), k).indices
@@ -83,6 +85,7 @@ class HybridFVMap(FVMap):
         else:
             map_ = torch.cat((self.attn_map.flatten(), self.scan_map.flatten()))
             stream_cutoff = self.attn_map.numel()
+            k = int(map_.numel() * p)
             top_k = torch.topk(map_, k).indices
             top_k_heads = {}
             for i in top_k:
