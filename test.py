@@ -79,9 +79,9 @@ def main(args):
             
             dataset = Dataset(curr_train_data, curr_test_data, verbose=args.verbose, template=args.use_template)
             dataset.tensorize(operator.tokenizer)
-            if args.ablate_top_p_heads > 0:
+            if args.p > 0:
                 fv_map = torch.load(f"{args.fv_map_load_dir}/{test_task}_random/100/function_vectors.pth")
-                top_p_heads = operator.top_p_heads(fv_map, args.ablate_top_p_heads)
+                top_p_heads = operator.top_p_heads(fv_map, args.p, stream=args.stream)
                 kwargs = operator.attention2kwargs(
                     None,
                     attention_intervention_fn=operator.get_fv_remove_head_attn_hook(),
@@ -127,8 +127,11 @@ if __name__=='__main__':
     parser.add_argument("--split", type=str, default="test", choices=["test", "dev"])
     parser.add_argument("--model", type=str, required=True)
     parser.add_argument("--operator", type=str, required=True, choices=ALL_OPERATORS)
-    parser.add_argument("--ablate_top_p_heads", type=float, default=0.0, help="Ablate top p heads")
-    parser.add_argument("--fv_map_load_dir", type=str, default=None, help="Load fv_map from this directory (only needed when ablate_top_p_heads > 0), will use out_dir if not specified")
+    ablation_subparser = parser.add_subparsers(dest="ablation_type", required=False)
+    zero_parser = ablation_subparser.add_parser("removal_ablation", help="Zero out heads")
+    zero_parser.add_argument("--p", type=float, default=0.0, help="Ablate top p heads")
+    zero_parser.add_argument("--fv_map_load_dir", type=str, default=None, help="Load fv_map from this directory (only needed when ablate_top_p_heads > 0), will use out_dir if not specified")
+    zero_parser.add_argument("--stream", type=str, default=None, choices=["attn", "scan"], help="Stream to ablate, either attn or scan, defaults to None to ablate both streams")
 
     args = parser.parse_args()
     if args.out_dir is None:

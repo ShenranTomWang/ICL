@@ -112,12 +112,13 @@ class Operator(ABC):
         manager = torch.load(fname).to(self.device)
         return manager
     
-    def top_p_heads(self, fv_map: FVMap, top_p: float) -> map:
+    def top_p_heads(self, fv_map: FVMap, top_p: float, **kwargs) -> map:
         """
         Get top p heads from fv_map
         Args:
             fv_map (FVMap): fv_map object
             top_p (float): top p value in [0, 1]
+            kwargs: additional arguments, not used
         Returns:
             map[int: list[{head: int, stream: str}]]: map of top p heads in corresponding streams at specific layers.
                 This is to be passed to hooks as a kwarg, stream is one of attn or scan

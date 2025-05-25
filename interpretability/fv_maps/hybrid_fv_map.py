@@ -59,18 +59,22 @@ class HybridFVMap(FVMap):
         ax2 = plt.subplot(gs_inner[1])
         self.visualize_on_axis(ax1, ax2)
 
-    def top_k_heads(self, k: int, stream: str = None, all_attn_layers: list = None, all_scan_layers: list = None) -> map:
+    def top_k_heads(self, k: int, stream: str = None) -> map:
         if stream is not None:
             if stream == "attn":
-                map_ = self.attn_map.flatten()
+                map_ = self.attn_map
+                layers = self.attn_layers
             elif stream == "scan":
-                map_ = self.scan_map.flatten()
+                map_ = self.scan_map
+                layers = self.scan_layers
             else:
                 raise ValueError(f"Invalid stream: {stream}. Must be one of attn or scan.")
-            top_k = torch.topk(map_, k).indices
-            for i in top_k_heads:
-                layer = (i // self.attn_map.shape[1]).item()
-                head = (i % self.attn_map.shape[1]).item()
+            top_k = torch.topk(map_.flatten(), k).indices
+            top_k_heads = {}
+            for i in top_k:
+                layer = (i // map_.shape[1]).item()
+                layer = layers[layer] if layers is not None else layer
+                head = (i % map_.shape[1]).item()
                 if layer in top_k_heads:
                     top_k_heads[layer].append({"head": head, "stream": stream})
                 else:
@@ -84,12 +88,12 @@ class HybridFVMap(FVMap):
             for i in top_k:
                 if i < stream_cutoff:
                     layer = (i // self.attn_map.shape[1]).item()
-                    layer = all_attn_layers[layer] if all_attn_layers is not None else layer
+                    layer = self.attn_layers[layer] if self.attn_layers is not None else layer
                     head = (i % self.attn_map.shape[1]).item()
                     stream = "attn"
                 else:
                     layer = ((i - stream_cutoff) // self.scan_map.shape[1]).item()
-                    layer = all_scan_layers[layer] if all_scan_layers is not None else layer
+                    layer = self.scan_layers[layer] if self.scan_layers is not None else layer
                     head = ((i - stream_cutoff) % self.scan_map.shape[1]).item()
                     stream = "scan"
                 if layer in top_k_heads:
