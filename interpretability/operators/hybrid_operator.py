@@ -132,7 +132,6 @@ class HybridOperator(Operator, ABC):
         """
         top_k = int(self.total_n_heads * top_p)
         top_p_heads = fv_map.top_k_heads(top_k, stream=stream)
-        import pdb; pdb.set_trace()
         return top_p_heads
 
     def attention2kwargs(
