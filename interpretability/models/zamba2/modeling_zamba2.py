@@ -496,7 +496,7 @@ class Zamba2Attention(nn.Module):
         attention = attn_output if output_attentions else None
         if attention_override is not None:
             attn_hook, attn_intervention, _, _, hook_kwargs = attention_override
-            attn_output = attn_hook(attn_output, attn_intervention, curr_stream="attn", layer=self.layer_idx, **hook_kwargs)
+            attn_output = attn_hook(attn_output, attn_intervention, curr_stream="attn", layer=layer_idx, **hook_kwargs)
         attn_output = attn_output.reshape(*input_shape, -1).contiguous()
         attn_output = self.o_proj(attn_output)
         return attn_output, attn_weights, attention
