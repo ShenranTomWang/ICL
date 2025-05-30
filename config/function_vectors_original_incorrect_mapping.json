@@ -1,0 +1,20 @@
+[
+    "antonym_incorrect_mapping",
+    "capitalize_incorrect_mapping",
+    "capitalize_first_letter_incorrect_mapping",
+    "country-capital_incorrect_mapping",
+    "country-currency_incorrect_mapping",
+    "english-french_incorrect_mapping",
+    "english-german_incorrect_mapping",
+    "english-spanish_incorrect_mapping",
+    "landmark-country_incorrect_mapping",
+    "lowercase_first_letter_incorrect_mapping",
+    "national_parks_incorrect_mapping",
+    "park-country_incorrect_mapping",
+    "person-sport_incorrect_mapping",
+    "present-past_incorrect_mapping",
+    "product-company_incorrect_mapping",
+    "sentiment_incorrect_mapping",
+    "singular-plural_incorrect_mapping",
+    "synonym_incorrect_mapping"
+]

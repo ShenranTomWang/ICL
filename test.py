@@ -154,10 +154,12 @@ if __name__=='__main__':
     args = parser.parse_args()
     if args.out_dir is None:
         args.out_dir = "out/" + "/".join(args.model.split("/")[-1:])
-    if args.fv_map_load_dir is None:
+    if hasattr(args, "fv_map_load_dir") and args.fv_map_load_dir is None:
         args.fv_map_load_dir = args.out_dir
-    if args.mean_load_dir is None:
+    if hasattr(args, "mean_load_dir") and args.mean_load_dir is None:
         args.mean_load_dir = args.out_dir
+    if not hasattr(args, "p"):
+        args.p = 0.0
     
     assert args.dataset is not None or args.task is not None, "Either dataset or task must be provided"
         
