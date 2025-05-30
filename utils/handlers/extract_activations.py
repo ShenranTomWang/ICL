@@ -143,8 +143,9 @@ def run_operator_generic(operator: Operator, args, inputs: list, dir: str = "") 
         attn = operator.extract_attention_managers(inputs)
         operator.store_attention_managers(attn, dir)
     elif args.stream == "attn_mean":
-        attn = operator.extract_attention_managers(inputs, operator.get_attention_mean)
-        operator.store_attention_managers(attn, dir, fnames=["attn_mean"])
+        attn = operator.extract_attention_managers(inputs, operator.get_attention_last_token)
+        attn = AttentionManager.mean_of(attn)
+        operator.store_attention_managers([attn], dir, fnames=["attn_mean"])
     else:
         raise ValueError(f"Invalid stream split combination: {args.stream} and {args.split}")
     
