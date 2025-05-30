@@ -61,6 +61,14 @@ class HybridAttentionManager(AttentionManager):
         scan_outputs = self.scan_outputs.get_last_token() if self.scan_outputs is not None else None
         return HybridAttentionManager(all_attns, attn_outputs, scan_outputs, self.device)
     
+    def get_stream(self, stream: str) -> torch.Tensor:
+        if stream == "attn":
+            return self.attn_outputs.clone() if self.attn_outputs is not None else None
+        elif stream == "scan":
+            return self.scan_outputs.clone() if self.scan_outputs is not None else None
+        else:
+            raise ValueError(f"Unknown stream: {stream}")
+    
     def mean(self) -> "HybridAttentionManager":
         all_attn, attn_output, scan_output = self.all_attns.clone(), self.attn_outputs.clone(), self.scan_outputs.clone()
         for i, attn_i in enumerate(attn_output):

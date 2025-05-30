@@ -3,6 +3,7 @@ A collection of hooks used for intervention. Each hook is a function of (stream,
 """
 
 import torch
+from interpretability.attention_managers.attention_manager import AttentionManager
 
 def add_mean_hybrid(
     stream: torch.Tensor,
@@ -72,19 +73,21 @@ def fv_remove_head_generic(
     heads: map,
     layer: int,
     curr_stream: str,
-    ablation_type: str = "zero",
+    ablation_type: str = "zero_ablation",
+    ablation_value: AttentionManager | None = None,
     **kwargs
 ) -> torch.Tensor:
     """
     Hook for removing head during forward pass for generic (and potentially multihead) models. This will set the output of the specific head
-    to zero or a random head depending on ablation_type
+    to zero or a specific value depending on ablation_type
     Args:
         stream (torch.Tensor): stream tensor of shape (batch_size, seqlen, stream_dims...)
         intervention (torch.Tensor | None): intervention tensor, not used
         heads (map): map of heads to remove, obtained from operator.top_p_heads
         layer (int): current layer index
         curr_stream (str): current stream, one of "attn" or "scan"
-        ablation_type (str, optional): type of ablation to perform. Defaults to "zero", which means set to zero. If "random", set to random head.
+        ablation_type (str, optional): type of ablation to perform. Defaults to "zero_ablation", which means set to zero. If "mean_ablation", set to a ablation_value
+        ablation_value (AttentionManager | None): value to set the head to if ablation_type is "mean_ablation". Defaults to None, which means no value is set
         **kwargs: additional kwargs, not used
     Returns:
         torch.Tensor: intervened results
@@ -95,13 +98,15 @@ def fv_remove_head_generic(
             stream_to_ablate = item["stream"]
             head_to_ablate = item["head"]
             if stream_to_ablate == curr_stream:
-                if ablation_type == "zero":
+                if ablation_type == "zero_ablation":
                     stream[:, :, head_to_ablate, :] = 0
-                elif ablation_type == "random":
-                    random_head = torch.randint(0, stream.shape[2], (1,))
-                    stream[:, :, head_to_ablate, :] = stream[:, :, random_head, :]
+                elif ablation_type == "mean_ablation":
+                    ablation_value_stream = ablation_value.get_stream(curr_stream)
+                    ablation_value_stream = ablation_value_stream[layer]
+                    ablation_value_stream = ablation_value_stream.unsqueeze(1).expand(-1, stream.shape[1], -1, -1)
+                    stream[:, :, head_to_ablate, :] = ablation_value_stream[:, :, head_to_ablate, :]
                 else:
-                    raise ValueError(f"Invalid ablation_type: {ablation_type}. Must be one of zero or random.")
+                    raise ValueError(f"Invalid ablation_type: {ablation_type}. Must be one of zero_ablation or mean_ablation.")
     return stream
 
 def fv_remove_head_mamba(
@@ -110,30 +115,35 @@ def fv_remove_head_mamba(
     heads: map,
     layer: int,
     curr_stream: str,
-    ablation_type: str = "zero",
+    ablation_type: str = "zero_ablation",
+    ablation_value: AttentionManager | None = None,
     **kwargs
 ) -> torch.Tensor:
     """
     Hook for removing head during forward pass for mamba models. This will set the output of the specific head
-    to zero or a random head depending on ablation_type. Note that Mamba models are not multihead, so random ablation is not supported.
+    to zero or a specific value depending on ablation_type. Note that Mamba models are not multihead, so random ablation is not supported.
     Args:
         stream (torch.Tensor): stream tensor of shape (batch_size, n_channels, seqlen)
         intervention (torch.Tensor | None): intervention tensor, not used
         heads (map): map of heads to remove, obtained from operator.top_p_heads
         layer (int): current layer index
         curr_stream (str): current stream, one of "attn" or "scan"
-        ablation_type (str, optional): type of ablation to perform. Defaults to "zero", which means set to zero. Random is not supported for Mamba models.
+        ablation_type (str, optional): type of ablation to perform. Defaults to "zero_ablation", which means set to zero. "mean_ablation" will set head to ablation_value
+        ablation_value (AttentionManager | None): value to set the head to if ablation_type is "mean_ablation". Defaults to None, which means no value is set
         **kwargs: additional kwargs, not used
     Returns:
         torch.Tensor: intervened results
     """
     if layer in heads:
-        if ablation_type == "zero":
+        if ablation_type == "zero_ablation":
             stream[:, :, :] = 0
-        elif ablation_type == "random":
-            raise ValueError("Random ablation not supported for Mamba models, as they are not multihead.")
+        elif ablation_type == "mean_ablation":
+            ablation_value_stream = ablation_value.get_stream(curr_stream)
+            ablation_value_stream = ablation_value_stream[layer]
+            ablation_value_stream = ablation_value_stream.unsqueeze(1).expand(-1, stream.shape[1], -1)
+            stream[:, :, :] = ablation_value_stream
         else:
-            raise ValueError(f"Invalid ablation_type: {ablation_type}. Must be one of zero or random.")
+            raise ValueError(f"Invalid ablation_type: {ablation_type} for Mamba.")
     return stream
 
 def fv_replace_head_mamba(

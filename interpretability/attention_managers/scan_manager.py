@@ -1,15 +1,32 @@
 import torch
 from .attention_manager import AttentionManager
-from .manager_item import MambaScanManagerItem, GenericManagerItem
+from .manager_item import MambaScanManagerItem, GenericManagerItem, ManagerItem
 
-class MambaScanManager(AttentionManager):
+class ScanManager(AttentionManager):
+    """
+    This is the manager parent class for scan outputs. It is used to manage the scan outputs of Mamba models.
+    """
+    def __init__(self, manager_item: ManagerItem | None, device: torch.DeviceObjType = "cpu"):
+        self.scan_outputs = manager_item
+        super().__init__(device)
+    
+    def get_stream(self, stream) -> torch.Tensor:
+        if stream == "scan":
+            return self.scan_outputs.clone() if self.scan_outputs is not None else None
+        else:
+            raise ValueError(f"Unknown stream: {stream}, must be 'scan'")
+    
+    def __iter__(self):
+        yield self.scan_outputs
+
+class MambaScanManager(ScanManager):
     """
     This is the manager class for Mamba models. Since Mamba stream has shape (batch_size, n_channels, seqlen),
     we need to use MambaScanManagerItem to manage the scan outputs.
     """
     def __init__(self, scan_outputs: list[torch.Tensor] | None, device: torch.DeviceObjType = "cpu"):
-        self.scan_outputs = MambaScanManagerItem(scan_outputs).to(device) if scan_outputs is not None else None
-        super().__init__(device)
+        scan_outputs = MambaScanManagerItem(scan_outputs).to(device) if scan_outputs is not None else None
+        super().__init__(scan_outputs, device)
         
     def __add__(self, other: "MambaScanManager") -> "MambaScanManager":
         if other is None:
@@ -34,9 +51,6 @@ class MambaScanManager(AttentionManager):
     def __rmul__(self, other: int) -> "MambaScanManager":
         scan_outputs = self.scan_outputs * other if self.scan_outputs is not None else None
         return MambaScanManager(scan_outputs, self.device)
-    
-    def __iter__(self):
-        yield self.scan_outputs
         
     def get_last_token(self) -> "MambaScanManager":
         scan_outputs = self.scan_outputs.get_last_token() if self.scan_outputs is not None else None
@@ -53,14 +67,14 @@ class MambaScanManager(AttentionManager):
         scan_outputs = self.scan_outputs.to(device)
         return MambaScanManager(scan_outputs, device)
     
-class Mamba2ScanManager(AttentionManager):
+class Mamba2ScanManager(ScanManager):
     """
     This is the manager class for Mamba2 models. Mamba2 stream is multihead and has the same shape as self-attention,
     so we use GenericManagerItem to manage the scan outputs.
     """
     def __init__(self, scan_outputs: list[torch.Tensor] | None, device: torch.DeviceObjType = "cpu"):
-        self.scan_outputs = GenericManagerItem(scan_outputs).to(device) if scan_outputs is not None else None
-        super().__init__(device)
+        scan_outputs = GenericManagerItem(scan_outputs).to(device) if scan_outputs is not None else None
+        super().__init__(scan_outputs, device)
         
     def __add__(self, other: "Mamba2ScanManager") -> "Mamba2ScanManager":
         if other is None:
@@ -85,9 +99,6 @@ class Mamba2ScanManager(AttentionManager):
     def __rmul__(self, other: int) -> "Mamba2ScanManager":
         scan_outputs = self.scan_outputs * other if self.scan_outputs is not None else None
         return Mamba2ScanManager(scan_outputs, self.device)
-    
-    def __iter__(self):
-        yield self.scan_outputs
         
     def get_last_token(self) -> "Mamba2ScanManager":
         scan_outputs = self.scan_outputs.get_last_token() if self.scan_outputs is not None else None

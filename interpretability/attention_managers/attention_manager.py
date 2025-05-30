@@ -44,6 +44,20 @@ class AttentionManager(ABC):
     
     @abstractmethod
     def get_last_token(self) -> "AttentionManager":
+        """Returns the last token of the attention manager
+        Returns:
+            AttentionManager: last token
+        """
+        pass
+    
+    @abstractmethod
+    def get_stream(self, stream: str) -> torch.Tensor:
+        """Returns the stream of the attention manager
+        Args:
+            stream (str): name of the stream ("attn" or "scan")
+        Returns:
+            torch.Tensor: stream of the attention manager
+        """
         pass
     
     def save(self, path: str) -> None:

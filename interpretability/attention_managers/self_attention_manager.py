@@ -47,6 +47,12 @@ class SelfAttentionManager(AttentionManager):
         attn_outputs = self.attn_outputs.get_last_token() if self.attn_outputs is not None else None
         return SelfAttentionManager(all_attns, attn_outputs, self.device)
     
+    def get_stream(self, stream: str) -> torch.Tensor:
+        if stream == "attn":
+            return self.attn_outputs.clone() if self.attn_outputs is not None else None
+        else:
+            raise ValueError(f"Unknown stream: {stream}. Only 'attn' is supported for SelfAttentionManager")
+    
     def mean(self) -> "SelfAttentionManager":
         all_attn, attn_output = self.all_attns.clone(), self.attn_outputs.clone()
         for i, attn_i in enumerate(attn_output):

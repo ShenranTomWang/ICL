@@ -8,6 +8,7 @@ from interpretability.operators import Operator
 import interpretability
 from utils.inference import do_inference, evaluate
 from constants import ALL_OPERATORS, ALL_DTYPES
+from interpretability.attention_managers import AttentionManager
             
 def run(
     args, dataset, operator, seed, kwargs: dict = {}
@@ -71,6 +72,14 @@ def main(args):
         train_counter, test_counter = init_counters(train_data, test_data)
         log_counters(train_counter, test_counter)
         
+        if args.ablation_type == "mean_ablation":
+            embeddings = []
+            for test_task in test_counter:
+                embedding = torch.load(f"{args.mean_load_dir}/{test_task}/{seed}/dev_attn_mean/attn_mean.pth")
+                embedding = embedding.to(args.device)
+                embeddings.append(embedding)
+            mean_embedding = AttentionManager.mean_of(embeddings)
+        
         for test_task in test_counter:
             curr_test_data = [dp for dp in test_data if dp["task"] == test_task]
             curr_train_data = [dp for dp in train_data if dp["task"] == test_task]
@@ -86,7 +95,9 @@ def main(args):
                     None,
                     attention_intervention_fn=operator.get_fv_remove_head_attn_hook(),
                     scan_intervention_fn=operator.get_fv_remove_head_scan_hook(),
-                    heads=top_p_heads
+                    heads=top_p_heads,
+                    ablation_type=args.ablation_type,
+                    ablation_value=mean_embedding if args.ablation_type == "mean_ablation" else None
                 )
             else:
                 kwargs = {}
@@ -128,16 +139,25 @@ if __name__=='__main__':
     parser.add_argument("--model", type=str, required=True)
     parser.add_argument("--operator", type=str, required=True, choices=ALL_OPERATORS)
     ablation_subparser = parser.add_subparsers(dest="ablation_type", required=False)
-    zero_parser = ablation_subparser.add_parser("removal_ablation", help="Zero out heads")
+    
+    zero_parser = ablation_subparser.add_parser("zero_ablation", help="Zero out heads")
     zero_parser.add_argument("--p", type=float, default=0.0, help="Ablate top p heads")
-    zero_parser.add_argument("--fv_map_load_dir", type=str, default=None, help="Load fv_map from this directory (only needed when ablate_top_p_heads > 0), will use out_dir if not specified")
+    zero_parser.add_argument("--fv_map_load_dir", type=str, default=None, help="Load fv_map from this directory (only needed when p > 0), will use out_dir if not specified")
     zero_parser.add_argument("--stream", type=str, default=None, choices=["attn", "scan"], help="Stream to ablate, either attn or scan, defaults to None to ablate both streams")
 
+    mean_parser = ablation_subparser.add_parser("mean_ablation", help="Zero out heads")
+    mean_parser.add_argument("--p", type=float, default=0.0, help="Ablate top p heads")
+    mean_parser.add_argument("--fv_map_load_dir", type=str, default=None, help="Load fv_map from this directory (only needed when p > 0), will use out_dir if not specified")
+    mean_parser.add_argument("--mean_load_dir", type=str, default=None, help="Load mean from this directory (only needed when p > 0), will use out_dir if not specified")
+    mean_parser.add_argument("--stream", type=str, default=None, choices=["attn", "scan"], help="Stream to ablate, either attn or scan, defaults to None to ablate both streams")
+    
     args = parser.parse_args()
     if args.out_dir is None:
         args.out_dir = "out/" + "/".join(args.model.split("/")[-1:])
     if args.fv_map_load_dir is None:
         args.fv_map_load_dir = args.out_dir
+    if args.mean_load_dir is None:
+        args.mean_load_dir = args.out_dir
     
     assert args.dataset is not None or args.task is not None, "Either dataset or task must be provided"
         
