@@ -140,7 +140,7 @@ def fv_remove_head_mamba(
         elif ablation_type == "mean_ablation":
             ablation_value_stream = ablation_value.get_stream(curr_stream)
             ablation_value_stream = ablation_value_stream[layer]
-            ablation_value_stream = ablation_value_stream.unsqueeze(1).expand(-1, stream.shape[1], -1)
+            ablation_value_stream = ablation_value_stream.unsqueeze(1).expand(-1, stream.shape[-1], -1)
             stream[:, :, :] = ablation_value_stream
         else:
             raise ValueError(f"Invalid ablation_type: {ablation_type} for Mamba.")
