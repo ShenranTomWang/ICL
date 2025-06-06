@@ -232,7 +232,7 @@ class FewshotGymFunctionVectorDataset(FewshotGymDataset):
         return data
         
     def get_train_test_lines(self, dataset):
-        train_lines, test_lines = train_test_split(dataset, test_size=0.2)
+        train_lines, test_lines = train_test_split(dataset, test_size=0.3)
         return train_lines, test_lines
     
     def dataset2list(self, dataset):
