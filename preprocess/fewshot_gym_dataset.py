@@ -284,7 +284,6 @@ class FewshotGymTextToTextDataset(FewshotGymDataset):
 
         # formulate into list (for consistency in np.random)
         train_lines, test_lines = self.get_train_test_lines(dataset)
-        print(f"Dataset {self.hf_identifier} has {len(train_lines)} train lines and {len(test_lines)} test lines.")
 
         # shuffle the data
         np.random.seed(seed)
@@ -300,6 +299,7 @@ class FewshotGymTextToTextDataset(FewshotGymDataset):
             k_shot_dev.append(line)
 
         k_shot_test = test_lines
+        print(f"Dataset {self.hf_identifier} has {len(k_shot_train)} train lines, {len(k_shot_dev)} valid lines and {len(k_shot_test)} test lines.")
 
         self.save(path, train_k, seed, k_shot_train, k_shot_dev, k_shot_test)
         return k_shot_train, k_shot_dev, k_shot_test
