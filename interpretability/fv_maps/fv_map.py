@@ -88,6 +88,21 @@ class FVMap(ABC):
         """
         pass
     
+    @abstractmethod
+    def exclusion_ablation_heads(self, top_p: float, ablation_p: float, **kwargs) -> map:
+        """
+        Get the heads for exclusion ablation.
+
+        Args:
+            top_p (float): The proportion of heads to exclude.
+            ablation_p (float): The proportion of heads to select for ablation.
+            kwargs: Additional arguments for the method.
+
+        Returns:
+            map[int: {head: int, stream: str}]: at each layer, the head and stream, stream is either "attn" or "scan".
+        """
+        pass
+    
     @staticmethod
     def visualize_all(maps: list["FVMap"], titles: list[str] = None, save_path: str = None) -> Figure:
         """

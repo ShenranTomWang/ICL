@@ -72,7 +72,7 @@ def main(args):
         train_counter, test_counter = init_counters(train_data, test_data)
         log_counters(train_counter, test_counter)
         
-        if args.ablation_type == "mean_ablation":
+        if args.ablation_type == "mean_ablation" or args.ablation_type == "exclusion_mean_ablation":
             embeddings = []
             for test_task in test_counter:
                 embedding = torch.load(f"{args.mean_load_dir}/{test_task}/{seed}/dev_attn_mean/attn_mean.pth")
@@ -89,16 +89,29 @@ def main(args):
             dataset = Dataset(curr_train_data, curr_test_data, verbose=args.verbose, template=args.use_template)
             dataset.tensorize(operator.tokenizer)
             if args.p > 0:
-                fv_map = torch.load(f"{args.fv_map_load_dir}/{test_task}_random/100/function_vectors.pth")
-                top_p_heads = operator.top_p_heads(fv_map, args.p, stream=args.stream)
-                kwargs = operator.attention2kwargs(
-                    None,
-                    attention_intervention_fn=operator.get_fv_remove_head_attn_hook(),
-                    scan_intervention_fn=operator.get_fv_remove_head_scan_hook(),
-                    heads=top_p_heads,
-                    ablation_type=args.ablation_type,
-                    ablation_value=mean_embedding if args.ablation_type == "mean_ablation" else None
-                )
+                if args.ablation_type == "mean_ablation" or args.ablation_type == "zero_ablation":
+                    fv_map = torch.load(f"{args.fv_map_load_dir}/{test_task}_random/100/function_vectors.pth")
+                    top_p_heads = operator.top_p_heads(fv_map, args.p, stream=args.stream)
+                    kwargs = operator.attention2kwargs(
+                        None,
+                        attention_intervention_fn=operator.get_fv_remove_head_attn_hook(),
+                        scan_intervention_fn=operator.get_fv_remove_head_scan_hook(),
+                        heads=top_p_heads,
+                        ablation_type=args.ablation_type,
+                        ablation_value=mean_embedding if args.ablation_type == "mean_ablation" else None
+                    )
+                elif args.ablation_type == "exclusion_mean_ablation" or args.ablation_type == "exclusion_zero_ablation":
+                    ablation_type = "mean_ablation" if args.ablation_type == "exclusion_mean_ablation" else "zero_ablation"
+                    fv_map = torch.load(f"{args.fv_map_load_dir}/{test_task}_random/100/function_vectors.pth")
+                    heads_to_ablate = operator.exclusion_ablation_heads(fv_map=fv_map, top_p=args.exclude_p, ablation_p=args.p, stream=args.stream)
+                    kwargs = operator.attention2kwargs(
+                        None,
+                        attention_intervention_fn=operator.get_fv_remove_head_attn_hook(),
+                        scan_intervention_fn=operator.get_fv_remove_head_scan_hook(),
+                        heads=heads_to_ablate,
+                        ablation_type=ablation_type,
+                        ablation_value=mean_embedding if ablation_type == "mean_ablation" else None
+                    )
             else:
                 kwargs = {}
             f1, acc = run(args, dataset, operator, seed, kwargs=kwargs)
@@ -145,11 +158,24 @@ if __name__=='__main__':
     zero_parser.add_argument("--fv_map_load_dir", type=str, default=None, help="Load fv_map from this directory (only needed when p > 0), will use out_dir if not specified")
     zero_parser.add_argument("--stream", type=str, default=None, choices=["attn", "scan"], help="Stream to ablate, either attn or scan, defaults to None to ablate both streams")
 
-    mean_parser = ablation_subparser.add_parser("mean_ablation", help="Zero out heads")
+    mean_parser = ablation_subparser.add_parser("mean_ablation", help="Mean out heads")
     mean_parser.add_argument("--p", type=float, default=0.0, help="Ablate top p heads")
     mean_parser.add_argument("--fv_map_load_dir", type=str, default=None, help="Load fv_map from this directory (only needed when p > 0), will use out_dir if not specified")
     mean_parser.add_argument("--mean_load_dir", type=str, default=None, help="Load mean from this directory (only needed when p > 0), will use out_dir if not specified")
     mean_parser.add_argument("--stream", type=str, default=None, choices=["attn", "scan"], help="Stream to ablate, either attn or scan, defaults to None to ablate both streams")
+    
+    exclusion_zero_parser = ablation_subparser.add_parser("exclusion_zero_ablation", help="Randomly ablate heads that are not function heads")
+    exclusion_zero_parser.add_argument("--p", type=float, default=0.0, help="Percentage of heads to ablate, defaults to 0.0")
+    exclusion_zero_parser.add_argument("--fv_map_load_dir", type=str, default=None, help="Load fv_map from this directory (only needed when p > 0), will use out_dir if not specified")
+    exclusion_zero_parser.add_argument("--stream", type=str, default=None, choices=["attn", "scan"], help="Stream to ablate, either attn or scan, defaults to None to ablate both streams")
+    exclusion_zero_parser.add_argument("--exclude_p", type=float, default=0.0, help="Percentage of function heads to exclude from ablation, defaults to 0.0")
+    
+    exclusion_mean_parser = ablation_subparser.add_parser("exclusion_mean_ablation", help="Randomly ablate heads that are not function heads")
+    exclusion_mean_parser.add_argument("--p", type=float, default=0.0, help="Percentage of heads to ablate, defaults to 0.0")
+    exclusion_mean_parser.add_argument("--fv_map_load_dir", type=str, default=None, help="Load fv_map from this directory (only needed when p > 0), will use out_dir if not specified")
+    exclusion_mean_parser.add_argument("--stream", type=str, default=None, choices=["attn", "scan"], help="Stream to ablate, either attn or scan, defaults to None to ablate both streams")
+    exclusion_mean_parser.add_argument("--exclude_p", type=float, default=0.0, help="Percentage of function heads to exclude from ablation, defaults to 0.0")
+    exclusion_mean_parser.add_argument("--mean_load_dir", type=str, default=None, help="Load mean from this directory (only needed when p > 0), will use out_dir if not specified")
     
     args = parser.parse_args()
     if args.out_dir is None:

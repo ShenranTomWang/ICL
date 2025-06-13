@@ -118,14 +118,29 @@ class Operator(ABC):
         Args:
             fv_map (FVMap): fv_map object
             top_p (float): top p value in [0, 1]
-            kwargs: additional arguments, not used
+            kwargs: additional arguments passed to fv_map for top p function usage
         Returns:
             map[int: list[{head: int, stream: str}]]: map of top p heads in corresponding streams at specific layers.
                 This is to be passed to hooks as a kwarg, stream is one of attn or scan
         """
-        top_p_heads = fv_map.top_p_heads(top_p)
+        top_p_heads = fv_map.top_p_heads(top_p, **kwargs)
         return top_p_heads
     
+    def exclusion_ablation_heads(self, fv_map: FVMap, top_p: float, ablation_p: float, **kwargs) -> map:
+        """
+        Get exclusion ablation heads from fv_map. This will select random heads not in top p function heads.
+        Args:
+            fv_map (FVMap): fv_map object
+            top_p (float): top p value in [0, 1] for top p function heads to exclude
+            ablation_p (float): ablation p value in [0, 1] for number of heads to select for ablation
+            kwargs: additional arguments passed to fv_map for ablation usage
+        Returns:
+            map[int: list[{head: int, stream: str}]]: map of exclusion ablation heads in corresponding streams at specific layers.
+                This is to be passed to hooks as a kwarg, stream is one of attn or scan
+        """
+        exclusion_ablation_heads = fv_map.exclusion_ablation_heads(top_p, ablation_p, **kwargs)
+        return exclusion_ablation_heads
+
     @abstractmethod
     def get_fv_remove_head_attn_hook(self) -> Callable:
         """

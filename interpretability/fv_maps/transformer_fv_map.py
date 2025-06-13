@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from matplotlib.figure import Figure
 from matplotlib import gridspec
-import os
+import os, random
 
 class TransformerFVMap(FVMap):
     """
@@ -48,6 +48,25 @@ class TransformerFVMap(FVMap):
             else:
                 top_k_heads[layer] = [{"head": head, "stream": "attn"}]
         return top_k_heads
+    
+    def exclusion_ablation_heads(self, top_p: float, ablation_p: float, **kwargs) -> map:
+        k = int(self.attn_map.numel() * top_p)
+        target_k = int(self.attn_map.numel() * ablation_p)
+        all_indices = set(range(self.attn_map.numel()))
+        top_k_indices = set(torch.topk(self.attn_map.flatten(), k).indices.tolist())
+        available_indices = list(all_indices - top_k_indices)
+        if target_k > len(available_indices):
+            raise ValueError("ablation_p is too large, not enough available indices outside top_k.")
+        indices = random.sample(available_indices, target_k)
+        heads = {}
+        for i in indices:
+            layer = (i // self.attn_map.shape[1])
+            head = (i % self.attn_map.shape[1])
+            if layer in heads:
+                heads[layer].append({"head": head, "stream": "attn"})
+            else:
+                heads[layer] = [{"head": head, "stream": "attn"}]
+        return heads
     
     def visualize(self, save_path: str = None) -> Figure:
         fig, ax = plt.subplots()

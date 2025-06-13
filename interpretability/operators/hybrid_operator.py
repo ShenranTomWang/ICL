@@ -118,21 +118,6 @@ class HybridOperator(Operator, ABC):
     def get_dummy_attention_manager(self) -> HybridAttentionManager:
         return HybridAttentionManager(None, None, None, self.device)
 
-    def top_p_heads(self, fv_map: HybridFVMap, top_p: float, stream: str = None, **kwargs) -> map:
-        """
-        Get top p heads from fv_map
-        Args:
-            fv_map (FVMap): fv_map object
-            top_p (float): top p value in [0, 1]
-            stream (str, optional): stream to use, one of "attn" or "scan". Defaults to None, which uses both streams.
-            **kwargs: additional arguments, not used
-        Returns:
-            map[int: list[{head: int, stream: str}]]: map of top p heads in corresponding streams at specific layers.
-                This is to be passed to hooks as a kwarg, stream is one of attn or scan
-        """
-        top_p_heads = fv_map.top_p_heads(top_p, stream=stream)
-        return top_p_heads
-
     def attention2kwargs(
         self,
         attention: HybridAttentionManager | None,
