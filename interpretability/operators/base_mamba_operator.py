@@ -36,7 +36,7 @@ class BaseMambaOperator(Operator):
         Convert attention outputs to kwargs for intervention
         Args:
             scan_outputs (AttentionManager | None): intervention values
-            scan_intervention_fn (Callable): intervention function for scan, defaults to None for using default
+            scan_intervention_fn (Callable): intervention function for scan, defaults to None for using add mean hook for Mamba models
             layers (list[int], optional): list of layers to use attention, if None, use all layers. Defaults to None.
             **kwargs: additional kwargs for intervention function
         Returns:

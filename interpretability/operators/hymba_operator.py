@@ -4,7 +4,8 @@ from interpretability.tokenizers import HybridTokenizer
 from transformers import AutoTokenizer
 import torch
 from .hybrid_operator import HybridOperator
-from interpretability.hooks import fv_remove_head_mamba
+from interpretability.hooks import fv_remove_head_mamba, add_mean_scan_mamba
+from typing import Callable
 
 class HymbaOperator(HybridOperator):
     def __init__(self, path: str, device: torch.DeviceObjType, dtype: torch.dtype):
@@ -17,5 +18,8 @@ class HymbaOperator(HybridOperator):
         scan_layers = [i for i in range(n_layers) if model.config.layer_type[i] == "h" or model.config.layer_type[i] == "m"]
         super().__init__(HybridTokenizer(tokenizer), model, device, dtype, n_layers, attn_layers, scan_layers, n_attn_heads, n_scan_heads)
 
-    def get_fv_remove_head_scan_hook(self):
+    def get_fv_remove_head_scan_hook(self) -> Callable:
         return fv_remove_head_mamba
+    
+    def get_scan_add_mean_hook(self) -> Callable:
+        return add_mean_scan_mamba

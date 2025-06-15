@@ -67,6 +67,16 @@ class MambaScanManager(ScanManager):
         scan_outputs = self.scan_outputs.to(device)
         return MambaScanManager(scan_outputs, device)
     
+    @classmethod
+    def zeros_like(cls, other: "MambaScanManager") -> "MambaScanManager":
+        scan_outputs = MambaScanManagerItem.zeros_like(other.scan_outputs) if other.scan_outputs is not None else None
+        return cls(scan_outputs, other.device)
+    
+    def set_head_values(self, head_values: "MambaScanManager", head_indices: dict) -> "MambaScanManager":
+        scan_outputs = self.scan_outputs.clone() if self.scan_outputs is not None else None
+        scan_outputs = scan_outputs.set_head_values(head_values.scan_outputs, head_indices, "scan") if scan_outputs is not None else None
+        return MambaScanManager(scan_outputs, self.device)
+    
 class Mamba2ScanManager(ScanManager):
     """
     This is the manager class for Mamba2 models. Mamba2 stream is multihead and has the same shape as self-attention,
@@ -114,3 +124,13 @@ class Mamba2ScanManager(ScanManager):
     def to(self, device: str) -> "Mamba2ScanManager":
         scan_outputs = self.scan_outputs.to(device)
         return Mamba2ScanManager(scan_outputs, device)
+    
+    @classmethod
+    def zeros_like(cls, other: "Mamba2ScanManager") -> "Mamba2ScanManager":
+        scan_outputs = GenericManagerItem.zeros_like(other.scan_outputs) if other.scan_outputs is not None else None
+        return cls(scan_outputs, other.device)
+
+    def set_head_values(self, head_values: "Mamba2ScanManager", head_indices: dict) -> "Mamba2ScanManager":
+        scan_outputs = self.scan_outputs.clone() if self.scan_outputs is not None else None
+        scan_outputs = scan_outputs.set_head_values(head_values.scan_outputs, head_indices, "scan") if scan_outputs is not None else None
+        return Mamba2ScanManager(scan_outputs, self.device)

@@ -1,10 +1,11 @@
+from typing import Callable
 import shutup; shutup.please()
 from interpretability.models.zamba2 import Zamba2ForCausalLM
 import torch
 from transformers import AutoTokenizer
 from .hybrid_operator import HybridOperator
 from interpretability.tokenizers import HybridTokenizer
-from interpretability.hooks import fv_remove_head_generic
+from interpretability.hooks import fv_remove_head_generic, add_mean_hybrid
 
 class ZambaOperator(HybridOperator):
     """Subclassing HymbaOperator to avoid redundant code
@@ -22,5 +23,8 @@ class ZambaOperator(HybridOperator):
         n_scan_heads = model.config.n_mamba_heads
         super().__init__(HybridTokenizer(tokenizer), model, device, dtype, n_layers, attn_layers, scan_layers, n_attn_heads, n_scan_heads)
 
-    def get_fv_remove_head_scan_hook(self):
+    def get_fv_remove_head_scan_hook(self) -> Callable:
         return fv_remove_head_generic
+    
+    def get_scan_add_mean_hook(self) -> Callable:
+        return add_mean_hybrid

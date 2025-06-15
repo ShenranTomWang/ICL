@@ -41,7 +41,32 @@ class ManagerItem(list, ABC):
                 mylist.append(None)
             else:
                 mylist.append(item.clone())
-        return ManagerItem(mylist)
+        return self.__class__(mylist)
+
+    @classmethod
+    @abstractmethod
+    def zeros_like(cls, other: "ManagerItem") -> "ManagerItem":
+        """
+        Create a new ManagerItem with the same shape as the other, filled with zeros.
+        Args:
+            other (ManagerItem): The item to match the shape of.
+        Returns:
+            ManagerItem: A new item filled with zeros.
+        """
+        pass
+    
+    @abstractmethod
+    def set_head_values(self, head_values: "ManagerItem", head_indices: dict, stream: str) -> "ManagerItem":
+        """
+        Set the head values in the manager item.
+        Args:
+            head_values (ManagerItem): The head values to set.
+            head_indices (dict): The indices of the heads to set.
+            stream (str): The stream to set the head values for.
+        Returns:
+            ManagerItem: A new item with the head values set.
+        """
+        pass
 
 class GenericManagerItem(ManagerItem):
     """
@@ -114,6 +139,36 @@ class GenericManagerItem(ManagerItem):
                 mylist.append(None)
             else:
                 mylist.append(item.to(device))
+        return GenericManagerItem(mylist)
+    
+    def set_head_values(self, head_values: "GenericManagerItem", head_indices: dict, stream: str) -> "GenericManagerItem":
+        mylist = self.clone()
+        for layer in range(len(mylist)):
+            if layer in head_indices:
+                heads = head_indices[layer]
+                for head in heads:
+                    head_idx =  head["head"]
+                    _stream = head["stream"]
+                    if _stream == stream:
+                        item = head_values[layer].clone()
+                        mylist[layer][:, head_idx, :] = item[:, head_idx, :]
+        return GenericManagerItem(mylist)
+    
+    @classmethod
+    def zeros_like(cls, other: "GenericManagerItem") -> "GenericManagerItem":
+        """
+        Create a new GenericManagerItem with the same shape as the other, filled with zeros.
+        Args:
+            other (GenericManagerItem): The item to match the shape of.
+        Returns:
+            GenericManagerItem: A new item filled with zeros.
+        """
+        mylist = []
+        for item in other:
+            if item is None:
+                mylist.append(None)
+            else:
+                mylist.append(torch.zeros_like(item))
         return GenericManagerItem(mylist)
     
 class MambaScanManagerItem(ManagerItem):
@@ -192,4 +247,33 @@ class MambaScanManagerItem(ManagerItem):
                 mylist.append(None)
             else:
                 mylist.append(item.to(device))
+        return MambaScanManagerItem(mylist)
+    
+    @classmethod
+    def zeros_like(cls, other: "MambaScanManagerItem") -> "MambaScanManagerItem":
+        """
+        Create a new MambaScanManagerItem with the same shape as the other, filled with zeros.
+        Args:
+            other (MambaScanManagerItem): The item to match the shape of.
+        Returns:
+            MambaScanManagerItem: A new item filled with zeros.
+        """
+        mylist = []
+        for item in other:
+            if item is None:
+                mylist.append(None)
+            else:
+                mylist.append(torch.zeros_like(item))
+        return MambaScanManagerItem(mylist)
+    
+    def set_head_values(self, head_values: "MambaScanManagerItem", head_indices: dict, stream: str) -> "MambaScanManagerItem":
+        mylist = self.clone()
+        for layer in range(len(mylist)):
+            if layer in head_indices:
+                heads = head_indices[layer]
+                for head in heads:
+                    _stream = head["stream"]
+                    if _stream == stream:
+                        item = head_values[layer].clone()
+                        mylist[layer] = item
         return MambaScanManagerItem(mylist)

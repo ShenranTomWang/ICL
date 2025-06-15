@@ -1,4 +1,4 @@
-import logging, argparse, os
+import logging, argparse, os, json
 from utils.utils import log_counters, init_counters
 from utils.data import load_data
 import numpy as np
@@ -9,6 +9,7 @@ import interpretability
 from utils.inference import do_inference, evaluate
 from constants import ALL_OPERATORS, ALL_DTYPES
 from interpretability.attention_managers import AttentionManager
+import interpretability.attention_managers as attention_managers
             
 def run(
     args, dataset, operator, seed, kwargs: dict = {}
@@ -112,6 +113,13 @@ def main(args):
                         ablation_type=ablation_type,
                         ablation_value=mean_embedding if ablation_type == "mean_ablation" else None
                     )
+                elif args.ablation_type == "steer":
+                    fv_map = torch.load(f"{args.fv_map_load_dir}/{test_task}_{args.target}/100/function_vectors.pth")
+                    fv_steer = operator.load_attention_manager(f"{args.fv_map_load_dir}/{test_task}_{args.target}/fv_steer.pth")
+                    zeros = attention_managers.zeros_like(fv_steer)
+                    top_p_heads = operator.top_p_heads(fv_map, args.p, stream=args.stream)
+                    fv_steer = zeros.set_head_values(fv_steer, top_p_heads)
+                    kwargs = operator.attention2kwargs(fv_steer)
             else:
                 kwargs = {}
             f1, acc = run(args, dataset, operator, seed, kwargs=kwargs)
@@ -177,6 +185,12 @@ if __name__=='__main__':
     exclusion_mean_parser.add_argument("--exclude_p", type=float, default=0.0, help="Percentage of function heads to exclude from ablation, defaults to 0.0")
     exclusion_mean_parser.add_argument("--mean_load_dir", type=str, default=None, help="Load mean from this directory (only needed when p > 0), will use out_dir if not specified")
     
+    steering_parser = ablation_subparser.add_parser("steer", help="Steer selected function heads")
+    steering_parser.add_argument("--p", type=float, default=0.0, help="Percentage of heads to steer, defaults to 0.0")
+    steering_parser.add_argument("--fv_map_load_dir", type=str, default=None, help="Load fv_map from this directory (only needed when p > 0), will use out_dir if not specified")
+    steering_parser.add_argument("--stream", type=str, default=None, choices=["attn", "scan"], help="Stream to steer, either attn or scan, defaults to None to steer both streams")
+    steering_parser.add_argument("--target", type=str, default="incorrect_mapping", help="Target task to steer towards, default is 'incorrect_mapping'")
+    
     args = parser.parse_args()
     if args.out_dir is None:
         args.out_dir = "out/" + "/".join(args.model.split("/")[-1:])
@@ -186,9 +200,9 @@ if __name__=='__main__':
         args.mean_load_dir = args.out_dir
     if not hasattr(args, "p"):
         args.p = 0.0
-    
-    assert args.dataset is not None or args.task is not None, "Either dataset or task must be provided"
-        
+
+    assert (args.dataset is not None) ^ (args.task is not None), "Either dataset or task must be provided, but not both"
+
     args.dtype = getattr(torch, args.dtype)
     args.device = torch.device(args.device)
     args.operator = getattr(interpretability.operators, args.operator)

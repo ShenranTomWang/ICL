@@ -100,7 +100,7 @@ class TransformerOperator(Operator):
         Convert attention outputs to kwargs for intervention
         Args:
             attention (SelfAttentionManager | None)
-            attention_intervention_fn (Callable): intervention function for attention, defaults to add_mean_hybrid
+            attention_intervention_fn (Callable): intervention function for attention, defaults to add mean hook for transformer models
             layers (list[int], optional): list of layers to use attention, if None, use all layers. Defaults to None.
             **kwargs: additional kwargs for intervention function
         Returns:

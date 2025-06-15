@@ -7,7 +7,7 @@ from interpretability.attention_managers import HybridAttentionManager
 from interpretability.fv_maps import HybridFVMap
 from interpretability.hooks import add_mean_hybrid, fv_replace_head_generic, fv_remove_head_generic
 from interpretability.tokenizers import Tokenizer
-from abc import ABC
+from abc import ABC, abstractmethod
 
 class HybridOperator(Operator, ABC):
     """
@@ -37,6 +37,10 @@ class HybridOperator(Operator, ABC):
         
     def get_attention_add_mean_hook(self):
         return add_mean_hybrid
+    
+    @abstractmethod
+    def get_scan_add_mean_hook(self):
+        pass
     
     def get_fv_remove_head_attn_hook(self):
         return fv_remove_head_generic
@@ -121,8 +125,8 @@ class HybridOperator(Operator, ABC):
     def attention2kwargs(
         self,
         attention: HybridAttentionManager | None,
-        attention_intervention_fn: Callable = add_mean_hybrid,
-        scan_intervention_fn: Callable = add_mean_hybrid,
+        attention_intervention_fn: Callable = None,
+        scan_intervention_fn: Callable = None,
         layers: list[int] = None,
         keep_scan: bool = True,
         keep_attention: bool = True,
@@ -132,8 +136,8 @@ class HybridOperator(Operator, ABC):
         Convert attention outputs to kwargs for intervention
         Args:
             attention (HybridAttentionManager | None)
-            attention_intervention_fn (Callable, optional): intervention function for attention, defaults to add_mean_hybrid
-            scan_intervention_fn (Callable, optional): intervention function for scan, defaults to add_mean_hybrid
+            attention_intervention_fn (Callable, optional): intervention function for attention, defaults to None for add mean hook of each model
+            scan_intervention_fn (Callable, optional): intervention function for scan, defaults to  None for add mean hook of each model
             layers (list[int], optional): list of layers to use attention, if None, use all layers. Defaults to None.
             keep_scan (bool, optional): whether to keep scan outputs. Defaults to True.
             keep_attention (bool, optional): whether to keep attention outputs. Defaults to True.
@@ -141,6 +145,10 @@ class HybridOperator(Operator, ABC):
         Returns:
             dict: kwargs
         """
+        if attention_intervention_fn is None:
+            attention_intervention_fn = self.get_attention_add_mean_hook()
+        if scan_intervention_fn is None:
+            scan_intervention_fn = self.get_scan_add_mean_hook()
         if layers is None:
             layers = set(self.ALL_LAYERS)
         _, attn_outputs, scan_outputs = attention if attention else (None, None, None)

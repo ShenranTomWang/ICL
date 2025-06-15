@@ -18,7 +18,7 @@ class Mamba2Operator(BaseMambaOperator):
         super().__init__(model, StandardTokenizer(tokenizer), device, dtype, n_layers, n_heads)
         
     def get_attention_add_mean_hook(self):
-        return add_mean_hybrid\
+        return add_mean_hybrid
             
     def get_dummy_attention_manager(self) -> Mamba2ScanManager:
         return Mamba2ScanManager(None, self.device)

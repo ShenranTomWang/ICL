@@ -60,7 +60,7 @@ class HybridFVMap(FVMap):
         ax2 = plt.subplot(gs_inner[1])
         self.visualize_on_axis(ax1, ax2)
 
-    def top_p_heads(self, p: float, stream: str = None, **kwargs) -> map:
+    def top_p_heads(self, p: float, stream: str = None, **kwargs) -> dict:
         if stream is not None:
             if stream == "attn":
                 map_ = self.attn_map
@@ -106,7 +106,7 @@ class HybridFVMap(FVMap):
                     top_k_heads[layer] = [{"head": head, "stream": stream}]
             return top_k_heads
 
-    def exclusion_ablation_heads(self, top_p: float, ablation_p: float, stream: str = None, **kwargs) -> map:
+    def exclusion_ablation_heads(self, top_p: float, ablation_p: float, stream: str = None, **kwargs) -> dict:
         if stream is not None:
             if stream == "attn":
                 map_ = self.attn_map

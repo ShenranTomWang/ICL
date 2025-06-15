@@ -36,7 +36,7 @@ class ScanFVMap(FVMap):
         ax = plt.subplot(gs_inner[0])
         self.visualize_on_axis(ax)
         
-    def top_p_heads(self, p: int, **kwargs) -> map:
+    def top_p_heads(self, p: int, **kwargs) -> dict:
         k = int(self.scan_map.numel() * p)
         top_k_indices = torch.topk(self.scan_map.flatten(), k).indices
         top_k_heads = {}
@@ -49,7 +49,7 @@ class ScanFVMap(FVMap):
                 top_k_heads[layer] = [{"head": head, "stream": "scan"}]
         return top_k_heads
 
-    def exclusion_ablation_heads(self, top_p: float, ablation_p: float, **kwargs) -> map:
+    def exclusion_ablation_heads(self, top_p: float, ablation_p: float, **kwargs) -> dict:
         k = int(self.scan_map.numel() * top_p)
         target_k = int(self.scan_map.numel() * ablation_p)
         all_indices = set(range(self.scan_map.numel()))

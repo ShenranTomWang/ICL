@@ -64,3 +64,15 @@ class SelfAttentionManager(AttentionManager):
         all_attns = self.all_attns.to(device) if self.all_attns is not None else None
         attn_outputs = self.attn_outputs.to(device) if self.attn_outputs is not None else None
         return SelfAttentionManager(all_attns, attn_outputs, device)
+    
+    @classmethod
+    def zeros_like(cls, other: "SelfAttentionManager") -> "SelfAttentionManager":
+        all_attns = GenericManagerItem.zeros_like(other.all_attns) if other.all_attns is not None else None
+        attn_outputs = GenericManagerItem.zeros_like(other.attn_outputs) if other.attn_outputs is not None else None
+        return cls(all_attns, attn_outputs, other.device)
+
+    def set_head_values(self, head_values: "SelfAttentionManager", head_indices: dict) -> "SelfAttentionManager":
+        all_attns = self.all_attns.clone() if self.all_attns is not None else None
+        attn_outputs = self.attn_outputs.clone() if self.attn_outputs is not None else None
+        attn_outputs = attn_outputs.set_head_values(head_values.attn_outputs, head_indices, "attn") if attn_outputs is not None else None
+        return SelfAttentionManager(all_attns, attn_outputs, self.device)

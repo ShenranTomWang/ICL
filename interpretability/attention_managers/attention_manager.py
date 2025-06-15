@@ -1,6 +1,16 @@
 from abc import ABC, abstractmethod
 import torch
 
+def zeros_like(manager: "AttentionManager") -> "AttentionManager":
+    """
+    Creates a zero manager with the same shape as the other attention manager.
+    Args:
+        manager (AttentionManager): attention manager to copy shape from
+    Returns:
+        AttentionManager: zero manager with the same shape as the other attention manager
+    """
+    return manager.zeros_like(manager)
+
 class AttentionManager(ABC):
     """
     AttentionManager manages the attention values of a model (e.g. attention map, attention output). 
@@ -77,3 +87,25 @@ class AttentionManager(ABC):
     @abstractmethod
     def to(self, device: str) -> "AttentionManager":
         pass
+    
+    @classmethod
+    @abstractmethod
+    def zeros_like(cls, other: "AttentionManager") -> "AttentionManager":
+        """Creates a zero manager with the same shape as the other attention manager
+        Args:
+            other (AttentionManager): attention manager to copy shape from
+        Returns:
+            AttentionManager: zero manager with the same shape as the other attention manager
+        """
+        pass
+    
+    @abstractmethod
+    def set_head_values(self, head_values: "AttentionManager", head_indices: dict) -> "AttentionManager":
+        """Sets the head values of the attention manager
+        Args:
+            head_values (AttentionManager): attention manager with head values
+            head_indices (dict): mapping of head indices to set, {layer: [{head: int, stream: str}]}
+        Returns:
+            AttentionManager: attention manager with set head values
+        """
+        pass 
