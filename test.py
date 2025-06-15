@@ -119,6 +119,7 @@ def main(args):
                     zeros = attention_managers.zeros_like(fv_steer)
                     top_p_heads = operator.top_p_heads(fv_map, args.p, stream=args.stream)
                     fv_steer = zeros.set_head_values(fv_steer, top_p_heads)
+                    fv_steer = fv_steer * args.alpha
                     kwargs = operator.attention2kwargs(fv_steer)
             else:
                 kwargs = {}
@@ -190,6 +191,7 @@ if __name__=='__main__':
     steering_parser.add_argument("--fv_map_load_dir", type=str, default=None, help="Load fv_map from this directory (only needed when p > 0), will use out_dir if not specified")
     steering_parser.add_argument("--stream", type=str, default=None, choices=["attn", "scan"], help="Stream to steer, either attn or scan, defaults to None to steer both streams")
     steering_parser.add_argument("--target", type=str, default="incorrect_mapping", help="Target task to steer towards, default is 'incorrect_mapping'")
+    steering_parser.add_argument("--alpha", type=float, default=1.0, help="Steering strength, defaults to 1.0")
     
     args = parser.parse_args()
     if args.out_dir is None:
