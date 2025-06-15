@@ -1,4 +1,4 @@
-import logging, argparse, os, json
+import logging, argparse, os
 from utils.utils import log_counters, init_counters
 from utils.data import load_data
 import numpy as np
