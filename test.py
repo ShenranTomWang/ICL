@@ -10,7 +10,8 @@ from utils.inference import do_inference, evaluate
 from constants import ALL_OPERATORS, ALL_DTYPES
 from interpretability.attention_managers import AttentionManager
 import interpretability.attention_managers as attention_managers
-            
+from utils.test import exclusion_ablation_sanity_check, ablation_steer_sanity_check
+
 def run(
     args, dataset, operator, seed, kwargs: dict = {}
 ) -> float:
@@ -113,6 +114,8 @@ def main(args):
                         ablation_type=ablation_type,
                         ablation_value=mean_embedding if ablation_type == "mean_ablation" else None
                     )
+                    top_p_heads = operator.top_p_heads(fv_map, args.exclude_p, stream=args.stream)
+                    exclusion_ablation_sanity_check(top_p_heads, heads_to_ablate, stream=args.stream)
                 elif args.ablation_type == "steer":
                     fv_map = torch.load(f"{args.fv_map_load_dir}/{test_task}_{args.target}/100/function_vectors.pth")
                     fv_steer = operator.load_attention_manager(f"{args.fv_map_load_dir}/{test_task}_{args.target}/fv_steer.pth")
@@ -120,6 +123,7 @@ def main(args):
                     top_p_heads = operator.top_p_heads(fv_map, args.p, stream=args.stream)
                     fv_steer = zeros.set_head_values(fv_steer, top_p_heads)
                     fv_steer = fv_steer * args.alpha
+                    ablation_steer_sanity_check(fv_steer, top_p_heads)
                     kwargs = operator.attention2kwargs(fv_steer)
             else:
                 kwargs = {}
