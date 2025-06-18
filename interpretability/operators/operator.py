@@ -216,8 +216,8 @@ class Operator(ABC):
 
         Args:
             intervened_tasks (list[torch.Tensor]): last logits [(batch_size, vocab_size)] * n_tasks
-            original_tasks (list[torch.Tensor]): last logits [(n_tasks, batch_size, vocab_size)] * n_tasks
-            label_ids (list[torch.Tensor]): [(n_tasks, batch_size)] * n_tasks
+            original_tasks (list[torch.Tensor]): last logits [(batch_size, vocab_size)] * n_tasks
+            label_ids (list[torch.Tensor]): [(batch_size,)] * n_tasks
 
         Returns:
             float: AIE value

@@ -120,8 +120,8 @@ def main(args):
                     fv_map = torch.load(f"{args.fv_map_load_dir}/{test_task}_{args.target}/100/function_vectors.pth")
                     fv_steer = operator.load_attention_manager(f"{args.fv_map_load_dir}/{test_task}_{args.target}/fv_steer.pth")
                     zeros = attention_managers.zeros_like(fv_steer)
-                    top_p_heads = operator.top_p_heads(fv_map, args.p, stream=args.stream)
-                    fv_steer = zeros.set_head_values(fv_steer, top_p_heads)
+                    top_p_heads = operator.top_p_heads(fv_map=fv_map, top_p=args.p, stream=args.stream)
+                    fv_steer = zeros.set_head_values(head_values=fv_steer, head_indices=top_p_heads)
                     fv_steer = fv_steer * args.alpha
                     ablation_steer_sanity_check(fv_steer, top_p_heads)
                     kwargs = operator.attention2kwargs(fv_steer)

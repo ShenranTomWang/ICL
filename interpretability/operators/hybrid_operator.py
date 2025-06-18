@@ -5,7 +5,7 @@ from typing import Callable
 from .operator import Operator
 from interpretability.attention_managers import HybridAttentionManager
 from interpretability.fv_maps import HybridFVMap
-from interpretability.hooks import add_mean_hybrid, fv_replace_head_generic, fv_remove_head_generic
+from interpretability.hooks import add_mean_hybrid, fv_replace_head_generic, fv_remove_head_generic, fv_replace_head_mamba
 from interpretability.tokenizers import Tokenizer
 from abc import ABC, abstractmethod
 
@@ -108,7 +108,7 @@ class HybridOperator(Operator, ABC):
             for head in range(self.n_scan_heads):
                 head_fv_logits = []
                 for i, (attn, inputs_task) in enumerate(zip(steer, inputs)):
-                    attn_kwargs = self.attention2kwargs(attn, layers=[layer], keep_attention=False, scan_intervention_fn=fv_replace_head_generic, head=head)
+                    attn_kwargs = self.attention2kwargs(attn, layers=[layer], keep_attention=False, scan_intervention_fn=fv_replace_head_mamba, head=head)
                     task_fv_logits = []
                     for input_task in inputs_task:
                         logit_fv = self.forward(input_task, **attn_kwargs).logits[:, -1, :].to("cpu")
