@@ -20,8 +20,6 @@ if __name__ == "__main__":
     subparser = parser.add_subparsers(dest="operation", required=True)
     aie_subparser = subparser.add_parser("AIE", help="Generate AIE function vectors")
     aie_subparser.add_argument("--split", type=str, default="dev", choices=["test", "dev"], help="Split to use for AIE")
-    ablation_subparser = subparser.add_parser("ablation_removal", help="Top-p FV head removal ablation")
-    ablation_subparser.add_argument("--p", type=float, default=0.05, help="Keep only p of the top FV heads")
     
     args = parser.parse_args()
     args.operator = getattr(interpretability.operators, args.operator)

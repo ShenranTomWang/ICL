@@ -42,7 +42,3 @@ def AIE_handler(args):
             fv_map.visualize(f"{out_dir}/function_vectors.png")
             logger.info(f"Function vectors saved to {out_dir}/{args.task}_function_vectors.pth")
             logger.info(f"Function vectors visualization saved to {out_dir}/{args.task}_function_vectors.png")
-
-def ablation_removal_handler(args):
-    # TODO: Implement this function
-    pass
