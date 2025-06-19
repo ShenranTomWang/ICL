@@ -1,0 +1,10 @@
+[
+    "tweet_eval-stance_feminist_random",
+    "ethos-national_origin_random",
+    "poem_sentiment_random",
+    "glue-wnli_random",
+    "tweet_eval-stance_atheism_random",
+    "superglue-cb_random",
+    "ethos-religion_random",
+    "ethos-race_random"
+]
