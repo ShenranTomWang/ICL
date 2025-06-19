@@ -89,7 +89,7 @@ def fv_remove_head_generic(
                     ablation_value_stream = ablation_value.get_stream(curr_stream)
                     ablation_value_stream = ablation_value_stream[layer]
                     if ablate_token is not None:
-                        ablation_value_stream[:, ablate_token, head_to_ablate, :] = ablation_value_stream[:, head_to_ablate, :]
+                        stream[:, ablate_token, head_to_ablate, :] = ablation_value_stream[:, head_to_ablate, :]
                     else:
                         ablation_value_stream = ablation_value_stream.unsqueeze(1).expand(stream.shape)
                         stream[:, :, head_to_ablate, :] = ablation_value_stream[:, :, head_to_ablate, :]

@@ -100,7 +100,8 @@ def main(args):
                         scan_intervention_fn=operator.get_fv_remove_head_scan_hook(),
                         heads=top_p_heads,
                         ablation_type=args.ablation_type,
-                        ablation_value=mean_embedding if args.ablation_type == "mean_ablation" else None
+                        ablation_value=mean_embedding if args.ablation_type == "mean_ablation" else None,
+                        ablate_token=-1
                     )
                 elif args.ablation_type == "exclusion_mean_ablation" or args.ablation_type == "exclusion_zero_ablation":
                     ablation_type = "mean_ablation" if args.ablation_type == "exclusion_mean_ablation" else "zero_ablation"
