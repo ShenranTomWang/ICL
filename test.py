@@ -112,7 +112,8 @@ def main(args):
                         scan_intervention_fn=operator.get_fv_remove_head_scan_hook(),
                         heads=heads_to_ablate,
                         ablation_type=ablation_type,
-                        ablation_value=mean_embedding if ablation_type == "mean_ablation" else None
+                        ablation_value=mean_embedding if ablation_type == "mean_ablation" else None,
+                        ablate_token=-1
                     )
                     top_p_heads = operator.top_p_heads(fv_map, args.exclude_p, stream=args.stream)
                     exclusion_ablation_sanity_check(top_p_heads, heads_to_ablate, stream=args.stream)
@@ -124,7 +125,7 @@ def main(args):
                     fv_steer = zeros.set_head_values(head_values=fv_steer, head_indices=top_p_heads)
                     fv_steer = fv_steer * args.alpha
                     ablation_steer_sanity_check(fv_steer, top_p_heads)
-                    kwargs = operator.attention2kwargs(fv_steer)
+                    kwargs = operator.attention2kwargs(fv_steer, last_k=1)
             else:
                 kwargs = {}
             f1, acc = run(args, dataset, operator, seed, kwargs=kwargs)
