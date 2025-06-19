@@ -1653,7 +1653,7 @@ class HymbaBlock(nn.Module):
                 cache_params.ssm_states[self.layer_idx].copy_(ssm_state)
                 
         scan_outputs = scan_outputs.transpose(1, 2)
-        scan = scan_outputs if output_attentions else None
+        scan = scan_outputs.transpose(1, 2) if output_attentions else None
         
         if attention_override is not None:
             _, _, scan_hook, scan_intervention, hook_kwargs = attention_override
