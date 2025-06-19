@@ -5,7 +5,7 @@ import utils.handlers.function_vectors as handlers
 import torch
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Generate function vectors")
+    parser = argparse.ArgumentParser(description="Generate function vectors. This script requires you to run extract_activations.py with fv_steer first.")
     parser.add_argument("--model", type=str, required=True, help="Path to the model")
     parser.add_argument("--operator", type=str, choices=ALL_OPERATORS, required=True, help="Operator to use")
     parser.add_argument("--dtype", type=str, default="bfloat16", choices=ALL_DTYPES, help="Data type to use")
