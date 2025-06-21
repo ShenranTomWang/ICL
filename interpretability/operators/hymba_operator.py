@@ -4,7 +4,7 @@ from interpretability.tokenizers import HybridTokenizer
 from transformers import AutoTokenizer
 import torch
 from .hybrid_operator import HybridOperator
-from interpretability.hooks import fv_remove_head_mamba, add_mean_scan_mamba
+from interpretability.hooks import fv_remove_head_mamba, add_mean_scan_mamba, fv_replace_head_mamba
 from typing import Callable
 from interpretability.attention_managers import HybridMambaAttentionManager
 
@@ -27,3 +27,6 @@ class HymbaOperator(HybridOperator):
     
     def _get_attention_manager_class(self) -> type[HybridMambaAttentionManager]:
         return HybridMambaAttentionManager
+    
+    def _get_fv_replace_head_scan_hook(self) -> Callable:
+        return fv_replace_head_mamba

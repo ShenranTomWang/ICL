@@ -43,6 +43,10 @@ class HybridOperator(Operator, ABC):
         pass
     
     @abstractmethod
+    def _get_fv_replace_head_scan_hook(self) -> Callable:
+        pass
+    
+    @abstractmethod
     def _get_attention_manager_class(self) -> type[HybridAttentionManager]:
         pass
     
@@ -112,7 +116,7 @@ class HybridOperator(Operator, ABC):
             for head in range(self.n_scan_heads):
                 head_fv_logits = []
                 for i, (attn, inputs_task) in enumerate(zip(steer, inputs)):
-                    attn_kwargs = self.attention2kwargs(attn, layers=[layer], keep_attention=False, scan_intervention_fn=fv_replace_head_mamba, head=head)
+                    attn_kwargs = self.attention2kwargs(attn, layers=[layer], keep_attention=False, scan_intervention_fn=self._get_fv_replace_head_scan_hook(), head=head)
                     task_fv_logits = []
                     for input_task in inputs_task:
                         logit_fv = self.forward(input_task, **attn_kwargs).logits[:, -1, :].to("cpu")

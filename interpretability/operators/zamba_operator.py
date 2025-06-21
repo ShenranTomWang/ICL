@@ -5,7 +5,7 @@ import torch
 from transformers import AutoTokenizer
 from .hybrid_operator import HybridOperator
 from interpretability.tokenizers import HybridTokenizer
-from interpretability.hooks import fv_remove_head_generic, add_mean_hybrid
+from interpretability.hooks import fv_remove_head_generic, add_mean_hybrid, fv_replace_head_generic
 from interpretability.attention_managers import HybridMamba2AttentionManager
 
 class ZambaOperator(HybridOperator):
@@ -32,3 +32,6 @@ class ZambaOperator(HybridOperator):
     
     def _get_attention_manager_class(self) -> type[HybridMamba2AttentionManager]:
         return HybridMamba2AttentionManager
+    
+    def _get_fv_replace_head_scan_hook(self) -> Callable:
+        return fv_replace_head_generic
