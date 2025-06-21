@@ -6,6 +6,7 @@ import torch
 from .hybrid_operator import HybridOperator
 from interpretability.hooks import fv_remove_head_mamba, add_mean_scan_mamba
 from typing import Callable
+from interpretability.attention_managers import HybridMambaAttentionManager
 
 class HymbaOperator(HybridOperator):
     def __init__(self, path: str, device: torch.DeviceObjType, dtype: torch.dtype):
@@ -23,3 +24,6 @@ class HymbaOperator(HybridOperator):
     
     def get_scan_add_mean_hook(self) -> Callable:
         return add_mean_scan_mamba
+    
+    def _get_attention_manager_class(self) -> type[HybridMambaAttentionManager]:
+        return HybridMambaAttentionManager

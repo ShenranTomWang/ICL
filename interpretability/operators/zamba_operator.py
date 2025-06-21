@@ -6,6 +6,7 @@ from transformers import AutoTokenizer
 from .hybrid_operator import HybridOperator
 from interpretability.tokenizers import HybridTokenizer
 from interpretability.hooks import fv_remove_head_generic, add_mean_hybrid
+from interpretability.attention_managers import HybridMamba2AttentionManager
 
 class ZambaOperator(HybridOperator):
     """Subclassing HymbaOperator to avoid redundant code
@@ -28,3 +29,6 @@ class ZambaOperator(HybridOperator):
     
     def get_scan_add_mean_hook(self) -> Callable:
         return add_mean_hybrid
+    
+    def _get_attention_manager_class(self) -> type[HybridMamba2AttentionManager]:
+        return HybridMamba2AttentionManager

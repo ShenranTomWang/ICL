@@ -35,11 +35,15 @@ class HybridOperator(Operator, ABC):
         n_total_heads = self.n_attn_layers * n_attn_heads + self.n_scan_layers * n_scan_heads
         super().__init__(tokenizer, model, device, dtype, n_layers, n_total_heads)
         
-    def get_attention_add_mean_hook(self):
+    def get_attention_add_mean_hook(self) -> Callable:
         return add_mean_hybrid
     
     @abstractmethod
-    def get_scan_add_mean_hook(self):
+    def get_scan_add_mean_hook(self) -> Callable:
+        pass
+    
+    @abstractmethod
+    def _get_attention_manager_class(self) -> type[HybridAttentionManager]:
         pass
     
     def get_fv_remove_head_attn_hook(self):
@@ -64,7 +68,7 @@ class HybridOperator(Operator, ABC):
             # n_layers * (batch_size, n_heads, pad_len + seqlen, pad_len + seqlen), (batch_size, pad_len + seqlen, attn_channels), (batch_size, pad_len + seqlen, attn_channels)
             all_attn, attn_output, scan_output = output.attentions
             all_attn, attn_output, scan_output = list(all_attn), list(attn_output), list(scan_output)
-            hybrid_output = HybridAttentionManager(all_attn, attn_output, scan_output, "cpu")
+            hybrid_output = self._get_attention_manager_class()(all_attns=all_attn, attn_outputs=attn_output, scan_outputs=scan_output, device="cpu")
             hybrid_output = activation_callback(hybrid_output)
             outputs.append(hybrid_output)
         return outputs
