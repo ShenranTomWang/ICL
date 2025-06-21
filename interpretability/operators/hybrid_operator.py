@@ -35,11 +35,11 @@ class HybridOperator(Operator, ABC):
         n_total_heads = self.n_attn_layers * n_attn_heads + self.n_scan_layers * n_scan_heads
         super().__init__(tokenizer, model, device, dtype, n_layers, n_total_heads)
         
-    def get_attention_add_mean_hook(self) -> Callable:
+    def _get_attention_add_mean_hook(self) -> Callable:
         return add_mean_hybrid
     
     @abstractmethod
-    def get_scan_add_mean_hook(self) -> Callable:
+    def _get_scan_add_mean_hook(self) -> Callable:
         pass
     
     @abstractmethod
@@ -126,9 +126,6 @@ class HybridOperator(Operator, ABC):
                 head_AIE = self.compute_AIE(head_fv_logits, original_logits, label_ids)
                 scan_map[layer_idx, head] = head_AIE
         return HybridFVMap(attn_map, scan_map, self.attn_layers, self.scan_layers, self.dtype)
-    
-    def get_dummy_attention_manager(self) -> HybridAttentionManager:
-        return HybridAttentionManager(None, None, None, self.device)
 
     def attention2kwargs(
         self,
@@ -154,9 +151,9 @@ class HybridOperator(Operator, ABC):
             dict: kwargs
         """
         if attention_intervention_fn is None:
-            attention_intervention_fn = self.get_attention_add_mean_hook()
+            attention_intervention_fn = self._get_attention_add_mean_hook()
         if scan_intervention_fn is None:
-            scan_intervention_fn = self.get_scan_add_mean_hook()
+            scan_intervention_fn = self._get_scan_add_mean_hook()
         if layers is None:
             layers = set(self.ALL_LAYERS)
         _, attn_outputs, scan_outputs = attention if attention else (None, None, None)

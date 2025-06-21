@@ -8,6 +8,7 @@ from interpretability.attention_managers import MambaScanManager, AttentionManag
 from interpretability.fv_maps import ScanFVMap
 from interpretability.hooks import fv_replace_head_mamba, fv_remove_head_mamba
 from interpretability.hooks import add_mean_scan_mamba
+from typing import Callable
 
 class MambaOperator(BaseMambaOperator):
     def __init__(self, path: str, device: torch.DeviceObjType, dtype: torch.dtype):
@@ -17,11 +18,8 @@ class MambaOperator(BaseMambaOperator):
         n_heads = 1
         super().__init__(model, StandardTokenizer(tokenizer), device, dtype, n_layers, n_heads)
         
-    def get_attention_add_mean_hook(self):
+    def _get_add_mean_hook(self) -> Callable:
         return add_mean_scan_mamba
-    
-    def get_dummy_attention_manager(self) -> MambaScanManager:
-        return MambaScanManager(None, self.device)
     
     def get_fv_remove_head_scan_hook(self):
         return fv_remove_head_mamba

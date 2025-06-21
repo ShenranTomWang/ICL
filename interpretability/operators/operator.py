@@ -37,16 +37,6 @@ class Operator(ABC):
         output = self.model(**tokenized, **kwargs)
         return output
     
-    @abstractmethod
-    def get_attention_add_mean_hook(self) -> Callable:
-        """
-        Get hook function to add mean attention values along sequence dimension
-
-        Returns:
-            Callable: hook function
-        """
-        pass
-    
     def get_attention_mean(self, attn: AttentionManager) -> AttentionManager:
         """
         Get mean attention values along sequence dimension

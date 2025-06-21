@@ -5,8 +5,9 @@ from transformers import AutoModelForCausalLM
 from .operator import Operator
 from interpretability.tokenizers import Tokenizer
 from interpretability.attention_managers import AttentionManager
+from abc import ABC, abstractmethod
 
-class BaseMambaOperator(Operator):
+class BaseMambaOperator(Operator, ABC):
     """
     Operator for Mamba models. This is an abstract class.
     """
@@ -24,6 +25,10 @@ class BaseMambaOperator(Operator):
         
     def get_fv_remove_head_attn_hook(self):
         return None
+    
+    @abstractmethod
+    def _get_add_mean_hook(self) -> Callable:
+        pass
     
     def attention2kwargs(
         self,
@@ -45,7 +50,7 @@ class BaseMambaOperator(Operator):
         if layers is None:
             layers = self.ALL_LAYERS
         if scan_intervention_fn is None:
-            scan_intervention_fn = self.get_attention_add_mean_hook()
+            scan_intervention_fn = self._get_add_mean_hook()
         params = ()
         scan_outputs_ = scan_outputs.scan_outputs if scan_outputs else None
         for layer in self.ALL_LAYERS:

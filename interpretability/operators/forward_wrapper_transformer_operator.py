@@ -21,8 +21,5 @@ class ForwardWrapperTransformerOperator(TransformerOperator):
     def generate_AIE_map(self, steer, inputs, label_ids) -> FVMap:
         raise NotImplementedError("ForwardWrapperTransformerOperator does not support AIE map generation")
     
-    def get_attention_add_mean_hook(self) -> Callable:
-        raise NotImplementedError("ForwardWrapperTransformerOperator does not support intervention features")
-    
     def extract_attention_managers(self, inputs: list[str], activation_callback: Callable = lambda x: x) -> list[AttentionManager]:
         raise NotImplementedError("ForwardWrapperTransformerOperator does not support intervention features")

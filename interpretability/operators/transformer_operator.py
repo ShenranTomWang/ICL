@@ -24,9 +24,6 @@ class TransformerOperator(Operator):
     ):
         self.n_heads = n_heads
         super().__init__(tokenizer=tokenizer, model=model, device=device, dtype=dtype, n_layers=n_layers, total_n_heads=n_layers * n_heads)
-        
-    def get_attention_add_mean_hook(self):
-        return add_mean_hybrid
     
     def get_fv_remove_head_scan_hook(self):
         return None

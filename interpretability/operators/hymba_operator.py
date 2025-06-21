@@ -22,7 +22,7 @@ class HymbaOperator(HybridOperator):
     def get_fv_remove_head_scan_hook(self) -> Callable:
         return fv_remove_head_mamba
     
-    def get_scan_add_mean_hook(self) -> Callable:
+    def _get_scan_add_mean_hook(self) -> Callable:
         return add_mean_scan_mamba
     
     def _get_attention_manager_class(self) -> type[HybridMambaAttentionManager]:
