@@ -119,7 +119,8 @@ def main(args):
                     top_p_heads = operator.top_p_heads(fv_map, args.exclude_p, stream=args.stream)
                     exclusion_ablation_sanity_check(top_p_heads, heads_to_ablate, stream=args.stream)
                 elif args.ablation_type == "steer":
-                    fv_map = torch.load(f"{args.fv_map_load_dir}/{test_task}_{args.target}/100/function_vectors.pth")
+                    args.target = ("_" + args.target) if args.target is not None else ""
+                    fv_map = torch.load(f"{args.fv_map_load_dir}/{test_task}{args.target}/100/function_vectors.pth")
                     fv_steer = operator.load_attention_manager(f"{args.fv_map_load_dir}/{test_task}_{args.target}/fv_steer.pth")
                     zeros = attention_managers.zeros_like(fv_steer)
                     top_p_heads = operator.top_p_heads(fv_map=fv_map, top_p=args.p, stream=args.stream)
@@ -196,7 +197,7 @@ if __name__=='__main__':
     steering_parser.add_argument("--p", type=float, default=0.0, help="Percentage of heads to steer, defaults to 0.0")
     steering_parser.add_argument("--fv_map_load_dir", type=str, default=None, help="Load fv_map from this directory (only needed when p > 0), will use out_dir if not specified")
     steering_parser.add_argument("--stream", type=str, default=None, choices=["attn", "scan"], help="Stream to steer, either attn or scan, defaults to None to steer both streams")
-    steering_parser.add_argument("--target", type=str, default="incorrect_mapping", help="Target task to steer towards, default is 'incorrect_mapping'")
+    steering_parser.add_argument("--target", type=str, default=None, choices=["incorrect_mapping", "random", "0_correct", "25_correct", "50_correct", "75_correct"], help="Target task to steer towards, defaults to None for steering with base FVs")
     steering_parser.add_argument("--alpha", type=float, default=1.0, help="Steering strength, defaults to 1.0")
     
     args = parser.parse_args()
