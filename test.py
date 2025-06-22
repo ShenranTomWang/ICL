@@ -121,7 +121,7 @@ def main(args):
                 elif args.ablation_type == "steer":
                     args.target = ("_" + args.target) if args.target is not None else ""
                     fv_map = torch.load(f"{args.fv_map_load_dir}/{test_task}{args.target}/100/function_vectors.pth")
-                    fv_steer = operator.load_attention_manager(f"{args.fv_map_load_dir}/{test_task}_{args.target}/fv_steer.pth")
+                    fv_steer = operator.load_attention_manager(f"{args.fv_map_load_dir}/{test_task}/fv_steer.pth")
                     zeros = attention_managers.zeros_like(fv_steer)
                     top_p_heads = operator.top_p_heads(fv_map=fv_map, top_p=args.p, stream=args.stream)
                     fv_steer = zeros.set_head_values(head_values=fv_steer, head_indices=top_p_heads)

@@ -90,7 +90,7 @@ class HybridAttentionManager(AttentionManager):
         all_attns = GenericManagerItem.zeros_like(other.all_attns) if other.all_attns is not None else None
         attn_outputs = GenericManagerItem.zeros_like(other.attn_outputs) if other.attn_outputs is not None else None
         scan_outputs = GenericManagerItem.zeros_like(other.scan_outputs) if other.scan_outputs is not None else None
-        return cls(all_attns, attn_outputs, scan_outputs, other.device)
+        return other.__class__(all_attns, attn_outputs, scan_outputs, other.device)
     
     def set_head_values(self, head_values: "HybridAttentionManager", head_indices: dict) -> "HybridAttentionManager":
         all_attns = self.all_attns.clone() if self.all_attns is not None else None
