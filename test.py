@@ -197,7 +197,7 @@ if __name__=='__main__':
     steering_parser.add_argument("--p", type=float, default=0.0, help="Percentage of heads to steer, defaults to 0.0")
     steering_parser.add_argument("--fv_map_load_dir", type=str, default=None, help="Load fv_map from this directory (only needed when p > 0), will use out_dir if not specified")
     steering_parser.add_argument("--stream", type=str, default=None, choices=["attn", "scan"], help="Stream to steer, either attn or scan, defaults to None to steer both streams")
-    steering_parser.add_argument("--target", type=str, default=None, choices=["incorrect_mapping", "random", "0_correct", "25_correct", "50_correct", "75_correct"], help="Target task to steer towards, defaults to None for steering with base FVs")
+    steering_parser.add_argument("--target", type=str, default="random", choices=["incorrect_mapping", "random", "0_correct", "25_correct", "50_correct", "75_correct"], help="Target task to steer towards, defaults to random for steering with base FVs")
     steering_parser.add_argument("--alpha", type=float, default=1.0, help="Steering strength, defaults to 1.0")
     
     args = parser.parse_args()
