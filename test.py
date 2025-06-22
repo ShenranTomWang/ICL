@@ -220,10 +220,12 @@ if __name__=='__main__':
     if args.log_file is not None:
         os.makedirs(os.path.dirname(args.log_file), exist_ok=True)
         handlers.append(logging.FileHandler(args.log_file))
-    logging.basicConfig(format='%(asctime)s - %(levelname)s - %(name)s - %(message)s',
-                        datefmt='%m/%d/%Y %H:%M:%S',
-                        level=logging.INFO,
-                        handlers=handlers)
+    logging.basicConfig(
+        format='%(asctime)s - %(levelname)s - %(name)s - %(message)s',
+        datefmt='%m/%d/%Y %H:%M:%S',
+        level=logging.INFO,
+        handlers=handlers
+    )
     logging.basicConfig(level=logging.ERROR, format='%(asctime)s - %(levelname)s - %(message)s')
     logger = logging.getLogger(__name__)
     logger.info(args)
