@@ -119,7 +119,6 @@ def main(args):
                     top_p_heads = operator.top_p_heads(fv_map, args.exclude_p, stream=args.stream)
                     exclusion_ablation_sanity_check(top_p_heads, heads_to_ablate, stream=args.stream)
                 elif args.ablation_type == "steer":
-                    args.target = ("_" + args.target) if args.target is not None else ""
                     fv_map = torch.load(f"{args.fv_map_load_dir}/{test_task}{args.target}/100/function_vectors.pth")
                     fv_steer = operator.load_attention_manager(f"{args.fv_map_load_dir}/{test_task}/fv_steer.pth")
                     zeros = attention_managers.zeros_like(fv_steer)
@@ -210,6 +209,7 @@ if __name__=='__main__':
     if not hasattr(args, "p"):
         args.p = 0.0
 
+    args.target = ("_" + args.target) if hasattr(args, "target") and args.target is not None else ""
     assert (args.dataset is not None) ^ (args.task is not None), "Either dataset or task must be provided, but not both"
 
     args.dtype = getattr(torch, args.dtype)
