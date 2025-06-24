@@ -9,6 +9,7 @@ import interpretability
 from utils.inference import do_inference, evaluate
 from constants import ALL_OPERATORS, ALL_DTYPES
 from interpretability.attention_managers import AttentionManager
+from interpretability.fv_maps import FVMap
 import interpretability.attention_managers as attention_managers
 from utils.test import exclusion_ablation_sanity_check, ablation_steer_sanity_check
 
@@ -82,6 +83,13 @@ def main(args):
                 embeddings.append(embedding)
             mean_embedding = AttentionManager.mean_of(embeddings)
         
+        if args.ablation_type == "steer" and args.mean_pool:
+            fv_maps = []
+            for test_task in test_counter:
+                fv_map = torch.load(f"{args.fv_map_load_dir}/{test_task}{args.target}/100/function_vectors.pth")
+                fv_maps.append(fv_map)
+            fv_map = FVMap.mean_of(fv_maps)
+        
         for test_task in test_counter:
             curr_test_data = [dp for dp in test_data if dp["task"] == test_task]
             curr_train_data = [dp for dp in train_data if dp["task"] == test_task]
@@ -119,7 +127,8 @@ def main(args):
                     top_p_heads = operator.top_p_heads(fv_map, args.exclude_p, stream=args.stream)
                     exclusion_ablation_sanity_check(top_p_heads, heads_to_ablate, stream=args.stream)
                 elif args.ablation_type == "steer":
-                    fv_map = torch.load(f"{args.fv_map_load_dir}/{test_task}{args.target}/100/function_vectors.pth")
+                    if not args.mean_pool:
+                        fv_map = torch.load(f"{args.fv_map_load_dir}/{test_task}{args.target}/100/function_vectors.pth")
                     fv_steer = operator.load_attention_manager(f"{args.fv_map_load_dir}/{test_task}/fv_steer.pth")
                     zeros = attention_managers.zeros_like(fv_steer)
                     top_p_heads = operator.top_p_heads(fv_map=fv_map, top_p=args.p, stream=args.stream)
@@ -198,6 +207,7 @@ if __name__=='__main__':
     steering_parser.add_argument("--stream", type=str, default=None, choices=["attn", "scan"], help="Stream to steer, either attn or scan, defaults to None to steer both streams")
     steering_parser.add_argument("--target", type=str, default="random", choices=["incorrect_mapping", "random", "0_correct", "25_correct", "50_correct", "75_correct"], help="Target task to steer towards, defaults to random for steering with base FVs")
     steering_parser.add_argument("--alpha", type=float, default=1.0, help="Steering strength, defaults to 1.0")
+    steering_parser.add_argument("--mean_pool", default=False, action="store_true", help="Whether to mean pool the fv_steer, defaults to False")
     
     args = parser.parse_args()
     if args.out_dir is None:
