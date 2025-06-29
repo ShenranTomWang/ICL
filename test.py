@@ -83,7 +83,7 @@ def main(args):
                 embeddings.append(embedding)
             mean_embedding = AttentionManager.mean_of(embeddings)
         
-        if args.ablation_type == "steer" and args.mean_pool:
+        if args.mean_pool:
             fv_maps = []
             for test_task in test_counter:
                 fv_map = torch.load(f"{args.fv_map_load_dir}/{test_task}{args.target}/100/function_vectors.pth")
@@ -100,7 +100,8 @@ def main(args):
             dataset.tensorize(operator.tokenizer)
             if args.p > 0:
                 if args.ablation_type == "mean_ablation" or args.ablation_type == "zero_ablation":
-                    fv_map = torch.load(f"{args.fv_map_load_dir}/{test_task}_random/100/function_vectors.pth")
+                    if not args.mean_pool:
+                        fv_map = torch.load(f"{args.fv_map_load_dir}/{test_task}{args.target}/100/function_vectors.pth")
                     top_p_heads = operator.top_p_heads(fv_map, args.p, stream=args.stream)
                     kwargs = operator.attention2kwargs(
                         None,
@@ -113,7 +114,8 @@ def main(args):
                     )
                 elif args.ablation_type == "exclusion_mean_ablation" or args.ablation_type == "exclusion_zero_ablation":
                     ablation_type = "mean_ablation" if args.ablation_type == "exclusion_mean_ablation" else "zero_ablation"
-                    fv_map = torch.load(f"{args.fv_map_load_dir}/{test_task}_random/100/function_vectors.pth")
+                    if not args.mean_pool:
+                        fv_map = torch.load(f"{args.fv_map_load_dir}/{test_task}{args.target}/100/function_vectors.pth")
                     heads_to_ablate = operator.exclusion_ablation_heads(fv_map=fv_map, top_p=args.exclude_p, ablation_p=args.p, stream=args.stream)
                     kwargs = operator.attention2kwargs(
                         None,
@@ -181,18 +183,21 @@ if __name__=='__main__':
     zero_parser.add_argument("--p", type=float, default=0.0, help="Ablate top p heads")
     zero_parser.add_argument("--fv_map_load_dir", type=str, default=None, help="Load fv_map from this directory (only needed when p > 0), will use out_dir if not specified")
     zero_parser.add_argument("--stream", type=str, default=None, choices=["attn", "scan"], help="Stream to ablate, either attn or scan, defaults to None to ablate both streams")
+    zero_parser.add_argument("--mean_pool", default=False, action="store_true", help="Whether to mean pool the fv_map, defaults to False")
 
     mean_parser = ablation_subparser.add_parser("mean_ablation", help="Mean out heads. This will require have ran function_vectors.py first to obtain AIE maps.")
     mean_parser.add_argument("--p", type=float, default=0.0, help="Ablate top p heads")
     mean_parser.add_argument("--fv_map_load_dir", type=str, default=None, help="Load fv_map from this directory (only needed when p > 0), will use out_dir if not specified")
     mean_parser.add_argument("--mean_load_dir", type=str, default=None, help="Load mean from this directory (only needed when p > 0), will use out_dir if not specified")
     mean_parser.add_argument("--stream", type=str, default=None, choices=["attn", "scan"], help="Stream to ablate, either attn or scan, defaults to None to ablate both streams")
+    mean_parser.add_argument("--mean_pool", default=False, action="store_true", help="Whether to mean pool the fv_map, defaults to False")
     
     exclusion_zero_parser = ablation_subparser.add_parser("exclusion_zero_ablation", help="Randomly ablate heads that are not function heads to zero. This will require have ran function_vectors.py first to obtain AIE maps.")
     exclusion_zero_parser.add_argument("--p", type=float, default=0.0, help="Percentage of heads to ablate, defaults to 0.0")
     exclusion_zero_parser.add_argument("--fv_map_load_dir", type=str, default=None, help="Load fv_map (AIE score map) from this directory (only needed when p > 0), will use out_dir if not specified")
     exclusion_zero_parser.add_argument("--stream", type=str, default=None, choices=["attn", "scan"], help="Stream to ablate, either attn or scan, defaults to None to ablate both streams")
     exclusion_zero_parser.add_argument("--exclude_p", type=float, default=0.0, help="Percentage of function heads to exclude from ablation, defaults to 0.0")
+    exclusion_zero_parser.add_argument("--mean_pool", default=False, action="store_true", help="Whether to mean pool the fv_map, defaults to False")
     
     exclusion_mean_parser = ablation_subparser.add_parser("exclusion_mean_ablation", help="Randomly ablate heads that are not function heads to the mean. This will require have ran function_vectors.py first to obtain AIE maps.")
     exclusion_mean_parser.add_argument("--p", type=float, default=0.0, help="Percentage of heads to ablate, defaults to 0.0")
@@ -200,6 +205,7 @@ if __name__=='__main__':
     exclusion_mean_parser.add_argument("--stream", type=str, default=None, choices=["attn", "scan"], help="Stream to ablate, either attn or scan, defaults to None to ablate both streams")
     exclusion_mean_parser.add_argument("--exclude_p", type=float, default=0.0, help="Percentage of function heads to exclude from ablation, defaults to 0.0")
     exclusion_mean_parser.add_argument("--mean_load_dir", type=str, default=None, help="Load mean from this directory (only needed when p > 0), will use out_dir if not specified")
+    exclusion_mean_parser.add_argument("--mean_pool", default=False, action="store_true", help="Whether to mean pool the fv_map, defaults to False")
     
     steering_parser = ablation_subparser.add_parser("steer", help="Steer selected function heads. This will require have ran extract_activations.py with fv_steer first.")
     steering_parser.add_argument("--p", type=float, default=0.0, help="Percentage of heads to steer, defaults to 0.0")
@@ -219,7 +225,7 @@ if __name__=='__main__':
     if not hasattr(args, "p"):
         args.p = 0.0
 
-    args.target = ("_" + args.target) if hasattr(args, "target") and args.target is not None else ""
+    args.target = ("_" + args.target) if hasattr(args, "target") and args.target is not None else "_random"
     assert (args.dataset is not None) ^ (args.task is not None), "Either dataset or task must be provided, but not both"
 
     args.dtype = getattr(torch, args.dtype)
