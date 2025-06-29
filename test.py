@@ -183,6 +183,7 @@ if __name__=='__main__':
     zero_parser.add_argument("--p", type=float, default=0.0, help="Ablate top p heads")
     zero_parser.add_argument("--fv_map_load_dir", type=str, default=None, help="Load fv_map from this directory (only needed when p > 0), will use out_dir if not specified")
     zero_parser.add_argument("--stream", type=str, default=None, choices=["attn", "scan"], help="Stream to ablate, either attn or scan, defaults to None to ablate both streams")
+    zero_parser.add_argument("--target", type=str, default="random", choices=["incorrect_mapping", "random", "0_correct", "25_correct", "50_correct", "75_correct"], help="Target task to take mean, defaults to random for steering with base FVs")
     zero_parser.add_argument("--mean_pool", default=False, action="store_true", help="Whether to mean pool the fv_map, defaults to False")
 
     mean_parser = ablation_subparser.add_parser("mean_ablation", help="Mean out heads. This will require have ran function_vectors.py first to obtain AIE maps.")
@@ -190,6 +191,7 @@ if __name__=='__main__':
     mean_parser.add_argument("--fv_map_load_dir", type=str, default=None, help="Load fv_map from this directory (only needed when p > 0), will use out_dir if not specified")
     mean_parser.add_argument("--mean_load_dir", type=str, default=None, help="Load mean from this directory (only needed when p > 0), will use out_dir if not specified")
     mean_parser.add_argument("--stream", type=str, default=None, choices=["attn", "scan"], help="Stream to ablate, either attn or scan, defaults to None to ablate both streams")
+    mean_parser.add_argument("--target", type=str, default="random", choices=["incorrect_mapping", "random", "0_correct", "25_correct", "50_correct", "75_correct"], help="Target task to take mean, defaults to random for steering with base FVs")
     mean_parser.add_argument("--mean_pool", default=False, action="store_true", help="Whether to mean pool the fv_map, defaults to False")
     
     exclusion_zero_parser = ablation_subparser.add_parser("exclusion_zero_ablation", help="Randomly ablate heads that are not function heads to zero. This will require have ran function_vectors.py first to obtain AIE maps.")
@@ -197,6 +199,7 @@ if __name__=='__main__':
     exclusion_zero_parser.add_argument("--fv_map_load_dir", type=str, default=None, help="Load fv_map (AIE score map) from this directory (only needed when p > 0), will use out_dir if not specified")
     exclusion_zero_parser.add_argument("--stream", type=str, default=None, choices=["attn", "scan"], help="Stream to ablate, either attn or scan, defaults to None to ablate both streams")
     exclusion_zero_parser.add_argument("--exclude_p", type=float, default=0.0, help="Percentage of function heads to exclude from ablation, defaults to 0.0")
+    exclusion_zero_parser.add_argument("--target", type=str, default="random", choices=["incorrect_mapping", "random", "0_correct", "25_correct", "50_correct", "75_correct"], help="Target task to take mean, defaults to random for steering with base FVs")
     exclusion_zero_parser.add_argument("--mean_pool", default=False, action="store_true", help="Whether to mean pool the fv_map, defaults to False")
     
     exclusion_mean_parser = ablation_subparser.add_parser("exclusion_mean_ablation", help="Randomly ablate heads that are not function heads to the mean. This will require have ran function_vectors.py first to obtain AIE maps.")
@@ -205,6 +208,7 @@ if __name__=='__main__':
     exclusion_mean_parser.add_argument("--stream", type=str, default=None, choices=["attn", "scan"], help="Stream to ablate, either attn or scan, defaults to None to ablate both streams")
     exclusion_mean_parser.add_argument("--exclude_p", type=float, default=0.0, help="Percentage of function heads to exclude from ablation, defaults to 0.0")
     exclusion_mean_parser.add_argument("--mean_load_dir", type=str, default=None, help="Load mean from this directory (only needed when p > 0), will use out_dir if not specified")
+    exclusion_mean_parser.add_argument("--target", type=str, default="random", choices=["incorrect_mapping", "random", "0_correct", "25_correct", "50_correct", "75_correct"], help="Target task to take mean, defaults to random for steering with base FVs")
     exclusion_mean_parser.add_argument("--mean_pool", default=False, action="store_true", help="Whether to mean pool the fv_map, defaults to False")
     
     steering_parser = ablation_subparser.add_parser("steer", help="Steer selected function heads. This will require have ran extract_activations.py with fv_steer first.")
