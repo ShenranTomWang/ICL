@@ -1,0 +1,10 @@
+[
+    "tweet_eval-stance_feminist_incorrect_mapping",
+    "ethos-national_origin_incorrect_mapping",
+    "poem_sentiment_incorrect_mapping",
+    "glue-wnli_incorrect_mapping",
+    "tweet_eval-stance_atheism_incorrect_mapping",
+    "superglue-cb_incorrect_mapping",
+    "ethos-religion_incorrect_mapping",
+    "ethos-race_incorrect_mapping"
+]
