@@ -137,7 +137,7 @@ def fv_remove_head_mamba(
                     ablation_value_stream = ablation_value.get_stream(curr_stream)
                     ablation_value_stream = ablation_value_stream[layer]
                     if ablate_token is not None:
-                        ablation_value_stream[..., ablate_token] = ablation_value_stream[..., ablate_token]
+                        stream[..., ablate_token] = ablation_value_stream
                     else:
                         ablation_value_stream = ablation_value_stream.unsqueeze(-1).expand(stream.shape)
                         stream[:, :, :] = ablation_value_stream
