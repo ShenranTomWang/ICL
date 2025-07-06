@@ -14,9 +14,9 @@ def main(args):
             task_maps.append(map_)
         task_map = FVMap.mean_of(task_maps)
         all_maps.append(task_map)
-    FVMap.visualize_all(all_maps, datasets, save_path=f"{args.out_dir}/{args.task}_function_vectors.png")
+    FVMap.visualize_all(all_maps, datasets, save_path=f"{args.out_dir}/{args.task}_function_vectors.pdf")
     mean_map = FVMap.mean_of(all_maps)
-    mean_map.visualize(f"{args.out_dir}/{args.task}_mean_function_vector.png")
+    mean_map.visualize(f"{args.out_dir}/{args.task}_mean_function_vector.pdf")
         
 
 if __name__ == "__main__":

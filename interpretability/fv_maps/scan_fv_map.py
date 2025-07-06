@@ -1,5 +1,6 @@
 from .fv_map import FVMap
 import torch
+import matplotlib as mpl; mpl.rcParams['pdf.fonttype'] = 42
 import matplotlib.pyplot as plt
 import seaborn as sns
 from matplotlib.figure import Figure
