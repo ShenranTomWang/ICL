@@ -18,7 +18,7 @@ class ScanFVMap(FVMap):
             dtype (torch.dtype, optional): device. Defaults to torch.float32.
         """
         self.scan_map = scan_map.to("cpu").to(dtype)
-        self.dtype = dtype
+        super().__init__(total_heads=scan_map.numel(), dtype=dtype)
         
     def __add__(self, other: "ScanFVMap") -> "ScanFVMap":
         return ScanFVMap(self.scan_map + other.scan_map, self.dtype)

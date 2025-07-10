@@ -33,8 +33,8 @@ class HybridFVMap(FVMap):
         self.scan_map = scan_map.to("cpu").to(dtype)
         self.attn_layers = attn_layers if attn_layers is not None else list(range(attn_map.shape[0]))
         self.scan_layers = scan_layers if scan_layers is not None else list(range(scan_map.shape[0]))
-        self.dtype = dtype
-        
+        super().__init__(total_heads=attn_map.numel() + scan_map.numel(), dtype=dtype)
+
     def __add__(self, other: "HybridFVMap") -> "HybridFVMap":
         attn_map = self.attn_map + other.attn_map
         scan_map = self.scan_map + other.scan_map

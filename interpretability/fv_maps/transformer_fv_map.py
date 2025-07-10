@@ -18,8 +18,8 @@ class TransformerFVMap(FVMap):
             dtype (torch.dtype, optional): device. Defaults to torch.float32.
         """
         self.attn_map = attn_map.to("cpu").to(dtype)
-        self.dtype = dtype
-        
+        super().__init__(total_heads=attn_map.numel(), dtype=dtype)
+
     def __add__(self, other: "TransformerFVMap") -> "TransformerFVMap":
         return TransformerFVMap(self.attn_map + other.attn_map, self.dtype)
     

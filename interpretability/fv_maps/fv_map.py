@@ -3,12 +3,17 @@ from matplotlib.figure import Figure
 from matplotlib import pyplot as plt
 import matplotlib.gridspec as gridspec
 import numpy as np
+import torch
 
 class FVMap(ABC):
     """
     This is an abstract base class for AIE heatmaps for the function vector experiments.
     It defines the interface for FVMap objects, which are used to visualize and analyze the function vector maps.
     """
+    def __init__(self, total_heads: int, dtype: torch.dtype):
+        self.total_heads = total_heads
+        self.dtype = dtype
+
     @staticmethod
     def mean_of(maps: list["FVMap"]) -> "FVMap":
         """
