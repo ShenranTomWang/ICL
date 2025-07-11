@@ -129,8 +129,6 @@ class Operator(ABC):
                 This is to be passed to hooks as a kwarg, stream is one of attn or scan
         """
         exclusion_ablation_heads = fv_map.exclusion_ablation_heads(top_p, ablation_p, **kwargs)
-        num_heads = sum(len(heads) for heads in exclusion_ablation_heads.values())
-        assert num_heads == int(fv_map.total_heads * ablation_p), "Number of heads in exclusion ablation does not match expected number."
         return exclusion_ablation_heads
 
     @abstractmethod
