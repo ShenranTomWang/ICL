@@ -148,6 +148,18 @@ def main(args):
                     fv_steer = fv_steer * args.alpha
                     ablation_steer_sanity_check(fv_steer, heads_to_steer)
                     kwargs = operator.attention2kwargs(fv_steer, last_k=1)
+                elif args.ablation_type == "steer_layer":
+                    if not args.mean_pool:
+                        fv_map = torch.load(f"{args.fv_map_load_dir}/{test_task}{args.target}/100/function_vectors.pth")
+                    fv_steer = operator.load_attention_manager(f"{args.fv_map_load_dir}/{test_task}/fv_steer.pth")
+                    fv_steer = fv_steer * args.alpha
+                    kwargs = operator.attention2kwargs(
+                        fv_steer,
+                        layers=args.layers,
+                        last_k=1,
+                        keep_attention=True if args.stream is None or args.stream == "attn" else False,
+                        keep_scan=True if args.stream is None or args.stream == "scan" else False
+                    )
             else:
                 kwargs = {}
             f1, acc = run(args, dataset, operator, seed, kwargs=kwargs)
@@ -238,6 +250,14 @@ if __name__=='__main__':
     exclusion_steer_parser.add_argument("--alpha", type=float, default=1.0, help="Steering strength, defaults to 1.0")
     exclusion_steer_parser.add_argument("--target", type=str, default="random", choices=["incorrect_mapping", "random", "0_correct", "25_correct", "50_correct", "75_correct"], help="Target task to load fv_map, defaults to random for steering with base FVs")
     
+    layer_steer_parser = ablation_subparser.add_parser("steer_layer", help="Steer selected function heads at specific layers. This will require have ran extract_activations.py with fv_steer first.")
+    layer_steer_parser.add_argument("--stream", type=str, default=None, choices=["attn", "scan"], help="Stream to steer, either attn or scan, defaults to None to steer both streams")
+    layer_steer_parser.add_argument("--layers", type=str, default=None, help="Comma-separated list of layer indices to steer, e.g., '0,1,2', defaults to None to steer all layers")
+    layer_steer_parser.add_argument("--fv_map_load_dir", type=str, default=None, help="Load fv_map from this directory (only needed when p > 0), will use out_dir if not specified")
+    layer_steer_parser.add_argument("--mean_pool", default=False, action="store_true", help="Whether to mean pool the fv_steer, defaults to False")
+    layer_steer_parser.add_argument("--alpha", type=float, default=1.0, help="Steering strength, defaults to 1.0")
+    layer_steer_parser.add_argument("--target", type=str, default="random", choices=["incorrect_mapping", "random", "0_correct", "25_correct", "50_correct", "75_correct"], help="Target task to load fv_map, defaults to random for steering with base FVs")
+    
     args = parser.parse_args()
     if args.out_dir is None:
         args.out_dir = "out/" + "/".join(args.model.split("/")[-1:])
@@ -247,6 +267,9 @@ if __name__=='__main__':
         args.mean_load_dir = args.out_dir
     if not hasattr(args, "p"):
         args.p = 0.0
+        
+    if hasattr(args, "layers") and args.layers is not None:
+        args.layers = [int(layer) for layer in args.layers.split(",")]
 
     args.target = ("_" + args.target) if hasattr(args, "target") and args.target is not None else "_random"
     assert (args.dataset is not None) ^ (args.task is not None), "Either dataset or task must be provided, but not both"
