@@ -5,7 +5,8 @@ import torch
 def main(args):
     operator = args.operator_cls(args.model, args.device, args.dtype)
     all_layers = operator.ALL_LAYERS
-    out_dir = f"logs/{args.model.split('/')[-1]}"
+    out_dir = f"out/{args.model.split('/')[-1]}"
+    log_dir = f"logs/{args.model.split('/')[-1]}/16"
     for layer in all_layers:
         subprocess.run(
             [
@@ -16,7 +17,7 @@ def main(args):
                 "--task", args.task,
                 "--k", "0",
                 "--device", args.device,
-                "--log_file", f"{out_dir}/16/{args.task}/layer_steer/{layer}/log_no_demo_mean.log",
+                "--log_file", f"{log_dir}/{args.task}/layer_steer/{layer}/log_no_demo_mean.log",
                 "steer_layer",
                 "--layers", str(layer),
                 "--mean_pool" if args.mean_pool else "",
@@ -32,7 +33,7 @@ def main(args):
                     "--task", args.task,
                     "--k", "0",
                     "--device", args.device,
-                    "--log_file", f"{out_dir}/16/{args.task}/layer_steer/{layer}/log_no_demo_mean_attn.log",
+                    "--log_file", f"{log_dir}/{args.task}/layer_steer/{layer}/log_no_demo_mean_attn.log",
                     "steer_layer",
                     "--layers", str(layer),
                     "--mean_pool" if args.mean_pool else "",
@@ -48,7 +49,7 @@ def main(args):
                     "--task", args.task,
                     "--k", "0",
                     "--device", args.device,
-                    "--log_file", f"{out_dir}/16/{args.task}/layer_steer/{layer}/log_no_demo_mean_scan.log",
+                    "--log_file", f"{log_dir}/{args.task}/layer_steer/{layer}/log_no_demo_mean_scan.log",
                     "steer_layer",
                     "--layers", str(layer),
                     "--mean_pool" if args.mean_pool else "",
