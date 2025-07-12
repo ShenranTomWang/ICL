@@ -3,7 +3,7 @@ import subprocess
 import torch
 
 def main(args):
-    operator = args.operator_cls(args.model, args.device, args.dtype)
+    operator = args.operator_cls(args.model, args.device, args.dtype)       # TODO: implement config-only loading of operator
     all_layers = operator.ALL_LAYERS
     out_dir = f"out/{args.model.split('/')[-1]}"
     log_dir = f"logs/{args.model.split('/')[-1]}/16"
