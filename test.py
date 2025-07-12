@@ -148,18 +148,18 @@ def main(args):
                     fv_steer = fv_steer * args.alpha
                     ablation_steer_sanity_check(fv_steer, heads_to_steer)
                     kwargs = operator.attention2kwargs(fv_steer, last_k=1)
-                elif args.ablation_type == "steer_layer":
-                    if not args.mean_pool:
-                        fv_map = torch.load(f"{args.fv_map_load_dir}/{test_task}{args.target}/100/function_vectors.pth")
-                    fv_steer = operator.load_attention_manager(f"{args.fv_map_load_dir}/{test_task}/fv_steer.pth")
-                    fv_steer = fv_steer * args.alpha
-                    kwargs = operator.attention2kwargs(
-                        fv_steer,
-                        layers=args.layers,
-                        last_k=1,
-                        keep_attention=True if args.stream is None or args.stream == "attn" else False,
-                        keep_scan=True if args.stream is None or args.stream == "scan" else False
-                    )
+            elif args.ablation_type == "steer_layer":
+                if not args.mean_pool:
+                    fv_map = torch.load(f"{args.fv_map_load_dir}/{test_task}{args.target}/100/function_vectors.pth")
+                fv_steer = operator.load_attention_manager(f"{args.fv_map_load_dir}/{test_task}/fv_steer.pth")
+                fv_steer = fv_steer * args.alpha
+                kwargs = operator.attention2kwargs(
+                    fv_steer,
+                    layers=args.layers,
+                    last_k=1,
+                    keep_attention=True if args.stream is None or args.stream == "attn" else False,
+                    keep_scan=True if args.stream is None or args.stream == "scan" else False
+                )
             else:
                 kwargs = {}
             f1, acc = run(args, dataset, operator, seed, kwargs=kwargs)
