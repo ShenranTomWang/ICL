@@ -23,7 +23,7 @@ def main(args):
                 "--mean_pool" if args.mean_pool else "",
             ]
         )
-        if type(operator) == operators.HybridOperator:
+        if isinstance(operator, operators.HybridOperator):
             subprocess.run(
                 [
                     "python", "test.py",
