@@ -123,7 +123,7 @@ class FVMap(ABC):
         """
         width = int(np.sqrt(len(maps)))
         height = len(maps) // width + (len(maps) % width > 0)
-        fig = plt.figure(figsize=(width * 10, height * 5))
+        fig = plt.figure(figsize=(width * 14, height * 12))
         gs = gridspec.GridSpec(height, width, figure=fig)
 
         if titles is None:
@@ -137,7 +137,7 @@ class FVMap(ABC):
                 x = (col + 0.5) / width,          # Horizontal center of the cell
                 y = 1 - (row / height) + 0.001,    # Slightly above the top of the cell
                 s=titles[i],
-                ha="center", va="bottom", fontsize=10, weight="bold"
+                ha="center", va="bottom", fontsize=24, weight="bold"
             )
         plt.tight_layout()
         

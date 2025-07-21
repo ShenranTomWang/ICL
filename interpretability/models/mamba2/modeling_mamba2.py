@@ -582,7 +582,7 @@ class Mamba2Mixer(nn.Module):
             # Cutting off padded chunks
             if pad_size > 0:
                 y = y[:, :seq_len, :, :]
-            attention = y if output_attentions else None
+            attention = y.clone() if output_attentions else None
             if attention_override is not None:
                 hook, scan_intervention, hook_kwargs = attention_override
                 y = hook(y, scan_intervention, curr_stream="scan", layer=self.layer_idx, **hook_kwargs)

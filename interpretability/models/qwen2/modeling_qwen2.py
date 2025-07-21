@@ -203,7 +203,7 @@ class Qwen2Attention(nn.Module):
             **kwargs,
         )
 
-        attention = attn_output if output_attentions else None
+        attention = attn_output.clone() if output_attentions else None
         if attention_override is not None:
             hook, intervention, hook_kwargs = attention_override
             attn_output = hook(attn_output, intervention, curr_stream="attn", layer=self.layer_idx, **hook_kwargs)

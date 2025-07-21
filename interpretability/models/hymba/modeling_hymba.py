@@ -668,7 +668,7 @@ class HymbaFlashAttention2(HymbaAttention):
         )
 
         v_dim = value_states.shape[-2] * value_states.shape[-1]
-        attention = attn_output if output_attentions else None
+        attention = attn_output.clone() if output_attentions else None
         if attention_override is not None:
             attn_hook, attn_intervention, _, _, hook_kwargs = attention_override
             attn_output = attn_hook(attention, attn_intervention, curr_stream="attn", layer=self.layer_idx, **hook_kwargs)
@@ -1068,7 +1068,7 @@ class HymbaSdpaAttention(HymbaAttention):
         )
 
         attn_output = attn_output.transpose(1, 2).contiguous()
-        attention = attn_output if output_attentions else None
+        attention = attn_output.clone() if output_attentions else None
         if attention_override is not None:
             attn_hook, attn_intervention, _, _, hook_kwargs = attention_override
             attn_output = attn_hook(attn_output, attn_intervention, curr_stream="attn", layer=self.layer_idx, **hook_kwargs)
@@ -1330,7 +1330,7 @@ class HymbaFlexAttention(HymbaFlashAttention2):
             )
 
             v_dim = value_states.shape[-2] * value_states.shape[-1]
-            attention = attn_output if output_attentions else None
+            attention = attn_output.clone() if output_attentions else None
             if attention_override is not None:
                 attn_hook, attn_intervention, _, _, hook_kwargs = attention_override
                 attn_output = attn_hook(attn_output, attn_intervention, curr_stream="attn", layer=self.layer_idx, **hook_kwargs)
@@ -1357,7 +1357,7 @@ class HymbaFlexAttention(HymbaFlashAttention2):
                 head_mask = head_mask.view(1, 1, -1, 1)
                 attn_output = attn_output * head_mask
             
-            attention = attn_output if output_attentions else None
+            attention = attn_output.clone() if output_attentions else None
             if attention_override is not None:
                 attn_hook, attn_intervention, _, _, hook_kwargs = attention_override
                 attn_output = attn_hook(attn_output, attn_intervention, curr_stream="attn", layer=self.layer_idx, **hook_kwargs)
@@ -1653,7 +1653,7 @@ class HymbaBlock(nn.Module):
                 cache_params.ssm_states[self.layer_idx].copy_(ssm_state)
                 
         scan_outputs = scan_outputs.transpose(1, 2)
-        scan = scan_outputs.transpose(1, 2) if output_attentions else None
+        scan = scan_outputs.transpose(1, 2).clone() if output_attentions else None
         
         if attention_override is not None:
             _, _, scan_hook, scan_intervention, hook_kwargs = attention_override

@@ -493,7 +493,7 @@ class Zamba2Attention(nn.Module):
             **kwargs,
         )
         
-        attention = attn_output if output_attentions else None
+        attention = attn_output.clone() if output_attentions else None
         if attention_override is not None:
             attn_hook, attn_intervention, _, _, hook_kwargs = attention_override
             attn_output = attn_hook(attn_output, attn_intervention, curr_stream="attn", layer=layer_idx, **hook_kwargs)

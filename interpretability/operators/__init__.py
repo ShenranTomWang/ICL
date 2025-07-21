@@ -7,6 +7,7 @@ from .zamba_operator import ZambaOperator
 from .hymba_operator import HymbaOperator
 from .operator import Operator
 from .llama_operator import LlamaOperator
+from .gpt_neox_operator import GPTNeoXOperator
 
 __all__ = [
     "HybridOperator",
@@ -18,4 +19,5 @@ __all__ = [
     "Qwen2Operator",
     "ForwardWrapperTransformerOperator",
     "LlamaOperator",
+    "GPTNeoXOperator"
 ]
