@@ -4,16 +4,7 @@ from utils.dataset import Dataset
 from utils.utils import init_counters, log_counters
 import torch
 import os, logging
-
-def to_base(dataset: str) -> str:
-    if dataset.endswith("_random"):
-        return dataset[:-7]
-    elif dataset.endswith("_0_correct"):
-        return dataset[:-11]
-    elif dataset.endswith("_25_correct") or dataset.endswith("_50_correct") or dataset.endswith("_75_correct"):
-        return dataset[:-13]
-    else:
-        return dataset
+from utils.data import to_base
 
 def AIE_handler(args):
     logger = logging.getLogger(__name__)

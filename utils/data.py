@@ -105,3 +105,13 @@ def load_data_by_datasets(datasets: list[str], k: int, n: int, split: str, seed:
             logger.error(f"Error loading data for {dataset}")
             logger.error(e)
     return data
+
+def to_base(dataset: str) -> str:
+    if dataset.endswith("_random"):
+        return dataset[:-7]
+    elif dataset.endswith("_0_correct"):
+        return dataset[:-11]
+    elif dataset.endswith("_25_correct") or dataset.endswith("_50_correct") or dataset.endswith("_75_correct"):
+        return dataset[:-13]
+    else:
+        return dataset

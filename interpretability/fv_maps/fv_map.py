@@ -10,9 +10,10 @@ class FVMap(ABC):
     This is an abstract base class for AIE heatmaps for the function vector experiments.
     It defines the interface for FVMap objects, which are used to visualize and analyze the function vector maps.
     """
-    def __init__(self, total_heads: int, dtype: torch.dtype):
+    def __init__(self, total_heads: int, dtype: torch.dtype, figsize: tuple[int, int]):
         self.total_heads = total_heads
         self.dtype = dtype
+        self.figsize = figsize
 
     @staticmethod
     def mean_of(maps: list["FVMap"]) -> "FVMap":
@@ -109,7 +110,7 @@ class FVMap(ABC):
         pass
     
     @staticmethod
-    def visualize_all(maps: list["FVMap"], titles: list[str] = None, save_path: str = None) -> Figure:
+    def visualize_all(maps: list["FVMap"], titles: list[str] = None, save_path: str = None, figsize: tuple[int, int] = (10, 10)) -> Figure:
         """
         Visualize all FVMaps in a list in a single, lossless figure.
         
@@ -117,13 +118,14 @@ class FVMap(ABC):
             maps (list[FVMap]): List of FVMap objects.
             titles (list[str], optional): List of titles for each map. Defaults to Map i.
             save_path (str, optional): Path to save the figure.
+            figsize (tuple[int, int], optional): Size of the figure. Defaults to (10, 10).
         
         Returns:
             Figure: The composite matplotlib figure.
         """
         width = int(np.sqrt(len(maps)))
         height = len(maps) // width + (len(maps) % width > 0)
-        fig = plt.figure(figsize=(width * 14, height * 12))
+        fig = plt.figure(figsize=(width * figsize[0], height * figsize[1]))
         gs = gridspec.GridSpec(height, width, figure=fig)
 
         if titles is None:
@@ -137,7 +139,7 @@ class FVMap(ABC):
                 x = (col + 0.5) / width,          # Horizontal center of the cell
                 y = 1 - (row / height) + 0.001,    # Slightly above the top of the cell
                 s=titles[i],
-                ha="center", va="bottom", fontsize=24, weight="bold"
+                ha="center", va="bottom", fontsize=28, weight="bold"
             )
         plt.tight_layout()
         
