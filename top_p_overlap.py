@@ -46,7 +46,7 @@ if __name__ == "__main__":
     parser.add_argument("--device", type=str, default="cuda" if torch.cuda.is_available() else "cpu", help="Device to run the model on")
     parser.add_argument("--log_file", type=str, default="out/log.log", help="Log file path")
     parser.add_argument("--fv_map_load_dir", type=str, default="out", help="Directory to load FV maps from, defaults to 'out'")
-    parser.add_argument("--p", type=float, default=0.02, help="Top p value for overlap calculation")
+    parser.add_argument("--p", type=float, required=True, help="Top p value for overlap calculation")
     args = parser.parse_args()
     
     args.operator = getattr(interpretability.operators, args.operator)
