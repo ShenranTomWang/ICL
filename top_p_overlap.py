@@ -34,7 +34,7 @@ def main(args):
         logger.warning(f"No heads found for task {args.task1} with top p {args.p}.")
         return
     overlap_percentage = len(overlap) / len(top_p_heads1) * 100
-    logger.info(f"Overlap percentage between top {args.p} heads of task {args.task1} and task {args.task2}: {overlap_percentage:.2f}%")
+    logger.info(f"Overlap percentage between top {args.p} heads: {overlap_percentage:.2f}%")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run top_p_overlap.py script")

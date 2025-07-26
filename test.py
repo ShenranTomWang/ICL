@@ -267,6 +267,8 @@ if __name__=='__main__':
         args.mean_load_dir = args.out_dir
     if not hasattr(args, "p"):
         args.p = 0.0
+    if not hasattr(args, "mean_pool"):
+        args.mean_pool = False
         
     if hasattr(args, "layers") and args.layers is not None:
         args.layers = [int(layer) for layer in args.layers.split(",")]
