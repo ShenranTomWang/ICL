@@ -38,11 +38,15 @@ class HybridFVMap(FVMap):
         super().__init__(total_heads=attn_map.numel() + scan_map.numel(), dtype=dtype, figsize=figsize)
 
     def __add__(self, other: "HybridFVMap") -> "HybridFVMap":
+        if not hasattr(self, "figsize"):
+            self.figsize = (10, 10)
         attn_map = self.attn_map + other.attn_map
         scan_map = self.scan_map + other.scan_map
         return HybridFVMap(attn_map, scan_map, self.attn_layers, self.scan_layers, self.dtype, self.figsize)
     
     def __truediv__(self, other: int | float) -> "HybridFVMap":
+        if not hasattr(self, "figsize"):
+            self.figsize = (10, 10)
         attn_map = self.attn_map / other
         scan_map = self.scan_map / other
         return HybridFVMap(attn_map, scan_map, self.attn_layers, self.scan_layers, self.dtype, self.figsize)

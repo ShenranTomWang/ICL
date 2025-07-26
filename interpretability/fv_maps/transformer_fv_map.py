@@ -22,9 +22,13 @@ class TransformerFVMap(FVMap):
         super().__init__(total_heads=attn_map.numel(), dtype=dtype, figsize=figsize)
 
     def __add__(self, other: "TransformerFVMap") -> "TransformerFVMap":
+        if not hasattr(self, "figsize"):
+            self.figsize = (10, 10)
         return TransformerFVMap(self.attn_map + other.attn_map, self.dtype, self.figsize)
     
     def __truediv__(self, other: int | float) -> "TransformerFVMap":
+        if not hasattr(self, "figsize"):
+            self.figsize = (10, 10)
         return TransformerFVMap(self.attn_map / other, self.dtype, self.figsize)
 
     def visualize_on_axis(self, ax: plt.Axes) -> None:
@@ -48,7 +52,7 @@ class TransformerFVMap(FVMap):
         for i in top_k_indices:
             layer = (i // self.attn_map.shape[1]).item()
             head = (i % self.attn_map.shape[1]).item()
-            if i in top_k_heads:
+            if layer in top_k_heads:
                 top_k_heads[layer].append({"head": head, "stream": "attn"})
             else:
                 top_k_heads[layer] = [{"head": head, "stream": "attn"}]
