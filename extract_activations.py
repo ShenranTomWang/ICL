@@ -45,6 +45,7 @@ def get_subparsers(parser: argparse.ArgumentParser, name: str) -> None:
     subparsers = parser.add_subparsers(dest=name)
     attn_parser = subparsers.add_parser("attn", help="Attention stream")
     attn_mean_parser = subparsers.add_parser("attn_mean", help="Attention stream mean")
+    attn_mean_parser.add_argument("--choice", type=int, default=None, help="number of ICL demos to choose randomly from k examples, default None means use all k examples")
     fv_steer_parser = subparsers.add_parser("fv_steer", help="Attention stream last (extract function vectors from attn stream for steering)")
     fv_steer_parser.add_argument("--choice", type=int, default=10, help="number of ICL demos to choose randomly from k examples")
     steer_parser = subparsers.add_parser("steer", help="Steer stream")

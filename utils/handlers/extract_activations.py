@@ -85,6 +85,17 @@ def dev_handler(
             
             dataset = Dataset(curr_train_data, curr_test_data, verbose=args.verbose, template=args.use_template)
             run_operator_fv_steer(args, operator, dataset, f"{args.out_dir}/{train_task}/{seed}/", seed)
+    elif args.stream == "attn_mean" and args.choice != None:
+        logger = logging.getLogger(__name__)
+        for train_task in train_counter:
+            logger.info(f"Processing {train_task} (dev)")
+            curr_train_data = [dp for dp in train_data if dp["task"] == train_task]
+            curr_test_data = [dp for dp in test_data if dp["task"] == train_task]
+            
+            dataset = Dataset(curr_train_data, curr_test_data, verbose=args.verbose, template=args.use_template)
+            dataset.choose(args.choice, seed)
+            dataset.preprocess()
+            run_operator_generic(operator, args, dataset.inputs, f"{args.out_dir}/{train_task}/{seed}/{args.split}_{args.stream}_choice={args.choice}/")
     else:
         basic_handler(test_counter, train_data, test_data, operator, args, seed)
     

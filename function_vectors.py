@@ -20,6 +20,8 @@ if __name__ == "__main__":
     subparser = parser.add_subparsers(dest="operation", required=True)
     aie_subparser = subparser.add_parser("AIE", help="Generate AIE function vectors")
     aie_subparser.add_argument("--split", type=str, default="dev", choices=["test", "dev"], help="Split to use for AIE")
+    neg_aie_subparser = subparser.add_parser("neg_AIE", help="Generate negative AIE function vectors")
+    neg_aie_subparser.add_argument("--split", type=str, default="dev", choices=["test", "dev"], help="Split to use for negative AIE")
     
     args = parser.parse_args()
     args.operator = getattr(interpretability.operators, args.operator)
