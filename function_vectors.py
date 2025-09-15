@@ -35,6 +35,6 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.ERROR, format='%(asctime)s - %(levelname)s - %(message)s')
     logger = logging.getLogger(__name__)
     logger.info(args)
-    
+
     handler = getattr(handlers, f"{args.operation}_handler")
     handler(args)

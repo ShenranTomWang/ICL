@@ -54,7 +54,7 @@ def neg_AIE_handler(args):
             steer = operator.load_attention_manager(f"{args.fv_load_dir}/{test_task_base}/{seed}/{args.split}_attn_mean_choice=10/attn_mean.pth")
             inputs = dataset.inputs
             label_id = torch.tensor(dataset.output_ids)
-            fv_map = operator.generate_neg_AIE_map([steer], [inputs], [label_id])
+            fv_map = operator.generate_AIE_map([steer], [inputs], [label_id])
             out_dir = f"{args.out_dir}/{test_task}/{seed}"
             os.makedirs(out_dir, exist_ok=True)
             torch.save(fv_map, f"{out_dir}/neg_function_vectors.pth")
