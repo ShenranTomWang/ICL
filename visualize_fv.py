@@ -12,17 +12,17 @@ def main(args):
         task_maps = []
         for seed in args.seed.split(","):
             load_dir = f"{args.load_dir}/{dataset}/{seed}"
-            load = f"{load_dir}/function_vectors.pth" if not args.negative_AIE else f"{load_dir}/neg_function_vectors.pth"
+            load = f"{load_dir}/function_vectors.pth" if not args.neg_AIE else f"{load_dir}/neg_function_vectors.pth"
             map_ = torch.load(load)
             map_.figsize = args.figsize
             torch.save(map_, load)
             task_maps.append(map_)
         task_map = FVMap.mean_of(task_maps)
         all_maps.append(task_map)
-    save_path = f"{args.out_dir}/{args.task}_function_vectors.pdf" if not args.negative_AIE else f"{args.out_dir}/{args.task}_neg_function_vectors.pdf"
+    save_path = f"{args.out_dir}/{args.task}_function_vectors.pdf" if not args.neg_AIE else f"{args.out_dir}/{args.task}_neg_function_vectors.pdf"
     FVMap.visualize_all(all_maps, titles, save_path=save_path, figsize=task_map.figsize)
     mean_map = FVMap.mean_of(all_maps)
-    save_path = f"{args.out_dir}/{args.task}_mean_function_vector.pdf" if not args.negative_AIE else f"{args.out_dir}/{args.task}_mean_neg_function_vector.pdf"
+    save_path = f"{args.out_dir}/{args.task}_mean_function_vector.pdf" if not args.neg_AIE else f"{args.out_dir}/{args.task}_mean_neg_function_vector.pdf"
     mean_map.visualize(save_path=save_path)
 
 if __name__ == "__main__":

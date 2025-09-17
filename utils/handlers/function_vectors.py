@@ -5,6 +5,7 @@ from utils.utils import init_counters, log_counters
 import torch
 import os, logging
 from utils.data import to_base
+from interpretability import AttentionManager
 
 def AIE_handler(args):
     logger = logging.getLogger(__name__)
@@ -51,7 +52,12 @@ def neg_AIE_handler(args):
             dataset.preprocess()
             dataset.tensorize(operator.tokenizer)
             test_task_base = to_base(test_task)
-            steer = operator.load_attention_manager(f"{args.fv_load_dir}/{test_task_base}/{seed}/{args.split}_attn_mean_choice=10/attn_mean.pth")
+            steer = []
+            for seed in args.seed:
+                am = operator.load_attention_manager(f"{args.fv_load_dir}/{test_task_base}/{seed}/{args.split}_attn_mean/attn_mean.pth")
+                am = am.to(args.device)
+                steer.append(am)
+            steer = AttentionManager.mean_of(steer)
             inputs = dataset.inputs
             label_id = torch.tensor(dataset.output_ids)
             fv_map = operator.generate_AIE_map([steer], [inputs], [label_id])
