@@ -54,10 +54,9 @@ def neg_AIE_handler(args):
             steer = []
             for _test_task in test_counter:
                 _test_task_base = to_base(_test_task)
-                for seed in args.seed:
-                    am = operator.load_attention_manager(f"{args.fv_load_dir}/{_test_task_base}/{seed}/{args.split}_attn_mean/attn_mean.pth")
-                    am = am.to(args.device)
-                    steer.append(am)
+                am = operator.load_attention_manager(f"{args.fv_load_dir}/{_test_task_base}/{seed}/{args.split}_attn_mean/attn_mean.pth")
+                am = am.to(args.device)
+                steer.append(am)
             steer = AttentionManager.mean_of(steer)
             inputs = dataset.inputs
             label_id = torch.tensor(dataset.output_ids)
