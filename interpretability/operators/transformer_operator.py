@@ -51,13 +51,22 @@ class TransformerOperator(Operator):
         return attn_outputs
     
     @torch.inference_mode()
-    def generate_AIE_map(self, steer: list[SelfAttentionManager], inputs: list[list[str]], label_ids: list[torch.Tensor]) -> TransformerFVMap:
+    def generate_AIE_map(
+        self,
+        steer: list[SelfAttentionManager],
+        inputs: list[list[str]],
+        label_ids: list[torch.Tensor],
+        attn_intervention_fn: Callable = fv_replace_head_generic,
+        **kwargs
+    ) -> TransformerFVMap:
         """
         Generate AIE map from attention outputs for a list of inputs
         Args:
             steer (list[SelfAttentionManager]): steer values for each task
             inputs (list[list[str]]): list of inputs for each task
             label_ids (list[torch.Tensor]): list of label ids for each task
+            attn_intervention_fn (Callable, optional): intervention function for attention, defaults to fv_replace_head_generic
+            kwargs: additional arguments, not used
         Returns:
             TransformerFVMap: AIE map
         """
@@ -75,7 +84,7 @@ class TransformerOperator(Operator):
             for head in range(self.n_heads):
                 head_fv_logits = []
                 for i, (attn, inputs_task) in enumerate(zip(steer, inputs)):
-                    attn_kwargs = self.attention2kwargs(attn, layers=[layer], attention_intervention_fn=fv_replace_head_generic, head=head)
+                    attn_kwargs = self.attention2kwargs(attn, layers=[layer], attention_intervention_fn=attn_intervention_fn, head=head, heads=[{layer: head}])
                     task_fv_logits = []
                     for input_task in inputs_task:
                         logit_fv = self.forward(input_task, **attn_kwargs).logits[:, -1, :].to("cpu")

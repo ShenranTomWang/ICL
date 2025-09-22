@@ -1,13 +1,12 @@
 import argparse, json
 import torch
 from interpretability.fv_maps import FVMap
-from utils.data import to_base
 
 def main(args):
     with open(f"config/{args.task}.json", "r") as f:
         datasets = json.load(f)
     all_maps = []
-    titles = [to_base(dataset) for dataset in datasets]
+    titles = [dataset for dataset in datasets]
     for dataset in datasets:
         task_maps = []
         for seed in args.seed.split(","):

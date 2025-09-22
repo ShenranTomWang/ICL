@@ -25,7 +25,14 @@ class MambaOperator(BaseMambaOperator):
         return fv_remove_head_mamba
     
     @torch.inference_mode()
-    def generate_AIE_map(self, steer: list[AttentionManager], inputs: list[list[str]], label_ids: list[torch.Tensor]) -> ScanFVMap:
+    def generate_AIE_map(
+        self,
+        steer: list[AttentionManager],
+        inputs: list[list[str]], 
+        label_ids: list[torch.Tensor],
+        scan_intervention_fn: Callable = fv_replace_head_mamba,
+        **kwargs
+    ) -> ScanFVMap:
         """
         Generate AIE map from attention outputs
         Args:
@@ -49,7 +56,7 @@ class MambaOperator(BaseMambaOperator):
             for head in range(self.n_heads):
                 head_fv_logits = []
                 for i, (attn, inputs_task) in enumerate(zip(steer, inputs)):
-                    attn_kwargs = self.attention2kwargs(attn, layers=[layer], scan_intervention_fn=fv_replace_head_mamba)
+                    attn_kwargs = self.attention2kwargs(attn, layers=[layer], scan_intervention_fn=scan_intervention_fn, head=head, heads=[{layer: head}])
                     task_fv_logits = []
                     for input_task in inputs_task:
                         logit_fv = self.forward(input_task, **attn_kwargs).logits[:, -1, :].to("cpu")

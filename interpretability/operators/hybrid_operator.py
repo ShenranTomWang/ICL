@@ -78,16 +78,29 @@ class HybridOperator(Operator, ABC):
         return outputs
     
     @torch.inference_mode()
-    def generate_AIE_map(self, steer: list[HybridAttentionManager], inputs: list[list[str]], label_ids: list[torch.Tensor]) -> HybridFVMap:
+    def generate_AIE_map(
+        self,
+        steer: list[HybridAttentionManager],
+        inputs: list[list[str]],
+        label_ids: list[torch.Tensor],
+        attn_intervention_fn: Callable = fv_replace_head_generic,
+        scan_intervention_fn: Callable = None,
+        **kwargs
+    ) -> HybridFVMap:
         """
         Generate AIE map from attention outputs
         Args:
             steer (list[HybridAttentionManager]): steer values for each task
             inputs (list[list[str]]): list of inputs for each task
             label_ids (list[torch.Tensor]): list of label ids for each task
+            attn_intervention_fn (Callable, optional): intervention function for attention, defaults to fv_replace_head_generic
+            scan_intervention_fn (Callable, optional): intervention function for scan, defaults to  None for fv_replace_head_scan_hook
+            kwargs: additional arguments, not used
         Returns:
             TransformerFVMap: AIE map
         """
+        if scan_intervention_fn is None:
+            scan_intervention_fn = self._get_fv_replace_head_scan_hook()
         original_logits = []
         for inputs_task in inputs:
             task_logits = []
@@ -103,7 +116,7 @@ class HybridOperator(Operator, ABC):
             for head in range(self.n_attn_heads):
                 head_fv_logits = []
                 for i, (attn, inputs_task) in enumerate(zip(steer, inputs)):
-                    attn_kwargs = self.attention2kwargs(attn, layers=[layer], keep_scan=False, attention_intervention_fn=fv_replace_head_generic, head=head)
+                    attn_kwargs = self.attention2kwargs(attn, layers=[layer], keep_scan=False, attention_intervention_fn=attn_intervention_fn, head=head, heads=[{layer_idx: head}])
                     task_fv_logits = []
                     for input_task in inputs_task:
                         logit_fv = self.forward(input_task, **attn_kwargs).logits[:, -1, :].to("cpu")
@@ -116,7 +129,7 @@ class HybridOperator(Operator, ABC):
             for head in range(self.n_scan_heads):
                 head_fv_logits = []
                 for i, (attn, inputs_task) in enumerate(zip(steer, inputs)):
-                    attn_kwargs = self.attention2kwargs(attn, layers=[layer], keep_attention=False, scan_intervention_fn=self._get_fv_replace_head_scan_hook(), head=head)
+                    attn_kwargs = self.attention2kwargs(attn, layers=[layer], keep_attention=False, scan_intervention_fn=scan_intervention_fn, head=head, heads=[{layer_idx: head}])
                     task_fv_logits = []
                     for input_task in inputs_task:
                         logit_fv = self.forward(input_task, **attn_kwargs).logits[:, -1, :].to("cpu")
