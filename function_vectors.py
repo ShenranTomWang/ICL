@@ -22,6 +22,7 @@ if __name__ == "__main__":
     aie_subparser.add_argument("--split", type=str, default="dev", choices=["test", "dev"], help="Split to use for AIE")
     neg_aie_subparser = subparser.add_parser("neg_AIE", help="Generate negative AIE function vectors")
     neg_aie_subparser.add_argument("--split", type=str, default="dev", choices=["test", "dev"], help="Split to use for negative AIE")
+    neg_aie_subparser.add_argument("--use_F1", default=False, action="store_true", help="Use F1 score instead of AIE")
     
     args = parser.parse_args()
     args.operator = getattr(interpretability.operators, args.operator)

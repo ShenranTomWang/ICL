@@ -4,9 +4,42 @@ from interpretability.tokenizers import Tokenizer
 from interpretability.fv_maps import FVMap
 import torch
 from typing import Callable
+import numpy as np
+from collections import defaultdict
 from interpretability.attention_managers import AttentionManager
 from abc import ABC, abstractmethod
 import os, logging
+
+def evaluate(predictions: list, groundtruths: list) -> tuple[float]:
+    """Evaluate the predictions against the groundtruths.
+    Args:
+        predictions (list): list of predictions
+        groundtruths (list): list of groundtruths
+    Returns:
+        (float, float): F1, accuracy
+    """
+    accs = []
+    precisions = defaultdict(list)
+    recalls = defaultdict(list)
+    for prediction, groundtruth in zip(predictions, groundtruths):
+        if prediction is None:
+            continue
+        prediction = prediction
+        is_correct = prediction in groundtruth if type(groundtruth) == list else prediction == groundtruth
+        accs.append(is_correct)
+        recalls[groundtruth].append(is_correct)
+        precisions[prediction].append(is_correct)
+
+    f1s = []
+    for key in recalls:
+        precision = np.mean(precisions[key]) if key in precisions else 1.0
+        recall = np.mean(recalls[key])
+        if precision + recall == 0:
+            f1s.append(0)
+        else:
+            f1s.append(2 * precision * recall / (precision + recall))
+
+    return np.mean(f1s), np.mean(accs)
 
 class Operator(ABC):
     """
@@ -168,6 +201,7 @@ class Operator(ABC):
         steer: list[AttentionManager],
         inputs: list[list[str]],
         label_ids: list[torch.Tensor],
+        return_F1: bool = False,
         **kwargs
     ) -> FVMap:
         """
@@ -177,6 +211,7 @@ class Operator(ABC):
             steer (list[AttentionManager]): steer values for each task
             inputs (list[list[str]]): list of inputs for each task
             label_ids (list[torch.Tensor]): list of label ids for each task
+            return_F1 (bool, optional): whether to return F1 score, defaults to False to return AIE
             **kwargs: additional arguments, potentially including intervention functions for attention/scan
         Returns:
             FVMap: FVMap object
@@ -229,3 +264,29 @@ class Operator(ABC):
             aie += cie
         aie /= len(intervened_tasks)
         return aie
+    
+    @staticmethod
+    def compute_F1(intervened_tasks: list[torch.Tensor], original_tasks: list[torch.Tensor], label_ids: list[torch.Tensor]) -> float:
+        """
+        Compute F1 score for batch
+
+        Args:
+            intervened_tasks (list[torch.Tensor]): last logits [(batch_size, vocab_size)] * n_tasks
+            original_tasks (list[torch.Tensor]): last logits [(batch_size, vocab_size)] * n_tasks
+            label_ids (list[torch.Tensor]): [(batch_size,)] * n_tasks
+
+        Returns:
+            float: F1 score
+        """
+        assert len(intervened_tasks) == len(original_tasks) == len(label_ids), "intervened_tasks, original_tasks, and label_ids must have the same length"
+        all_preds = []
+        all_labels = []
+        for i in range(len(intervened_tasks)):
+            intervened_batch = intervened_tasks[i]
+            label_batch = label_ids[i]
+            preds = torch.argmax(intervened_batch, dim=-1).cpu().numpy()
+            labels = label_batch.cpu().numpy()
+            all_preds.extend(preds)
+            all_labels.extend(labels)
+        f1, _ = evaluate(all_preds, all_labels)
+        return f1

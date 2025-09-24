@@ -63,11 +63,12 @@ def neg_AIE_handler(args):
             fv_map = operator.generate_AIE_map(
                 [steer], [inputs], [label_id],
                 attn_intervention_fn=operator.get_fv_remove_head_attn_hook(),
-                scan_intervention_fn=operator.get_fv_remove_head_scan_hook()
+                scan_intervention_fn=operator.get_fv_remove_head_scan_hook(),
+                return_F1=args.use_F1
             )
             out_dir = f"{args.out_dir}/{test_task}/{seed}"
             os.makedirs(out_dir, exist_ok=True)
-            torch.save(fv_map, f"{out_dir}/neg_function_vectors.pth")
-            fv_map.visualize(f"{out_dir}/neg_function_vectors.png")
-            logger.info(f"Negative function vectors saved to {out_dir}/{args.task}_neg_function_vectors.pth")
-            logger.info(f"Negative function vectors visualization saved to {out_dir}/{args.task}_neg_function_vectors.png")
+            torch.save(fv_map, f"{out_dir}/neg_function_vectors{'_F1' if args.use_F1 else ''}.pth")
+            fv_map.visualize(f"{out_dir}/neg_function_vectors{'_F1' if args.use_F1 else ''}.png")
+            logger.info(f"Negative function vectors saved to {out_dir}/{args.task}_neg_function_vectors{'_F1' if args.use_F1 else ''}.pth")
+            logger.info(f"Negative function vectors visualization saved to {out_dir}/{args.task}_neg_function_vectors{'_F1' if args.use_F1 else ''}.png")

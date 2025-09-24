@@ -57,6 +57,7 @@ class TransformerOperator(Operator):
         inputs: list[list[str]],
         label_ids: list[torch.Tensor],
         attn_intervention_fn: Callable = fv_replace_head_generic,
+        return_F1: bool = False,
         **kwargs
     ) -> TransformerFVMap:
         """
@@ -66,6 +67,7 @@ class TransformerOperator(Operator):
             inputs (list[list[str]]): list of inputs for each task
             label_ids (list[torch.Tensor]): list of label ids for each task
             attn_intervention_fn (Callable, optional): intervention function for attention, defaults to fv_replace_head_generic
+            return_F1 (bool, optional): whether to return F1 score, defaults to False to return AIE
             kwargs: additional arguments, not used
         Returns:
             TransformerFVMap: AIE map
@@ -84,14 +86,24 @@ class TransformerOperator(Operator):
             for head in range(self.n_heads):
                 head_fv_logits = []
                 for i, (attn, inputs_task) in enumerate(zip(steer, inputs)):
-                    attn_kwargs = self.attention2kwargs(attn, layers=[layer], attention_intervention_fn=attn_intervention_fn, head=head, heads=[{layer: head}])
+                    attn_kwargs = self.attention2kwargs(
+                        attn,
+                        layers=[layer],
+                        attention_intervention_fn=attn_intervention_fn,
+                        head=head,
+                        heads=[{layer: {"stream": "attn", "head": head}}],
+                        ablation_type="mean_ablation"
+                    )
                     task_fv_logits = []
                     for input_task in inputs_task:
                         logit_fv = self.forward(input_task, **attn_kwargs).logits[:, -1, :].to("cpu")
                         task_fv_logits.append(logit_fv)
                     task_fv_logits = torch.cat(task_fv_logits, dim=0)
                     head_fv_logits.append(task_fv_logits)
-                head_AIE = self.compute_AIE(head_fv_logits, original_logits, label_ids)
+                if return_F1:
+                    head_AIE = self.compute_F1(head_fv_logits, original_logits, label_ids)
+                else:
+                    head_AIE = self.compute_AIE(head_fv_logits, original_logits, label_ids)
                 attn_map[layer, head] = head_AIE
         return TransformerFVMap(attn_map, self.dtype)
     

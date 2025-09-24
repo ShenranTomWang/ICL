@@ -11,17 +11,17 @@ def main(args):
         task_maps = []
         for seed in args.seed.split(","):
             load_dir = f"{args.load_dir}/{dataset}/{seed}"
-            load = f"{load_dir}/function_vectors.pth" if not args.neg_AIE else f"{load_dir}/neg_function_vectors.pth"
+            load = f"{load_dir}/function_vectors.pth" if not args.neg_AIE else f"{load_dir}/neg_function_vectors{'_F1' if args.use_F1 else ''}.pth"
             map_ = torch.load(load)
             map_.figsize = args.figsize
             torch.save(map_, load)
             task_maps.append(map_)
         task_map = FVMap.mean_of(task_maps)
         all_maps.append(task_map)
-    save_path = f"{args.out_dir}/{args.task}_function_vectors.pdf" if not args.neg_AIE else f"{args.out_dir}/{args.task}_neg_function_vectors.pdf"
+    save_path = f"{args.out_dir}/{args.task}_function_vectors.pdf" if not args.neg_AIE else f"{args.out_dir}/{args.task}_neg_function_vectors{'_F1' if args.use_F1 else ''}.pdf"
     FVMap.visualize_all(all_maps, titles, save_path=save_path, figsize=task_map.figsize)
     mean_map = FVMap.mean_of(all_maps)
-    save_path = f"{args.out_dir}/{args.task}_mean_function_vector.pdf" if not args.neg_AIE else f"{args.out_dir}/{args.task}_mean_neg_function_vector.pdf"
+    save_path = f"{args.out_dir}/{args.task}_mean_function_vector.pdf" if not args.neg_AIE else f"{args.out_dir}/{args.task}_mean_neg_function_vector{'_F1' if args.use_F1 else ''}.pdf"
     mean_map.visualize(save_path=save_path)
 
 if __name__ == "__main__":
@@ -32,6 +32,7 @@ if __name__ == "__main__":
     parser.add_argument("--load_dir", type=str, required=True, help="Directory to load function vector maps from")
     parser.add_argument("--figsize", type=int, nargs=2, default=(12, 8), help="Figure size for visualization")
     parser.add_argument("--neg_AIE", action="store_true", help="Whether to visualize negative AIE maps")
+    parser.add_argument("--use_F1", action="store_true", help="Whether the visualization is a F1 score maps")
     
     args = parser.parse_args()
     main(args)
