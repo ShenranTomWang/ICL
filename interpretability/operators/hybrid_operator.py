@@ -112,8 +112,8 @@ class HybridOperator(Operator, ABC):
             task_logits = torch.cat(task_logits, dim=0)
             original_logits.append(task_logits)
         
-        attn_map = torch.empty((self.n_attn_layers, self.n_attn_heads))
-        scan_map = torch.empty((self.n_scan_layers, self.n_scan_heads))
+        attn_map = torch.zeros((self.n_attn_layers, self.n_attn_heads))
+        scan_map = torch.zeros((self.n_scan_layers, self.n_scan_heads))
         for layer_idx, layer in enumerate(self.attn_layers):
             for head in range(self.n_attn_heads):
                 head_fv_logits = []

@@ -62,8 +62,6 @@ def neg_AIE_handler(args):
             label_id = torch.tensor(dataset.output_ids)
             fv_map = operator.generate_AIE_map(
                 [steer], [inputs], [label_id],
-                attn_intervention_fn=operator.get_fv_remove_head_attn_hook(),
-                scan_intervention_fn=operator.get_fv_remove_head_scan_hook(),
                 return_F1=args.use_F1
             )
             out_dir = f"{args.out_dir}/{test_task}/{seed}"

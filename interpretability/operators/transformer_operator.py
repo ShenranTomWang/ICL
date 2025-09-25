@@ -81,7 +81,7 @@ class TransformerOperator(Operator):
             task_logits = torch.cat(task_logits, dim=0)
             original_logits.append(task_logits)
         
-        attn_map = torch.empty((self.n_layers, self.n_heads))
+        attn_map = torch.zeros((self.n_layers, self.n_heads))
         for layer in range(self.n_layers):
             for head in range(self.n_heads):
                 head_fv_logits = []
@@ -105,6 +105,7 @@ class TransformerOperator(Operator):
                 else:
                     head_AIE = self.compute_AIE(head_fv_logits, original_logits, label_ids)
                 attn_map[layer, head] = head_AIE
+        breakpoint()
         return TransformerFVMap(attn_map, self.dtype)
     
     def attention2kwargs(
