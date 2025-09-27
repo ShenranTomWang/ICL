@@ -105,7 +105,6 @@ class TransformerOperator(Operator):
                 else:
                     head_AIE = self.compute_AIE(head_fv_logits, original_logits, label_ids)
                 attn_map[layer, head] = head_AIE
-        breakpoint()
         return TransformerFVMap(attn_map, self.dtype)
     
     def attention2kwargs(
