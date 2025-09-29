@@ -18,7 +18,7 @@ def draw_heatmap(tensor: torch.Tensor, title: str, axis=None):
     ax.set_ylabel('Layer')
     ax.set_title(title)
     
-def draw_attention(attention_weights: torch.Tensor,  title: str, axis=None, cmap='viridis', tokens_q=False, tokens_k=False, center=None):
+def draw_attention(attention_weights: torch.Tensor, title: str, axis=None, cmap='viridis', tokens_q=False, tokens_k=False, center=None):
     """
     Draws a heatmap of the self-attention weights with token descriptions.
     args:
