@@ -1450,7 +1450,7 @@ class HymbaBlock(nn.Module):
             kernel_size=self.conv_kernel_size,
             groups=self.intermediate_size,
             padding=self.conv_kernel_size - 1
-            )
+        )
 
         config.conv_dim[str(self.layer_idx)] = self.intermediate_size
 
@@ -1504,7 +1504,8 @@ class HymbaBlock(nn.Module):
         kv_last_layer=None, 
         use_cache=False,
         use_swa=False,
-        attention_override: tuple = None
+        attention_override: tuple = None,
+        output_attn_map: bool = False
     ):
         projected_states = self.in_proj(hidden_states).transpose(1, 2)  ## (bs, latent_dim, seq_len) 
 
@@ -1651,6 +1652,7 @@ class HymbaBlock(nn.Module):
 
             if ssm_state is not None and cache_params is not None:
                 cache_params.ssm_states[self.layer_idx].copy_(ssm_state)
+        breakpoint()
                 
         scan_outputs = scan_outputs.transpose(1, 2)
         scan = scan_outputs.transpose(1, 2).clone() if output_attentions else None
@@ -1663,11 +1665,15 @@ class HymbaBlock(nn.Module):
 
         hidden_states = (self.pre_avg_layernorm1(attn_outputs) + self.pre_avg_layernorm2(scan_outputs)) / 2
         contextualized_states = self.out_proj(hidden_states)
-        
-        outputs = (contextualized_states, attn_key_value)
+
+        outputs = {'states': contextualized_states, 'attn_key_value': attn_key_value}
         if output_attentions:
-            outputs += (attention,)
-            outputs += (scan,)
+            outputs['attention'] = attention
+            outputs['scan'] = scan
+        if output_attn_map:
+            outputs['A_bar'] = A_bar
+            outputs['B_bar'] = B_bar
+            outputs['C'] = C
 
         return outputs
 
@@ -1682,7 +1688,8 @@ class HymbaBlock(nn.Module):
         kv_last_layer=None,
         use_cache=False,
         use_swa=False,
-        attention_override: tuple = None
+        attention_override: tuple = None,
+        output_attn_map: bool = False
     ):
         if self.use_fast_kernels:
             if not is_fast_path_available or "cuda" not in self.x_proj[0].weight.device.type:
@@ -1699,7 +1706,8 @@ class HymbaBlock(nn.Module):
                 kv_last_layer=kv_last_layer,
                 use_cache=use_cache,
                 use_swa=use_swa,
-                attention_override=attention_override
+                attention_override=attention_override,
+                output_attn_map=output_attn_map
             )
         else:
             raise ValueError("Support Mamba kernel only")
@@ -1711,6 +1719,7 @@ class HymbaBlock(nn.Module):
             past_key_value: Optional[HybridMambaAttentionDynamicCache] = None,
             output_attentions: bool = False,
             attention_override: tuple = None,
+            output_attn_map: bool = False,
             **kwargs,
     ) -> Tuple[torch.Tensor, Optional[Tuple[torch.Tensor]]]:
 
@@ -1723,10 +1732,11 @@ class HymbaBlock(nn.Module):
             position_ids=kwargs['position_ids'],
             use_cache=kwargs['use_cache'],
             use_swa=kwargs['use_swa'],
-            attention_override=attention_override
+            attention_override=attention_override,
+            output_attn_map=output_attn_map
         )
         
-        outputs += (past_key_value,)
+        outputs['past_key_value'] = past_key_value
         return outputs
     
     
@@ -1885,6 +1895,7 @@ class HymbaDecoderLayer(nn.Module):
             kv_last_layer = None,
             use_swa=False,
             attention_override: tuple = None,
+            output_attn_map: bool = False,
             **kwargs,
     ) -> Tuple[torch.FloatTensor, Optional[Tuple[torch.FloatTensor, torch.FloatTensor]]]:
         if "padding_mask" in kwargs:
@@ -1921,12 +1932,14 @@ class HymbaDecoderLayer(nn.Module):
             use_cache=use_cache,
             use_swa=use_swa,
             output_attentions=output_attentions,
-            attention_override=attention_override
+            attention_override=attention_override,
+            output_attn_map=output_attn_map,
         )
-        if output_attentions:
-            hidden_states, attn_key_value, attention_output, scan_outputs, present_key_value = outputs
-        else:
-            hidden_states, attn_key_value, present_key_value = outputs
+        hidden_states = outputs.get('states', None)
+        attn_key_value = outputs.get('attn_key_value', None)
+        attention_output = outputs.get('attention', None)
+        scan_outputs = outputs.get('scan', None)
+        present_key_value = outputs.get('past_key_value', None)
 
         bs, seqlen, _ = hidden_states.shape
         past_seqlen = self._get_past_seqlen(past_key_value, seqlen)
@@ -1942,18 +1955,20 @@ class HymbaDecoderLayer(nn.Module):
             hidden_states, router_logits = self.moe(hidden_states)
             hidden_states = residual + hidden_states
 
-        outputs = (hidden_states,)
+        outputs['states'] = hidden_states
 
         if output_attentions:
-            outputs += ((self_attn_weights, attention_output, scan_outputs),)
+            outputs['attn_weights'] = self_attn_weights
+            outputs['attention'] = attention_output
+            outputs['scan'] = scan_outputs
 
         if use_cache:
-            outputs += (present_key_value,)
+            outputs['past_key_value'] = present_key_value
 
         if output_router_logits:
-            outputs += (router_logits,)
-        
-        outputs += (attn_key_value,)
+            outputs['router_logits'] = router_logits
+
+        outputs['attn_key_value'] = attn_key_value
 
         return outputs
 
@@ -2154,18 +2169,19 @@ class HymbaModel(HymbaPreTrainedModel):
     # Ignore copy
     @add_start_docstrings_to_model_forward(HYMBA_INPUTS_DOCSTRING)
     def forward(
-            self,
-            input_ids: torch.LongTensor = None,
-            attention_mask: Optional[torch.Tensor] = None,
-            position_ids: Optional[torch.LongTensor] = None,
-            past_key_values: Optional[Union[List[torch.FloatTensor], HybridMambaAttentionDynamicCache]] = None,
-            inputs_embeds: Optional[torch.FloatTensor] = None,
-            use_cache: Optional[bool] = None,
-            output_attentions: Optional[bool] = None,
-            output_hidden_states: Optional[bool] = None,
-            output_router_logits: Optional[bool] = None,
-            return_dict: Optional[bool] = None,
-            attention_overrides: Optional[tuple] = None
+        self,
+        input_ids: torch.LongTensor = None,
+        attention_mask: Optional[torch.Tensor] = None,
+        position_ids: Optional[torch.LongTensor] = None,
+        past_key_values: Optional[Union[List[torch.FloatTensor], HybridMambaAttentionDynamicCache]] = None,
+        inputs_embeds: Optional[torch.FloatTensor] = None,
+        use_cache: Optional[bool] = None,
+        output_attentions: Optional[bool] = None,
+        output_hidden_states: Optional[bool] = None,
+        output_router_logits: Optional[bool] = None,
+        return_dict: Optional[bool] = None,
+        attention_overrides: Optional[tuple] = None,
+        output_attn_map: Optional[bool] = False,
     ) -> Union[Tuple, MoeModelOutputWithPast]:
         output_attentions = output_attentions if output_attentions is not None else self.config.output_attentions
         output_router_logits = (
@@ -2307,6 +2323,7 @@ class HymbaModel(HymbaPreTrainedModel):
         all_attn_outputs = () if output_attentions else None
         all_scan_outputs = () if output_attentions else None
         all_router_logits = () if output_router_logits else None
+        attn_maps = () if output_attn_map else None
         next_decoder_cache = None
 
         kv_last_layer = None
@@ -2354,24 +2371,28 @@ class HymbaModel(HymbaPreTrainedModel):
                     use_cache=use_cache,
                     kv_last_layer=kv_last_layer if self.inter_layer_kv_reuse else None,
                     use_swa=self.sliding_window is not None and i not in self.global_attn_idx,
-                    attention_override=attention_overrides[i] if attention_overrides is not None else None
+                    attention_override=attention_overrides[i] if attention_overrides is not None else None,
+                    output_attn_map=output_attn_map,
                 )
 
-            hidden_states = layer_outputs[0]
+            hidden_states = layer_outputs['states']
 
             if use_cache:
-                next_decoder_cache = layer_outputs[2 if output_attentions else 1]
+                next_decoder_cache = layer_outputs['past_key_value']
 
             if output_attentions:
-                all_self_attns += (layer_outputs[1][0],)
-                all_attn_outputs += (layer_outputs[1][1],)
-                all_scan_outputs += (layer_outputs[1][2],)
+                all_self_attns += (layer_outputs['attn_weights'],)
+                all_attn_outputs += (layer_outputs['attention'],)
+                all_scan_outputs += (layer_outputs['scan'],)
+            
+            if output_attn_map:
+                attn_maps += (layer_outputs['A_bar'], layer_outputs['B_bar'], layer_outputs['C'])
 
             if output_router_logits:
-                all_router_logits += (layer_outputs[3],)
+                all_router_logits += (layer_outputs['router_logits'],)
 
             if self.inter_layer_kv_reuse:
-                kv_last_layer = layer_outputs[-1]
+                kv_last_layer = layer_outputs['attn_key_value']
 
                 if self.kv_reuse_group is not None:
                     for group_id, item in enumerate(self.kv_reuse_group):
@@ -2411,16 +2432,18 @@ class HymbaModel(HymbaPreTrainedModel):
                 for v in [hidden_states, next_cache, all_hidden_states, (all_self_attns, all_attn_outputs, all_scan_outputs), all_router_logits]
                 if v is not None
             )
+        attentions = ()
+        if output_attentions:
+            attentions += (all_self_attns, all_attn_outputs, all_scan_outputs)
+        if output_attn_map:
+            attentions += (attn_maps,)
         return MoeModelOutputWithPast(
             last_hidden_state=hidden_states,
             past_key_values=next_cache,
             hidden_states=all_hidden_states,
-            attentions=(all_self_attns, all_attn_outputs, all_scan_outputs),
+            attentions=attentions,
             router_logits=all_router_logits,
         )
-
-
-
 
 # Adapted from transformers.models.mixtral.modeling_mixtral.MixtralForCausalLM with MIXTRAL->JAMBA, Mixtral->Hymba
 class HymbaForCausalLM(HymbaPreTrainedModel):
@@ -2473,6 +2496,7 @@ class HymbaForCausalLM(HymbaPreTrainedModel):
             return_dict: Optional[bool] = None,
             calc_logits_for_entire_prompt: Optional[bool] = True,
             attention_overrides: Optional[tuple] = None,
+            output_attn_map: Optional[bool] = False,
     ) -> Union[Tuple, MoeCausalLMOutputWithPast]:
                 
         r"""
@@ -2520,6 +2544,7 @@ class HymbaForCausalLM(HymbaPreTrainedModel):
             output_router_logits=output_router_logits,
             return_dict=return_dict,
             attention_overrides=attention_overrides,
+            output_attn_map=output_attn_map,
         )
 
         hidden_states = outputs[0]
