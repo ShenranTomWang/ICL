@@ -10,6 +10,10 @@ from constants import ALL_DTYPES, ALL_OPERATORS
 def main(args: object, logger: logging.Logger) -> None:
     operator: interpretability.Operator = args.operator(args.model, args.device, args.dtype)
     
+    if args.stream == "trajectory":
+        assert isinstance(operator, interpretability.operators.Mamba2Operator) or isinstance(operator, interpretability.operators.MambaOperator), \
+            "Trajectory stream can only be from Mamba2 or Mamba operators"
+    
     if args.layers == "-1":
         args.layers = [i for i in range(operator.model.config.num_hidden_layers)]
     else:
@@ -23,18 +27,18 @@ def main(args: object, logger: logging.Logger) -> None:
         utils.log_counters(train_counter, test_counter)
         args.handler(train_counter, test_counter, train_data, test_data, operator, args, seed)
     
-    if args.stream == "fv_steer":
+    if args.stream == "fv_steer" or args.stream == "trajectory":
         with open(f"config/{args.task}.json", "r") as f:
             datasets = json.load(f)
         for dataset in datasets:
             outputs = []
             for seed in args.seed:
-                output = operator.load_attention_manager(f"{args.out_dir}/{dataset}/{seed}/fv_steer.pth")
+                output = operator.load_attention_manager(f"{args.out_dir}/{dataset}/{seed}/{args.stream}.pth")
                 outputs.append(output)
             dataset_mean = AttentionManager.mean_of(outputs)
-            dataset_mean.save(f"{args.out_dir}/{dataset}/fv_steer.pth")
-            logger.info(f"Saved mean of steer stream for {dataset} to {args.out_dir}/{dataset}/fv_steer.pth")
-        
+            dataset_mean.save(f"{args.out_dir}/{dataset}/{args.stream}.pth")
+            logger.info(f"Saved mean of {args.stream} stream for {dataset} to {args.out_dir}/{dataset}/{args.stream}.pth")
+
 def get_subparsers(parser: argparse.ArgumentParser, name: str) -> None:
     """
     Get subparsers for the given parser
@@ -49,6 +53,8 @@ def get_subparsers(parser: argparse.ArgumentParser, name: str) -> None:
     fv_steer_parser = subparsers.add_parser("fv_steer", help="Attention stream last (extract function vectors from attn stream for steering)")
     fv_steer_parser.add_argument("--choice", type=int, default=10, help="number of ICL demos to choose randomly from k examples")
     steer_parser = subparsers.add_parser("steer", help="Steer stream")
+    trajectory_parser = subparsers.add_parser("trajectory", help="Take difference between the last token and the query")
+    trajectory_parser.add_argument("--choice", type=int, default=10, help="number of ICL demos to choose randomly from k examples, default None means use all k examples")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

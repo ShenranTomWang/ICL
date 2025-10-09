@@ -68,13 +68,21 @@ class Dataset:
         """
         if self.demo is None:
             self.prepare_demo()
-        for i, dp_test in enumerate(self.test):
-            if self.template:
-                dp_test["input"] = self.demo + "Q: " + dp_test["input"] + "\nA:"
-            else:
-                self.test[i]["input"] = self.demo + dp_test["input"] + "\n"
         self.inputs = [dp["input"] for dp in self.test]
+        for i, _input in enumerate(self.inputs):
+            if self.template:
+                self.inputs[i] = self.demo + "Q: " + _input + "\nA:"
+            else:
+                self.inputs[i] = self.demo + _input + "\n"
         self.outputs = [dp["output"] for dp in self.test]
+
+    def prepare_trajectory(self) -> None:
+        """
+        Prepares the trajectory indices for the dataset. This will create a list of tuples of indices for each input.
+        The resulting list will be stored in self.trajectory_indices.
+        """
+        query_targets = -4 if self.template else -2
+        self.trajectory_indices = [(query_targets, -1) for _ in self.inputs]
         
     def tensorize(self, tokenizer: Tokenizer) -> None:
         """

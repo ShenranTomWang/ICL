@@ -1,8 +1,9 @@
 import torch
 from .attention_manager import AttentionManager
 from .manager_item import MambaScanManagerItem, GenericManagerItem, ManagerItem
+from abc import ABC, abstractmethod
 
-class ScanManager(AttentionManager):
+class ScanManager(AttentionManager, ABC):
     """
     This is the manager parent class for scan outputs. It is used to manage the scan outputs of Mamba models.
     """
@@ -15,6 +16,17 @@ class ScanManager(AttentionManager):
             return self.scan_outputs.clone() if self.scan_outputs is not None else None
         else:
             raise ValueError(f"Unknown stream: {stream}, must be 'scan'")
+    
+    @abstractmethod
+    def get_trajectory(self, trajectory_indices: tuple[int]) -> "ScanManager":
+        """
+        Get trajectory for the scan outputs
+        Args:
+            trajectory_indices (tuple[int]): indices for trajectory
+        Returns:
+            ScanManager: manager with trajectories
+        """
+        pass
     
     def __iter__(self):
         yield self.scan_outputs
@@ -55,6 +67,14 @@ class MambaScanManager(ScanManager):
     def get_last_token(self) -> "MambaScanManager":
         scan_outputs = self.scan_outputs.get_last_token() if self.scan_outputs is not None else None
         return MambaScanManager(scan_outputs, self.device)
+    
+    def get_trajectory(self, trajectory_indices: tuple[int]) -> "MambaScanManager":
+        query_value = self.scan_outputs.get_token(trajectory_indices[0]) if self.scan_outputs is not None else None
+        key_value = self.scan_outputs.get_token(trajectory_indices[1]) if self.scan_outputs is not None else None
+        if query_value is None:
+            return MambaScanManager(None, self.device)
+        else:
+            return MambaScanManager(key_value - query_value, self.device)
     
     def mean(self) -> "MambaScanManager":
         scan_output = self.scan_outputs.clone()
@@ -114,6 +134,14 @@ class Mamba2ScanManager(ScanManager):
         scan_outputs = self.scan_outputs.get_last_token() if self.scan_outputs is not None else None
         return Mamba2ScanManager(scan_outputs, self.device)
     
+    def get_trajectory(self, trajectory_indices: tuple[int]) -> "Mamba2ScanManager":
+        query_value = self.scan_outputs.get_token(trajectory_indices[0]) if self.scan_outputs is not None else None
+        key_value = self.scan_outputs.get_token(trajectory_indices[1]) if self.scan_outputs is not None else None
+        if query_value is None:
+            return Mamba2ScanManager(None, self.device)
+        else:
+            return Mamba2ScanManager(key_value - query_value, self.device)
+
     def mean(self) -> "Mamba2ScanManager":
         scan_output = self.scan_outputs.clone()
         for i, scan_i in enumerate(scan_output):

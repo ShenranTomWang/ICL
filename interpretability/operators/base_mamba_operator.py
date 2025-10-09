@@ -30,6 +30,18 @@ class BaseMambaOperator(Operator, ABC):
     def _get_add_mean_hook(self) -> Callable:
         pass
     
+    def get_trajectory_factory(self, trajectory_indices: list[tuple[int]]) -> Callable:
+        """
+        Get a factory function for trajectory
+        Args:
+            trajectory_indices (list[tuple[int]]): list of tuples of indices for trajectory
+        Returns:
+            Callable: factory function that takes a list of attention managers and returns a list of trajectories
+        """
+        def trajectory_factory(attn: AttentionManager, i: int, **kwargs) -> Callable:
+            return attn.get_trajectory(trajectory_indices[i])
+        return trajectory_factory
+
     def attention2kwargs(
         self,
         scan_outputs: AttentionManager | None,

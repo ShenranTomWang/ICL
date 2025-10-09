@@ -65,7 +65,7 @@ class HybridOperator(Operator, ABC):
             list[HybridAttentionManager]: attentions (self-attention and scan)
         """
         outputs = []
-        for input in inputs:
+        for i, input in enumerate(inputs):
             tokenized = self.tokenizer(input, return_tensors="pt", truncation=True)
             tokenized = {k: v.to(self.device) for k, v in tokenized.items()}
             output = self.model(**tokenized, output_attentions=True)
@@ -73,7 +73,7 @@ class HybridOperator(Operator, ABC):
             all_attn, attn_output, scan_output = output.attentions
             all_attn, attn_output, scan_output = list(all_attn), list(attn_output), list(scan_output)
             hybrid_output = self._get_attention_manager_class()(all_attns=all_attn, attn_outputs=attn_output, scan_outputs=scan_output, device="cpu")
-            hybrid_output = activation_callback(hybrid_output)
+            hybrid_output = activation_callback(hybrid_output, i)
             outputs.append(hybrid_output)
         return outputs
     

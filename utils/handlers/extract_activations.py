@@ -76,7 +76,7 @@ def dev_handler(
         args (NameSpace)
         seed (int)
     """
-    if args.stream == "fv_steer":
+    if args.stream == "fv_steer" or args.stream == "trajectory":
         logger = logging.getLogger(__name__)
         for train_task in train_counter:
             logger.info(f"Processing {train_task} (dev)")
@@ -84,7 +84,10 @@ def dev_handler(
             curr_test_data = [dp for dp in test_data if dp["task"] == train_task]
             
             dataset = Dataset(curr_train_data, curr_test_data, verbose=args.verbose, template=args.use_template)
-            run_operator_fv_steer(args, operator, dataset, f"{args.out_dir}/{train_task}/{seed}/", seed)
+            if args.stream == "fv_steer":
+                run_operator_fv_steer(args, operator, dataset, f"{args.out_dir}/{train_task}/{seed}/", seed)
+            elif args.stream == "trajectory":
+                run_operator_trajectory(args, operator, dataset, f"{args.out_dir}/{train_task}/{seed}/", seed)
     elif args.stream == "attn_mean" and args.choice != None:
         logger = logging.getLogger(__name__)
         for train_task in train_counter:
@@ -201,3 +204,21 @@ def run_operator_fv_steer(args, operator: Operator, dataset: Dataset, dir: str, 
     attn = operator.extract_attention_managers(dataset.inputs, operator.get_attention_last_token)
     attn = AttentionManager.mean_of(attn)
     operator.store_attention_managers([attn], dir, fnames=["fv_steer"])
+
+def run_operator_trajectory(args, operator: Operator, dataset: Dataset, dir: str, seed: int) -> None:
+    """
+    Run operator to extract activations
+
+    Args:
+        args (Namespace)
+        operator (Operator)
+        dataset (Dataset)
+        dir (str): directory to store outputs
+        seed (int): seed
+    """
+    dataset.choose(args.choice, seed)
+    dataset.preprocess()
+    dataset.prepare_trajectory()
+    attn = operator.extract_attention_managers(dataset.inputs, operator.get_trajectory_factory(dataset.trajectory_indices))
+    attn = AttentionManager.mean_of(attn)
+    operator.store_attention_managers([attn], dir, fnames=["trajectory"])

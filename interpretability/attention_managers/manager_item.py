@@ -132,6 +132,15 @@ class GenericManagerItem(ManagerItem):
                 mylist.append(item[:, -1, ...].clone())
         return GenericManagerItem(mylist)
     
+    def get_token(self, index: int) -> "GenericManagerItem":
+        mylist = []
+        for item in self:
+            if item is None:
+                mylist.append(None)
+            else:
+                mylist.append(item[:, index, ...].clone())
+        return GenericManagerItem(mylist)
+    
     def to(self, device: str | torch.DeviceObjType) -> "GenericManagerItem":
         mylist = []
         for item in self:
@@ -238,6 +247,15 @@ class MambaScanManagerItem(ManagerItem):
                 mylist.append(None)
             else:
                 mylist.append(item[..., -1].clone())
+        return MambaScanManagerItem(mylist)
+    
+    def get_token(self, index: int) -> "MambaScanManagerItem":
+        mylist = []
+        for item in self:
+            if item is None:
+                mylist.append(None)
+            else:
+                mylist.append(item[..., index].clone())
         return MambaScanManagerItem(mylist)
     
     def to(self, device: str | torch.DeviceObjType) -> "MambaScanManagerItem":

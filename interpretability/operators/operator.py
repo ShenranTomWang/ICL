@@ -70,21 +70,23 @@ class Operator(ABC):
         output = self.model(**tokenized, **kwargs)
         return output
     
-    def get_attention_mean(self, attn: AttentionManager) -> AttentionManager:
+    def get_attention_mean(self, attn: AttentionManager, **kwargs) -> AttentionManager:
         """
         Get mean attention values along sequence dimension
         Args:
             attn (AttentionManager): attention values
+            **kwargs: additional arguments, not used
         Returns:
             AttentionManager: mean attention values
         """
         return attn.mean()
     
-    def get_attention_last_token(self, attn: AttentionManager) -> AttentionManager:
+    def get_attention_last_token(self, attn: AttentionManager, **kwargs) -> AttentionManager:
         """
         Get attention values of last token
         Args:
             attn (AttentionManager): attention values
+            **kwargs: additional arguments, not used
         Returns:
             AttentionManager: last token attention values at each layer
         """
@@ -111,16 +113,18 @@ class Operator(ABC):
             fnames (list[str]): list of filenames to override default naming of indexing
         """
         logger = logging.getLogger(__name__)
-        if not dir.endswith("/"):
-            dir += "/"
-        if not os.path.exists(dir):
-            os.makedirs(os.path.dirname(dir), exist_ok=True)
         for i, attention_output in enumerate(attention_outputs):
             if attention_output is not None:
                 if fnames != None:
-                    attention_output.save(f"{dir}{fnames[i]}.pth")
+                    out_location = os.path.join(dir, f"{fnames[i]}.pth")
+                    if not os.path.exists(out_location):
+                        os.makedirs(os.path.dirname(out_location), exist_ok=True)
+                    attention_output.save(out_location)
                 else:
-                    attention_output.save(f"{dir}{i}.pth")
+                    out_location = os.path.join(dir, f"{i}.pth")
+                    if not os.path.exists(out_location):
+                        os.makedirs(os.path.dirname(out_location), exist_ok=True)
+                    attention_output.save(out_location)
         logger.info(f"Stored attention outputs to {dir}")
     
     def load_attention_manager(self, fname: str = "") -> AttentionManager:
