@@ -24,16 +24,16 @@ def AIE_handler(args):
             dataset.preprocess()
             dataset.tensorize(operator.tokenizer)
             test_task_base = to_base(test_task)
-            steer = operator.load_attention_manager(f"{args.fv_load_dir}/{test_task_base}/{seed}/fv_steer.pth")
+            steer = operator.load_attention_manager(f"{args.fv_load_dir}/{test_task_base}/{seed}/{args.fname}.pth")
             inputs = dataset.inputs
             label_id = torch.tensor(dataset.output_ids)
             fv_map = operator.generate_AIE_map([steer], [inputs], [label_id])
             out_dir = f"{args.out_dir}/{test_task}/{seed}"
             os.makedirs(out_dir, exist_ok=True)
-            torch.save(fv_map, f"{out_dir}/function_vectors.pth")
-            fv_map.visualize(f"{out_dir}/function_vectors.png")
-            logger.info(f"Function vectors saved to {out_dir}/{args.task}_function_vectors.pth")
-            logger.info(f"Function vectors visualization saved to {out_dir}/{args.task}_function_vectors.png")
+            torch.save(fv_map, f"{out_dir}/{args.out_fname}.pth")
+            fv_map.visualize(f"{out_dir}/{args.out_fname}.png")
+            logger.info(f"Function vectors saved to {out_dir}/{args.task}_{args.out_fname}.pth")
+            logger.info(f"Function vectors visualization saved to {out_dir}/{args.task}_{args.out_fname}.png")
 
 def neg_AIE_handler(args):
     logger = logging.getLogger(__name__)

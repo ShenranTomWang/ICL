@@ -20,6 +20,8 @@ if __name__ == "__main__":
     subparser = parser.add_subparsers(dest="operation", required=True)
     aie_subparser = subparser.add_parser("AIE", help="Generate AIE function vectors")
     aie_subparser.add_argument("--split", type=str, default="dev", choices=["test", "dev"], help="Split to use for AIE")
+    aie_subparser.add_argument("--fname", type=str, default="fv_steer", help="fv steer file name")
+    aie_subparser.add_argument("--out_fname", type=str, default="function_vectors", help="Output function vector map filename")
     neg_aie_subparser = subparser.add_parser("neg_AIE", help="Generate negative AIE function vectors")
     neg_aie_subparser.add_argument("--split", type=str, default="dev", choices=["test", "dev"], help="Split to use for negative AIE")
     neg_aie_subparser.add_argument("--use_F1", default=False, action="store_true", help="Use F1 score instead of AIE")
