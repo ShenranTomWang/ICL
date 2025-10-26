@@ -137,11 +137,11 @@ class FVMap(ABC):
             map_.visualize_on_spec(spec)
             fig.text(
                 x = (col + 0.5) / width,          # Horizontal center of the cell
-                y = 1 - (row / height) + 0.001,    # Slightly above the top of the cell
+                y = 1 - (row / height),    # Slightly above the top of the cell
                 s=titles[i],
                 ha="center", va="bottom", fontsize=28, weight="bold"
             )
-        plt.tight_layout()
+        plt.tight_layout(h_pad=5)
         
         if save_path:
             fig.savefig(save_path, bbox_inches="tight")

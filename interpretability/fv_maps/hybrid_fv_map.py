@@ -53,21 +53,21 @@ class HybridFVMap(FVMap):
     
     def visualize_on_axis(self, ax1: Axes, ax2: Axes) -> None:
         hm = sns.heatmap(self.attn_map.to(torch.float32).numpy(), ax=ax1, cmap="viridis", yticklabels=self.attn_layers)
-        hm.set_yticklabels(hm.get_yticklabels(), fontsize=16)
+        hm.set_yticklabels(hm.get_yticklabels(), fontsize=12)
         hm.set_xticklabels(hm.get_xticklabels(), fontsize=16)
         hm.collections[0].colorbar.ax.tick_params(labelsize=16)
         ax1.set_title("Attention Stream", fontsize=28)
-        ax1.set_xlabel("Heads", fontsize=20)
-        ax1.set_ylabel("Layers", fontsize=20)
+        ax1.set_xlabel("Heads", fontsize=22)
+        ax1.set_ylabel("Layers", fontsize=22)
         hm = sns.heatmap(self.scan_map.to(torch.float32).numpy(), ax=ax2, cmap="viridis", yticklabels=self.scan_layers)
-        hm.set_yticklabels(hm.get_yticklabels(), fontsize=16)
+        hm.set_yticklabels(hm.get_yticklabels(), fontsize=12)
         hm.set_xticklabels(hm.get_xticklabels(), fontsize=16)
         hm.collections[0].colorbar.ax.tick_params(labelsize=16)
         ax2.set_title("Mamba Stream", fontsize=28)
-        ax2.set_xlabel("Heads", fontsize=20)
+        ax2.set_xlabel("Heads", fontsize=22)
 
     def visualize_on_spec(self, spec: SubplotSpec) -> None:
-        gs_inner = gridspec.GridSpecFromSubplotSpec(1, 2, subplot_spec=spec, wspace=0.15)
+        gs_inner = gridspec.GridSpecFromSubplotSpec(1, 2, subplot_spec=spec, wspace=0.3)
         ax1 = plt.subplot(gs_inner[0])
         ax2 = plt.subplot(gs_inner[1])
         self.visualize_on_axis(ax1, ax2)
@@ -178,9 +178,10 @@ class HybridFVMap(FVMap):
                     heads[layer] = [{"head": head, "stream": stream_i}]
             return heads
 
-    def visualize(self, save_path: str = None) -> Figure:
+    def visualize(self, title: str = None, save_path: str = None) -> Figure:
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=self.figsize)
         self.visualize_on_axis(ax1, ax2)
+        fig.suptitle(title, fontsize=48) if title is not None else None
         plt.tight_layout()
         if save_path is not None:
             os.makedirs(os.path.dirname(save_path), exist_ok=True)

@@ -33,15 +33,15 @@ class TransformerFVMap(FVMap):
 
     def visualize_on_axis(self, ax: plt.Axes) -> None:
         hm = sns.heatmap(self.attn_map.to(torch.float32).numpy(), ax=ax, cmap="viridis")
-        hm.set_yticklabels(hm.get_yticklabels(), fontsize=16)
+        hm.set_yticklabels(hm.get_yticklabels(), fontsize=12)
         hm.set_xticklabels(hm.get_xticklabels(), fontsize=16)
         hm.collections[0].colorbar.ax.tick_params(labelsize=16)
-        ax.set_title("Attention Stream", fontsize=24)
-        ax.set_xlabel("Heads", fontsize=20)
-        ax.set_ylabel("Layers", fontsize=20)
+        ax.set_title("Attention Stream", fontsize=28)
+        ax.set_xlabel("Heads", fontsize=22)
+        ax.set_ylabel("Layers", fontsize=22)
 
     def visualize_on_spec(self, spec: gridspec.SubplotSpec) -> None:
-        gs_inner = gridspec.GridSpecFromSubplotSpec(1, 1, subplot_spec=spec, wspace=0.1)
+        gs_inner = gridspec.GridSpecFromSubplotSpec(1, 1, subplot_spec=spec, wspace=0.3)
         ax = plt.subplot(gs_inner[0])
         self.visualize_on_axis(ax)
         
@@ -76,10 +76,12 @@ class TransformerFVMap(FVMap):
             else:
                 heads[layer] = [{"head": head, "stream": "attn"}]
         return heads
-    
-    def visualize(self, save_path: str = None) -> Figure:
+
+    def visualize(self, title: str = None, save_path: str = None) -> Figure:
         fig, ax = plt.subplots(figsize=self.figsize)
         self.visualize_on_axis(ax)
+        if title is not None:
+            fig.suptitle(title, fontsize=48)
         if save_path is not None:
             os.makedirs(os.path.dirname(save_path), exist_ok=True)
             plt.savefig(save_path)

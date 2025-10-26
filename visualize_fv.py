@@ -22,15 +22,16 @@ def main(args):
     FVMap.visualize_all(all_maps, titles, save_path=save_path, figsize=task_map.figsize)
     mean_map = FVMap.mean_of(all_maps)
     save_path = f"{args.out_dir}/{args.task}_mean_{args.fname}.pdf" if not args.neg_AIE else f"{args.out_dir}/{args.task}_mean_neg_{args.fname}{'_F1' if args.use_F1 else ''}.pdf"
-    mean_map.visualize(save_path=save_path)
+    mean_map.visualize(title=args.title, save_path=save_path)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate function vectors")
     parser.add_argument("--out_dir", type=str, default="out", help="Output directory to save")
     parser.add_argument("--task", type=str, required=True)
+    parser.add_argument("--title", type=str, default=None, help="Title for the mean visualization")
     parser.add_argument("--seed", type=str, default="100,13,21,42,87", help="Comma separated list of seeds")
     parser.add_argument("--load_dir", type=str, required=True, help="Directory to load function vector maps from")
-    parser.add_argument("--figsize", type=int, nargs=2, default=(12, 8), help="Figure size for visualization")
+    parser.add_argument("--figsize", type=int, nargs=2, default=(12, 10), help="Figure size for visualization")
     parser.add_argument("--neg_AIE", action="store_true", help="Whether to visualize negative AIE maps")
     parser.add_argument("--use_F1", action="store_true", help="Whether the visualization is a F1 score maps")
     parser.add_argument("--fname", type=str, default="function_vectors", help="fv steer file name, only used if neg_AIE is False")
