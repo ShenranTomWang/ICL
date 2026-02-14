@@ -5,7 +5,7 @@ Here are the instructions for getting started with this repository
 Data are scraped from `datasets`. To download data, first make sure that the version of `datasets` is 1.4.0 (which, if you installed dependencies in `requirements.txt`, is not). then run
 ```shell
 cd preprocess
-python _build_gym.py --build --n_proc=<number of processes to run> --do_test --test_k {4|8|32}
+python _build_gym.py --build --n_proc=<number of processes to run> --do_test --test_k {4|8|16|32}
 ```
 After scraping the data, you can convert the version of `datasets` back to your version.
 
