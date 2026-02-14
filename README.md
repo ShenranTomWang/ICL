@@ -21,4 +21,8 @@ python create_data_custom.py --variant {random|0_correct|25_correct|50_correct|7
 This will create the corresponding datasets, and a new `config.json` file under [config](./config/).
 
 ## Running Experiments
-To run experiments, follow the script outlined in `test_custom_analysis_classification.sh`. This runs the experiment on `analysis_classification` task which contains 5 datasets of different purposes, all classification. to run other tasks, you can define your task in [config](./config/). The script uses `k = 4` samples of demonstrations, but you can change them accordingly
+1. Behaviour experiments (Section 4): this [script](test_fv_og.sh) runs on the parametric knowledge retrieval datasets.
+2. Extracting FVs for all heads (Section 5.1): this [script](extract_fv_steer.sh) runs on the parametric knowledge retrieval datasets.
+3. Identifying head importance via AIE (Section 5.1): this [script](function_vectors_original.sh) runs on the parametric knowledge retrieval datasets.
+4. Steering top FV heads (Section 5.3): this [script](test_fv_og_steer.sh) runs on the parametric knowledge retrieval datasets.
+5. Ablating top FV heads (Section 5.3): this [script](test_fv_og_removal_ablation.sh) runs on the parametric knowledge retrieval datasets.
