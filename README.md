@@ -2,23 +2,22 @@
 Here are the instructions for getting started with this repository
 
 ## Data Preperation
-Data are scraped from `datasets`. To download data, first make sure that the version of `datasets` is 1.4.0 (which, if you installed dependencies in `requirements.txt`, is not). then run
-```shell
-cd preprocess
-python _build_gym.py --build --n_proc=<number of processes to run> --do_test --test_k {4|8|16|32}
-```
-After scraping the data, you can convert the version of `datasets` back to your version.
+Data are scraped from `datasets`. To download data, first make sure that the version of `datasets` is 1.4.0 (which, if you installed dependencies in `requirements.txt`, is NOT). then run the script in [preprocess.sh](preprocess.sh)
 
 ## Generating Ablations
 To generate `random` or `#%_correct` data by dataset, run the following:
 ```shell
-python create_data_custom.py --variant {random|0_correct|25_correct|50_correct|75_correct} --dataset {dataset}
+python create_data.py --variant {random|0_correct|25_correct|50_correct|75_correct} --dataset {dataset}
 ```
 Alternatively, if you want to generate a variant of all datasets in a `config.json` file under [config](./config/), run:
 ```shell
-python create_data_custom.py --variant {random|0_correct|25_correct|50_correct|75_correct} --task {config_name}
+python create_data.py --variant {random|0_correct|25_correct|50_correct|75_correct} --task {config_name}
 ```
-This will create the corresponding datasets, and a new `config.json` file under [config](./config/).
+This will create the corresponding datasets, and a new `config.json` file under [config](./config/).  
+For the mechanistic part of the paper, you will need to create the `random` variant of data with `k=-1` (save as many train samples as possible to sample). An example of the parametric knowledge retrieval datasets (which is referred to as "function_vectors_original") would look like:
+```shell
+python create_data.py --variant {random|0_correct|25_correct|50_correct|75_correct} --task function_vectors_original --k -1
+```
 
 ## Running Experiments
 1. Behaviour experiments (Section 4): this [script](test_fv_og.sh) runs on the parametric knowledge retrieval datasets.
