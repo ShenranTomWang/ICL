@@ -46,7 +46,7 @@ class TransformerOperator(Operator):
             tokenized = self.tokenizer(input, return_tensors="pt", truncation=True).to(self.device)
             all_attn, attn_output = self.model(**tokenized, output_attentions=True).attentions
             attn_output = SelfAttentionManager(all_attn, attn_output, "cpu")
-            attn_output = activation_callback(attn_output, i)
+            attn_output = activation_callback(attn_output)
             attn_outputs.append(attn_output)
         return attn_outputs
     
